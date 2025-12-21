@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medieval Survival Prototype</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>Medieval Survival Prototype</h1>
+    <p>WASD veya ok tuşlarıyla hareket edin, etkileşim düğmeleriyle kaynak toplayıp hayatta kalın.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>Durum</h2>
+      <div id="stats" class="stats"></div>
+      <div class="actions">
+        <div class="action-row">
+          <button data-move="up">⬆️ Yukarı</button>
+        </div>
+        <div class="action-row">
+          <button data-move="left">⬅️ Sol</button>
+          <button data-move="down">⬇️ Aşağı</button>
+          <button data-move="right">➡️ Sağ</button>
+        </div>
+        <div class="action-row">
+          <button id="gather-btn">⛏️ Kaynak Topla</button>
+          <button id="rest-btn">🛌 Dinlen (1 Yemek)</button>
+        </div>
+        <div class="action-row">
+          <button id="farm-btn">🌾 Tarla Kur (2 Odun, 2 Lif)</button>
+          <button id="well-btn">⛲ Kuyu Aç (3 Taş)</button>
+        </div>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section class="board-wrapper">
+      <div id="board" class="board" aria-label="Oyun haritası"></div>
+      <div class="legend">
+        <span class="legend-item forest">🌲 Orman</span>
+        <span class="legend-item plains">🌾 Çayır</span>
+        <span class="legend-item stone">⛰️ Taşlık</span>
+        <span class="legend-item river">💧 Dere</span>
+        <span class="legend-item farm">🪴 Tarla</span>
+        <span class="legend-item well">⛲ Kuyu</span>
+        <span class="legend-item player">🧑‍🌾 Oyuncu</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Goal: Günü birlik hayatta kal, stok tut ve tarlalarını büyüt. PoC — henüz kalıcı kayıt yok.</p>
+  </footer>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
