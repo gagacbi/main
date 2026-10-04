@@ -15,8 +15,8 @@ Tarih: {{TARIH}} · Veri: `docs/balans/sonuc.json` (tablolar bu veriden üretili
 |---|---|---|---|
 | Aynı seviye yaratığı öldürme süresi | 3–5 sn | 0,8–2,1 sn | 2,8–5,3 sn |
 | Öldürme başına can kaybı | ≈%5 | %1–1,6 | %4,2–5,9 |
-| Bot Sv10 / Sv20 / Sv30 süresi | ≈1 / 6 / 20 sa | 0,15 / 0,5 / 1,8 sa (1 saatte Sv29) | **1,4 / 7,0 / 23 sa** |
-| Sv50 (bot) | ≈110 sa | ulaşılamaz biçimde hızlı | ≈88 sa |
+| Bot Sv10 / Sv20 / Sv30 süresi | ≈1 / 6 / 20 sa | 0,15 / 0,5 / 1,8 sa (1 saatte Sv29) | **1,4 / 7,6 / 25 sa** |
+| Sv50 (bot) | ≈110 sa | ulaşılamaz biçimde hızlı | ≈97 sa |
 | +5 seviye yaratığın bedeli | ≥1,3–1,8× | 1,3–2,5× (yüksek seviyede 1,2×) | seviye farkı eğrisiyle artırıldı |
 
 ### Yapılan ayarlar
@@ -116,7 +116,7 @@ Tek kişi boss'u kıl payı kazanır (en düşük can %1–10, bazen 1 ölüm); 
 ## 13. Açık sorular ve bilinen sınırlar
 
 1. **Çatlakta boylar arası dost ateşi:** farklı boy oyuncuların AoE'si birbirine PvP olarak işler. Ateşkes alanı mı, açık PvP mi? Karar bekliyor.
-2. **Akçe birikimi:** bot 88 saatte ~13 milyon akçe biriktirdi çünkü yalnızca +4'e kadar bastı (tılsım üretimi için oba gerekir; botta yok). Gerçek oyuncu +9 hedefler ve tablodaki saatler (4–12 sa'lık kazanç) bunu sinker olarak gösterir; yine de Sv40+ sonrası akçe sinki zayıf. Sonraki aşamada (pazar, vergi) çözülecek.
+2. **Akçe birikimi:** bot ~90 saatte on milyonlarca akçe biriktirdi çünkü yalnızca +4'e kadar bastı (tılsım üretimi için oba gerekir; botta yok). Gerçek oyuncu +9 hedefler ve tablodaki saatler (4–12 sa'lık kazanç) bunu sinker olarak gösterir; yine de Sv40+ sonrası akçe sinki zayıf. Sonraki aşamada (pazar, vergi) çözülecek.
 3. **Bot sınırları:** oba, sefer, düello, parti taktiği, kalabalık etkisi simüle edilmedi. Sv1–2 çok hızlı (öğretici gereği).
 4. **Şifa/iksir yok:** can yalnızca bölgede dinlenerek yenilenir; savaş içi iyileşme (Ay boyu) sonraki aşamada anlam kazanacak.
 5. **PVP_COEF (0,35)** için oyun testi verisi yok; çözümsel tablodaki süreler PvE'nin ≈2,3 katıdır.

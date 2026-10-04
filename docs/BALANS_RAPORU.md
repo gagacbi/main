@@ -15,8 +15,8 @@ Tarih: 2026-10-04 · Veri: `docs/balans/sonuc.json` (tablolar bu veriden üretil
 |---|---|---|---|
 | Aynı seviye yaratığı öldürme süresi | 3–5 sn | 0,8–2,1 sn | 2,8–5,3 sn |
 | Öldürme başına can kaybı | ≈%5 | %1–1,6 | %4,2–5,9 |
-| Bot Sv10 / Sv20 / Sv30 süresi | ≈1 / 6 / 20 sa | 0,15 / 0,5 / 1,8 sa (1 saatte Sv29) | **1,4 / 7,0 / 23 sa** |
-| Sv50 (bot) | ≈110 sa | ulaşılamaz biçimde hızlı | ≈88 sa |
+| Bot Sv10 / Sv20 / Sv30 süresi | ≈1 / 6 / 20 sa | 0,15 / 0,5 / 1,8 sa (1 saatte Sv29) | **1,4 / 7,6 / 25 sa** |
+| Sv50 (bot) | ≈110 sa | ulaşılamaz biçimde hızlı | ≈97 sa |
 | +5 seviye yaratığın bedeli | ≥1,3–1,8× | 1,3–2,5× (yüksek seviyede 1,2×) | seviye farkı eğrisiyle artırıldı |
 
 ### Yapılan ayarlar
@@ -45,17 +45,17 @@ Tarih: 2026-10-04 · Veri: `docs/balans/sonuc.json` (tablolar bu veriden üretil
 
 | Seviye | Süre (sa) | Hedef (sa) | Seviyeye kadar öldürme | Kill/sa (o seviye) |
 |---|---|---|---|---|
-| 5 | 0.21 |  | 94 | 444 |
-| 10 | 2.92 | ≈1 | 1.712 | 597 |
-| 15 | 4.33 |  | 3.498 | 1.268 |
-| 20 | 9.64 | ≈6 | 9.313 | 1.095 |
-| 25 | 14.58 |  | 16.244 | 1.405 |
-| 30 | 27.37 | ≈20 | 30.127 | 1.085 |
-| 35 | 38.37 |  | 44.840 | 1.337 |
-| 40 | 56.01 | ≈55 | 68.912 | 1.365 |
-| 45 | 81.18 |  | 95.496 | 1.056 |
+| 5 | 0.14 |  | 83 | 594 |
+| 10 | 1.42 | ≈1 | 1.465 | 1.083 |
+| 15 | 2.81 |  | 3.332 | 1.340 |
+| 20 | 7.56 | ≈6 | 9.453 | 1.289 |
+| 25 | 12.58 |  | 16.179 | 1.339 |
+| 30 | 25.02 | ≈20 | 29.344 | 1.058 |
+| 35 | 35.65 |  | 43.365 | 1.319 |
+| 40 | 55.69 | ≈55 | 70.685 | 1.364 |
+| 45 | 75.93 |  | 96.095 | 1.255 |
 
-Koşu: 100.084 simüle saat, 641.3 sn gerçek süre; ulaşılan seviye **50**, 39 ölüm, 144.973 yaratık, artı basma: 91 başarı / 11 başarısız / 0 yok olan.
+Koşu: 96.898 simüle saat, 638 sn gerçek süre; ulaşılan seviye **50**, 3 ölüm, 149.179 yaratık, artı basma: 95 başarı / 11 başarısız / 0 yok olan.
 
 ## 4. Savaş tempo ve güç eğrisi (çözümsel)
 
@@ -111,12 +111,12 @@ Bot koşusu (5 saat, Sv0'dan):
 
 | Boy | Uzmanlık | Seviye | Kill/sa | Ölüm/sa | Can %/öldürme | Sv10 süresi (sa) |
 |---|---|---|---|---|---|---|
-| gok | kalkan | 18 | 1.102 | 4.2 | 3.2 | 1.65 |
-| gok | kilic | 17 | 1.037 | 6.6 | 3.6 | 2.30 |
-| yer | kalkan | 17 | 1.085 | 10 | 2.7 | 2.66 |
-| yer | kilic | 17 | 1.022 | 11.6 | 4.2 | 2.20 |
-| ay | kalkan | 16 | 1.017 | 8.8 | 3.1 | 2.66 |
-| ay | kilic | 19 | 1.316 | 8 | 2.2 | 1.97 |
+| gok | kalkan | 19 | 1.394 | 1.8 | 1.1 | 1.45 |
+| gok | kilic | 19 | 1.471 | 0.2 | 1.2 | 1.26 |
+| yer | kalkan | 19 | 1.376 | 1.4 | 1.2 | 1.38 |
+| yer | kilic | 19 | 1.486 | 0.4 | 1 | 1.23 |
+| ay | kalkan | 19 | 1.393 | 0.8 | 1.2 | 1.26 |
+| ay | kilic | 19 | 1.441 | 1 | 1.2 | 1.23 |
 
 Sonuç: boylar birbirinden %12'den az ayrışıyor. Kılıç Alp ≈%27 DPS kazanıp ≈%8 dayanıklılık kaybediyor; Kalkan Alp ≈%62 etkin can kazanıp ≈%8 DPS kaybediyor. Tek başına PvE'de Kılıç daha hızlıdır; Kalkan'ın değeri sürü çekme, grup ve PvP'dedir.
 
@@ -242,12 +242,12 @@ Bulgular: korumasız +9 fiilen imkânsız (~2.900 deneme, ~437 yok olan parça);
 
 | Kamp seviyesi | Kill/sa | Ölüm/sa | Can %/öldürme | XP/sa | XP/sa (seviyenin %) |
 |---|---|---|---|---|---|
-| Sv-3 | 1.607 | 0 | 1.2 | 208.212 | 108 |
-| Sv-1 | 1.780 | 0 | 1.1 | 261.093 | 135.4 |
-| Sv±0 | 1.819 | 0 | 1.5 | 288.750 | 149.7 |
-| Sv+1 | 1.440 | 1.3 | 2.5 | 229.799 | 119.2 |
-| Sv+2 | 1.528 | 0 | 3.2 | 316.867 | 164.3 |
-| Sv+4 | 1.032 | 0 | 3.4 | 220.035 | 114.1 |
+| Sv-3 | 1.587 | 0 | 1.3 | 194.772 | 101 |
+| Sv-1 | 1.714 | 0 | 1.2 | 249.795 | 129.5 |
+| Sv±0 | 1.794 | 0 | 1.4 | 284.359 | 147.5 |
+| Sv+1 | 1.619 | 0.7 | 2.8 | 283.723 | 147.1 |
+| Sv+2 | 1.347 | 0.7 | 5.1 | 275.421 | 142.8 |
+| Sv+4 | 1.013 | 0 | 3.1 | 201.296 | 104.4 |
 
 Sv+1…+2 verimi sıfır seviyeye yakın; Sv+4'te verim yarıya iner. Kendini zorlamanın bedeli var ama keşfe değer; "her zaman en yüksek kampı farm et" stratejisi yok.
 
@@ -270,16 +270,16 @@ Sv+1…+2 verimi sıfır seviyeye yakın; Sv+4'te verim yarıya iner. Kendini zo
 
 | Boss | Sv | Oyuncu | Sonuç | Süre (sn) | Ölüm | En düşük can % |
 |---|---|---|---|---|---|---|
-| 1 | 9 | 1 | öldü | 168.4 | 4 | 0 |
-| 1 | 9 | 2 | öldü | 55.5 | 2 | 4 |
+| 1 | 9 | 1 | öldü | 130.7 | 3 | 3 |
+| 1 | 9 | 2 | öldü | 57.3 | 2 | 4 |
 | 1 | 9 | 4 | öldü | 22.3 | 0 | 28 |
-| 2 | 19 | 1 | öldü | 94.6 | 2 | 3 |
+| 2 | 19 | 1 | öldü | 75.9 | 1 | 2 |
 | 2 | 19 | 2 | öldü | 37.1 | 0 | 1 |
-| 2 | 19 | 4 | öldü | 19.3 | 0 | 53 |
-| 3 | 29 | 1 | öldü | 94.5 | 1 | 1 |
+| 2 | 19 | 4 | öldü | 19.9 | 0 | 48 |
+| 3 | 29 | 1 | öldü | 97.7 | 1 | 1 |
 | 3 | 29 | 2 | öldü | 60 | 1 | 3 |
 | 3 | 29 | 4 | öldü | 22.8 | 0 | 47 |
-| 4 | 39 | 1 | öldü | 159.6 | 2 | 1 |
+| 4 | 39 | 1 | öldü | 118 | 1 | 1 |
 | 4 | 39 | 2 | öldü | 65.7 | 1 | 2 |
 | 4 | 39 | 4 | öldü | 27.3 | 0 | 38 |
 | 5 | 48 | 1 | öldü | 122.3 | 1 | 3 |
@@ -292,24 +292,24 @@ Tek kişi boss'u kıl payı kazanır (en düşük can %1–10, bazen 1 ölüm); 
 
 | Sv | Efsanevi +9 takım | Kill/sa | Ölüm | Can %/öldürme | Saldırı | Can |
 |---|---|---|---|---|---|---|
-| 50 | hayır | 379 | 24 | 10.2 | 424 | 2.550 |
-| 50 | evet | 1.801 | 0 | 0.1 | 1.990 | 7.338 |
-| 30 | evet | 1.255 | 0 | 0.3 | 938 | 4.541 |
+| 50 | hayır | 1.570 | 3 | 0.9 | 793 | 3.978 |
+| 50 | evet | 1.811 | 0 | 0.1 | 1.990 | 7.338 |
+| 30 | evet | 1.259 | 0 | 0.3 | 938 | 4.541 |
 
 ## 12. Ekonomi
 
 | Sv | Akçe/sa | Kill/sa | +9 (tılsımlı) toplam akçe | Kaç saatlik kazanç |
 |---|---|---|---|---|
-| 10 | 5.611 | 1.221 | 226.639 | 40.4 |
-| 20 | 77.571 | 1.563 | 368.288 | 4.7 |
-| 30 | 81.390 | 1.009 | 509.938 | 6.3 |
-| 40 | 149.640 | 1.385 | 651.587 | 4.4 |
-| 48 | 172.967 | 1.384 | 764.907 | 4.4 |
+| 10 | -895 | 1.276 | 226.639 | 226639.1 |
+| 20 | 68.542 | 1.514 | 368.288 | 5.4 |
+| 30 | 76.328 | 989 | 509.938 | 6.7 |
+| 40 | 132.227 | 1.177 | 651.587 | 4.9 |
+| 48 | 170.227 | 1.424 | 764.907 | 4.5 |
 
 ## 13. Açık sorular ve bilinen sınırlar
 
 1. **Çatlakta boylar arası dost ateşi:** farklı boy oyuncuların AoE'si birbirine PvP olarak işler. Ateşkes alanı mı, açık PvP mi? Karar bekliyor.
-2. **Akçe birikimi:** bot 88 saatte ~13 milyon akçe biriktirdi çünkü yalnızca +4'e kadar bastı (tılsım üretimi için oba gerekir; botta yok). Gerçek oyuncu +9 hedefler ve tablodaki saatler (4–12 sa'lık kazanç) bunu sinker olarak gösterir; yine de Sv40+ sonrası akçe sinki zayıf. Sonraki aşamada (pazar, vergi) çözülecek.
+2. **Akçe birikimi:** bot ~90 saatte on milyonlarca akçe biriktirdi çünkü yalnızca +4'e kadar bastı (tılsım üretimi için oba gerekir; botta yok). Gerçek oyuncu +9 hedefler ve tablodaki saatler (4–12 sa'lık kazanç) bunu sinker olarak gösterir; yine de Sv40+ sonrası akçe sinki zayıf. Sonraki aşamada (pazar, vergi) çözülecek.
 3. **Bot sınırları:** oba, sefer, düello, parti taktiği, kalabalık etkisi simüle edilmedi. Sv1–2 çok hızlı (öğretici gereği).
 4. **Şifa/iksir yok:** can yalnızca bölgede dinlenerek yenilenir; savaş içi iyileşme (Ay boyu) sonraki aşamada anlam kazanacak.
 5. **PVP_COEF (0,35)** için oyun testi verisi yok; çözümsel tablodaki süreler PvE'nin ≈2,3 katıdır.
