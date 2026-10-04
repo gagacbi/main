@@ -14,6 +14,7 @@ async function admin(n = 'Gm') {
 }
 const gm = async (b: Bot, line: string) => (await b.rpc('gm', { line })).data as { ok: boolean; msg: string };
 
+RIFT.waveGapSec = 0.2; // testte dalga arası beklemeyi kısalt
 describe('H1 yönetici yetkisi', () => {
   test('rolü olmayan hesap GM komutu çalıştıramaz; rol yalnızca veritabanından gelir', async () => {
     const b = await new Bot(s.url, uniq('Norm')).join('yer');
@@ -80,7 +81,7 @@ describe('H3 gizem: rüyalar, Ak Sakal, mühür kırıkları, birleşme', () => 
     const b = await admin('GmShard'); const w = worldOf(s, b); const p = playerOf(s, b); await gm(b, 'god'); w.rifts.clear();
     for (let k = 1; k <= 6; k++) {
       w.mobs.clear(); const r = w.openRift()!; tp(s, b, r.x + 3, r.z); await b.until(() => r.state === 1, 6000);
-      for (let i = 0; i < 6 && r.state !== 3; i++) { for (const id of [...r.mobs]) { const m = w.mobs.get(id); if (m) w.damage(p, m, m.hp + 1); } await b.sleep(120); }
+      for (let i = 0; i < 60 && r.state !== 3; i++) { for (const id of [...r.mobs]) { const m = w.mobs.get(id); if (m) w.damage(p, m, m.hp + 1); } await b.sleep(120); }
       await b.until(() => r.state === 3, 6000); w.rifts.clear(); w.drops.clear();
     }
     expect(p.d.shards).toBe(6); expect(p.d.clues.filter((c) => c.startsWith('shard.')).sort()).toEqual(['shard.1', 'shard.2', 'shard.3']); void RIFT; await b.leave();

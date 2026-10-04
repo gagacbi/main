@@ -1,9 +1,9 @@
 {
  "clients": 10,
  "mobs": 0,
- "tickAvgMs": 0.611,
- "tickMaxMs": 4.44,
+ "tickAvgMs": 0.598,
+ "tickMaxMs": 3.62,
  "budgetMs": 50,
  "tickHz": 20,
- "snapshotsPerClient": 60
+ "snapshotsPerClient": 61
 }
