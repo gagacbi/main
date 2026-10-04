@@ -6,7 +6,7 @@ import type { ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
-import { INSCRIPTIONS } from '@shared/game';
+import { INSCRIPTIONS, CRAFT } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -167,8 +167,8 @@ export class Panels {
       }
     } else {
       const rec = [
-        { k: 'book', ic: 'book', need: { ore: 4 }, gold: 60 }, { k: 'charm', ic: 'charm', need: { ore: 14, hide: 6 }, gold: 200 },
-        ...SLOTS.map((s) => ({ k: 'gear:' + s, ic: s as string, need: { ore: 10, hide: 4, wood: 4 }, gold: 150 + 20 * m.level })),
+        { k: 'book', ic: 'book', need: { ore: CRAFT.book.ore }, gold: CRAFT.book.gold }, { k: 'charm', ic: 'charm', need: { ore: CRAFT.charm.ore, hide: CRAFT.charm.hide }, gold: CRAFT.charm.gold },
+        ...SLOTS.map((s) => ({ k: 'gear:' + s, ic: s as string, need: { ore: CRAFT.gear.ore, hide: CRAFT.gear.hide, wood: CRAFT.gear.wood }, gold: CRAFT.gear.goldBase + CRAFT.gear.goldPerLevel * m.level })),
       ];
       right = rec.map((r) => {
         const ok = m.gold >= r.gold && Object.entries(r.need).every(([k, v]) => m.bag[k as MatKey] >= v);

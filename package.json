@@ -19,7 +19,7 @@
     "report": "tsx scripts/make-report.ts",
     "verify": "npm run typecheck && npm run build && npm run test:json && npm run e2e && npm run report",
     "admin": "tsx scripts/admin.ts",
-    "sim": "tsx tests/sim/balance.ts"
+    "sim": "tsx tests/sim/balance.ts && tsx scripts/make-balance-report.ts"
   },
   "dependencies": {
     "@babylonjs/core": "^9.29.0",

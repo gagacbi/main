@@ -25,7 +25,26 @@ Geliştirme (canlı yenileme): `npm run dev` → istemci `http://localhost:5173`
 | `npm run typecheck` | TypeScript tür denetimi |
 | `npm run e2e` | Gerçek Chromium ile uçtan uca kanıt; ekran görüntüleri `docs/evidence/` altına yazılır |
 | `npm run build` | Tür denetimi + üretim derlemesi |
+| `npm run admin` | Yönetici (GM) hesabı yönetimi: `npm run admin -- create <ad> [parola]`, `promote/demote <ad>`, `list` (yalnızca yerelde, doğrudan veritabanına) |
+| `npm run sim` | Hızlandırılmış bot denge simülasyonu (tam ≈ 25 dk; `SIM_QUICK=1` ≈ 2 dk) → `docs/balans/sonuc.json`; `npx tsx scripts/make-balance-report.ts` ile [`docs/BALANS_RAPORU.md`](docs/BALANS_RAPORU.md) üretilir |
 | `npm run verify` | Hepsi: tür denetimi → derleme → testler → e2e → rapor (kanıtsız kriter varsa hata verir) |
+
+## Yönetici (GM) hesabı ve test
+
+Yönetici rolü **yalnızca yerel komut satırıyla** verilir (oyun içinden, istemciden veya ağdan verilemez; her GM komutu sunucuda rolü yeniden doğrular):
+
+```bash
+npm run admin -- create Yonetici sifre123   # seviye 50, 100.000 akçe, rol=admin
+npm start                                   # sonra oyuna Yonetici ile gir
+```
+
+Oyunda `F2` (veya `/gm yardım`) yönetici panelini açar: seviye/kit/akçe/malzeme verme, ölümsüzlük, bekleme sıfırlama, ışınlanma (`tp hub|rift|stone N|player ad`),
+yaratık çağırma, kukla ve DPS ölçümü, çatlak aç/kapat, zaman ileri sarma (oba ve sefer sayaçları), tüm ipuçlarını açma, `stats/ttk/econ` ölçümleri. Her GM işlemi `ledger`'a `gm` olarak yazılır.
+
+## Gizem
+
+Oyunun bir sırrı var: *Mühür dışarıdan açıldı.* Beş ayrı sistem birer iplik besler (Kayıp Yazıtlar, Kurdun Rüyaları, Ak Sakal, Balbal Taşları, Mühür Kırıkları);
+`Y` kodeksi hepsini toplar. Dört ipliğin ucu birleşince "Mühürün Dışı" açılır — ama dıştaki elin kim olduğu bilerek yazılmamıştır (bkz. [`docs/GIZEM.md`](docs/GIZEM.md)).
 
 Ortam değişkenleri: `PORT` (2567), `KUT_DB` (`.data/kut.db`), `KUT_MAX_PER_LAYER` (150), `KUT_TEST=1` (zaman ileri sarma ucunu açar; yalnızca test).
 

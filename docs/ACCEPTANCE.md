@@ -75,6 +75,16 @@ uçtan uca testi (gerçek Chromium, ekran görüntüsü / ölçüm), **B** = bui
 | F6 | Türkçe ve İngilizce, çalışma anında değiştirilebilir; Türkçe karakterler doğru görünür | E |
 | F7 | Performans: kare süresi ölçülür ve raporlanır (yazılım render'ında alt sınır, bütçe tablosu) | E |
 
+## H. Yönetici hesabı, gizem ve denge (Aşama 2 sonrası ek talep)
+| # | Kriter | Kanıt |
+|---|---|---|
+| H1 | Yönetici (GM) hesabı: rol yalnızca yerel veritabanı/CLI'den gelir, her komut sunucuda doğrulanır; yetkisiz reddedilir; komutlar ledger'a yazılır | I, E |
+| H2 | Yönetici paneli (F2 veya `/gm`): 30+ hızlı komut; arayüzden sunucuya gider | I, E |
+| H3 | Gizem: 5 ayrı sistemden beslenen ipucu iplikleri ve "Mühürün Dışı"; cevap bilerek yazılmamış | I, doküman |
+| H4 | Gizem arayüzü: balbal taşı, rüya ekranı, kodeks | E |
+| H5 | Hızlandırılmış bot simülasyonu + çözümsel denge tabloları, belgeli ayarlar | simülasyon, doküman |
+| H6 | Denge değişmezleri testle korunur | U |
+
 ## G. Kalite kapısı
 | # | Kriter | Kanıt |
 |---|---|---|

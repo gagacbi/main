@@ -2,7 +2,7 @@ import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
@@ -40,7 +40,7 @@ export interface Mob {
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
-  contrib: Map<number, number>; totalHp: number; scale: number; closedAt: number;
+  contrib: Map<number, number>; totalHp: number; scale: number; closedAt: number; gapUntil: number;
 }
 interface Drop { id: number; owner: number; k: SnapDrop['k']; x: number; z: number; t: number; m?: string; born: number; amount: number; item?: Item }
 
@@ -254,7 +254,8 @@ export class World {
     const pvp = tgt.kind === 'player';
     const crit = this.ctx.rng() * 100 < p.stats.crit;
     const roll = 0.92 + this.ctx.rng() * 0.16;
-    let dmg = hitDamage(p.stats.atk, mult * extra * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
+    const lv = tgt.kind === 'mob' && !tgt.dummy ? lvlDiffOut(tgt.lvl - p.d.level) : 1;
+    let dmg = hitDamage(p.stats.atk, mult * extra * lv * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
     if (extra !== 1) dmg = Math.round(dmg); // beceri çarpanı zaten ekte
     return this.damage(p, tgt, dmg, { crit });
   }
@@ -417,7 +418,7 @@ export class World {
       if (sk.mult > 0) { this.playerHit(p, m, sk.mult * sp); hit++; }
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {
         if (m.dead) break;
-        if (s === 'poison') this.applyStatus(m, s, dur, { dps: p.stats.atk * 0.28 * rank * p.stats.spell, by: p.id });
+        if (s === 'poison') this.applyStatus(m, s, dur, { dps: p.stats.atk * POISON_DOT * rank * p.stats.spell, by: p.id });
         else this.applyStatus(m, s, dur);
       }
     }
@@ -425,7 +426,7 @@ export class World {
       if (!this.canHitPlayer(p, q, false) || Math.sqrt(dist2(p, q)) > r + 0.6) continue;
       if (sk.mult > 0) this.playerHit(p, q, sk.mult * sp);
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {
-        if (s === 'poison') this.applyStatus(q, s, dur, { dps: p.stats.atk * 0.28 * rank * p.stats.spell * 0.35, by: p.id });
+        if (s === 'poison') this.applyStatus(q, s, dur, { dps: p.stats.atk * POISON_DOT * rank * p.stats.spell * 0.35, by: p.id });
         else this.applyStatus(q, s, dur);
       }
     }
@@ -598,20 +599,20 @@ export class World {
     const d = p.d; const o = oba.loadOymak(this.ctx, p.oymakId);
     switch (a.kind) {
       case 'book': {
-        if (d.bag.ore < 4 || d.gold < 60) throw new GameError('no_materials');
-        d.bag.ore -= 4; d.gold -= 60; d.bag.book++; this.ledger(p, 'craft', { kind: 'book', gold: 60, ore: 4 }); break;
+        const B = CRAFT.book; if (d.bag.ore < B.ore || d.gold < B.gold) throw new GameError('no_materials');
+        d.bag.ore -= B.ore; d.gold -= B.gold; d.bag.book++; this.ledger(p, 'craft', { kind: 'book', gold: B.gold, ore: B.ore }); break;
       }
       case 'charm': {
         if (o.lv.demir < 2) throw new GameError('demir_low', { lvl: 2 });
-        if (d.bag.ore < 14 || d.bag.hide < 6 || d.gold < 200) throw new GameError('no_materials');
-        d.bag.ore -= 14; d.bag.hide -= 6; d.gold -= 200; d.bag.charm++; this.ledger(p, 'craft', { kind: 'charm', gold: 200, ore: 14, hide: 6 }); break;
+        const C = CRAFT.charm; if (d.bag.ore < C.ore || d.bag.hide < C.hide || d.gold < C.gold) throw new GameError('no_materials');
+        d.bag.ore -= C.ore; d.bag.hide -= C.hide; d.gold -= C.gold; d.bag.charm++; this.ledger(p, 'craft', { kind: 'charm', gold: C.gold, ore: C.ore, hide: C.hide }); break;
       }
       case 'gear': {
         const slot = a.slot; if (!slot || !['weapon', 'armor', 'helmet', 'amulet'].includes(slot)) throw new GameError('bad_slot');
-        const gold = 150 + 20 * d.level;
-        if (d.bag.ore < 10 || d.bag.hide < 4 || d.bag.wood < 4 || d.gold < gold) throw new GameError('no_materials');
+        const G = CRAFT.gear; const gold = G.goldBase + G.goldPerLevel * d.level;
+        if (d.bag.ore < G.ore || d.bag.hide < G.hide || d.bag.wood < G.wood || d.gold < gold) throw new GameError('no_materials');
         if (d.items.length >= BAG_SIZE) throw new GameError('bag_full');
-        d.bag.ore -= 10; d.bag.hide -= 4; d.bag.wood -= 4; d.gold -= gold;
+        d.bag.ore -= G.ore; d.bag.hide -= G.hide; d.bag.wood -= G.wood; d.gold -= gold;
         const it = makeItem(this.ctx.rng, slot, d.level, this.ctx.rng() < 0.1 ? 2 : 1); d.items.push(it);
         this.ledger(p, 'craft', { kind: 'gear', slot, gold, tier: it.tier }); break;
       }
@@ -751,7 +752,7 @@ export class World {
         if (d <= def.range + 0.3 && now >= m.nextAtk) {
           m.nextAtk = now + def.atkInterval * 1000;
           this.emit({ k: 'swing', id: m.id, tx: tgt.x, tz: tgt.z }, m.x, m.z);
-          const dmg = hitDamage(m.atk, 1, tgt.stats.def, false, this.hasStatus(m, 'curse'), 0.92 + this.ctx.rng() * 0.16);
+          const dmg = hitDamage(m.atk * lvlDiffIn(m.lvl - tgt.d.level), 1, tgt.stats.def, false, this.hasStatus(m, 'curse'), 0.92 + this.ctx.rng() * 0.16);
           this.damage(m, tgt, dmg);
           if (def.onHit && tgt.deadUntil === 0 && this.ctx.rng() < def.onHit.chance) this.applyStatus(tgt, def.onHit.status, def.onHit.dur, def.onHit.status === 'poison' ? { dps: m.atk * 0.18, by: 0 } : undefined);
         }
@@ -786,7 +787,7 @@ export class World {
       const x = Math.cos(a) * d, z = Math.sin(a) * d;
       let ok = true; for (const r of this.rifts.values()) if (dist(r, { x, z }) < 50) ok = false;
       if (!ok) continue;
-      const r: Rift = { id: this.nid(), x, z, state: 0, wave: 0, mobs: new Set(), openedAt: this.now, lvl: 1, contrib: new Map(), totalHp: 1, scale: 1, closedAt: 0 };
+      const r: Rift = { id: this.nid(), x, z, state: 0, wave: 0, mobs: new Set(), openedAt: this.now, lvl: 1, contrib: new Map(), totalHp: 1, scale: 1, closedAt: 0, gapUntil: 0 };
       this.rifts.set(r.id, r);
       this.emit({ k: 'rift', st: 'open', x, z }, x, z);
       for (const p of this.players.values()) this.sys(p, 'sys.rift_open', { d: Math.round(Math.hypot(x, z)) });
@@ -825,14 +826,14 @@ export class World {
       const tier = rollTier(rng, 1, 1.2);
       const it = makeItem(rng, randomSlot(rng), r.lvl, tier);
       this.spawnDrop(p, 'item', r.x, r.z, { item: it, t: it.tier, m: it.slot });
-      const gold = Math.round(mobGold(r.lvl) * 22 * (0.8 + rng() * 0.4));
+      const gold = Math.round(mobGold(r.lvl) * RIFT.rewardGoldMult * (0.8 + rng() * 0.4));
       for (let i = 0; i < 4; i++) this.spawnDrop(p, 'gold', r.x, r.z, { amount: Math.round(gold / 4) });
       this.spawnDrop(p, 'mat', r.x, r.z, { m: 'ore', amount: irange(rng, 4, 8) });
       this.spawnDrop(p, 'mat', r.x, r.z, { m: 'hide', amount: irange(rng, 2, 5) });
       if (rng() < 0.45) this.spawnDrop(p, 'book', r.x, r.z);
       if (rng() < 0.25) this.spawnDrop(p, 'charm', r.x, r.z);
       if (rng() < 0.35) this.spawnDrop(p, 'frag', r.x, r.z);
-      this.addXp(p, mobXp(r.lvl) * 20, false);
+      this.addXp(p, mobXp(r.lvl) * RIFT.rewardXpMult, false);
       p.d.shards++; SHARD_AT.forEach((at, i) => { if (p.d.shards >= at) this.discoverClue(p, `shard.${i + 1}`); });
       this.ledger(p, 'rift.reward', { rift: r.id, lvl: r.lvl, tier, gold });
       this.sys(p, 'sys.rift_closed', {});
@@ -854,8 +855,15 @@ export class World {
       if (r.state === 0) {
         if (this.riftPlayers(r, RIFT.activateR).length) { r.wave = 1; this.spawnWave(r, false); }
       } else if (r.mobs.size === 0) {
-        if (r.state === 1) { if (r.wave >= RIFT.waves) this.spawnWave(r, true); else { r.wave++; this.spawnWave(r, false); } }
-        else if (r.state === 2) this.closeRift(r);
+        if (r.state === 2) { this.closeRift(r); continue; }
+        // dalgalar arası nefes: katılımcılar can yüzdesi kazanır, sonra bir sonraki dalga gelir
+        if (!r.gapUntil) {
+          r.gapUntil = now + RIFT.waveGapSec * 1000;
+          for (const p of this.riftPlayers(r, RIFT.rewardR)) { if (p.deadUntil > 0) continue; p.hp = Math.min(p.stats.maxHp, p.hp + Math.round(p.stats.maxHp * RIFT.gapHealPct)); p.meDirty = true; }
+        } else if (now >= r.gapUntil) {
+          r.gapUntil = 0;
+          if (r.wave >= RIFT.waves) this.spawnWave(r, true); else { r.wave++; this.spawnWave(r, false); }
+        }
       }
     }
   }

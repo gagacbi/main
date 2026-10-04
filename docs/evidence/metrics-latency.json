@@ -1,7 +1,7 @@
 {
  "rttMs": 150,
  "speed": 7,
- "maxPredictionError": 1.23,
+ "maxPredictionError": 1.22,
  "settledError": 0,
  "snaps": 0,
  "firstFrameMove": 0.117,

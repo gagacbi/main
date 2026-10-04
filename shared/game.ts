@@ -51,7 +51,7 @@ export function zoneAt(x: number, z: number): 'safe' | 'risky' {
 export const BOY_BONUS: Record<Boy, { mspd: number; aspd: number; hp: number; def: number; spell: number; heal: number }> = {
   gok: { mspd: 0.06, aspd: 0.05, hp: 0, def: 0, spell: 0, heal: 0 },
   yer: { mspd: 0, aspd: 0, hp: 0.08, def: 0.08, spell: 0, heal: 0 },
-  ay: { mspd: 0, aspd: 0, hp: 0, def: 0, spell: 0.07, heal: 0.4 },
+  ay: { mspd: 0, aspd: 0, hp: 0, def: 0, spell: 0.12, heal: 0.4 },
 };
 export const BOY_COLORS: Record<Boy, { main: string; accent: string; dark: string }> = {
   gok: { main: '#4aa8ff', accent: '#f4f8ff', dark: '#1d4f9c' },
@@ -71,8 +71,10 @@ export const SKILLS: SkillDef[] = [
   { id: 'nara', lvl: 5, cd: 12, kind: 'pull', r: 14, mult: 0.35, status: { slow: 3.5 }, fx: 'roar' },
   { id: 'kalkan', lvl: 7, cd: 20, kind: 'shield', r: 0, mult: 0, status: { shield: 9 }, fx: 'shield' },
   { id: 'zehir', lvl: 9, cd: 8, kind: 'aoe', r: 5.5, mult: 0.7, status: { poison: 6 }, fx: 'poison' },
-  { id: 'hiddet', lvl: 12, cd: 30, kind: 'aoe', r: 9.5, mult: 3.8, fx: 'wrath' },
+  { id: 'hiddet', lvl: 12, cd: 30, kind: 'aoe', r: 9.5, mult: 7, fx: 'wrath' },
 ];
+/** Zehirli Kesik: saniyelik hasar = saldırı × bu katsayı × kademe × büyü (savunmayı yok sayar) */
+export const POISON_DOT = 0.2;
 export const SKILL_MAX_RANK = 6;
 export const SKILL_RANK_LABEL = ['M1', 'M2', 'M3', 'M4', 'G1', 'P'];
 export const skillRankMult = (rank: number) => 1 + 0.14 * (rank - 1);
@@ -85,7 +87,8 @@ export const SPEC_MODS: Record<Spec, { hp: number; def: number; atk: number; asp
 };
 
 // ───────────────────────── Seviye / deneyim ─────────────────────────
-export const xpToNext = (level: number) => Math.round(45 * Math.pow(level, 1.8) * (level % 10 === 9 ? 2.5 : 1));
+/** Hedef (bot, saat): Sv10≈1, Sv20≈6, Sv30≈20, Sv40≈55, Sv50≈110 — bkz. docs/BALANS_RAPORU.md */
+export const xpToNext = (level: number) => Math.round(28 * Math.pow(level, 2.95) * (level % 10 === 9 ? 2.5 : 1));
 export const mobXp = (lvl: number) => Math.round(10 + 8 * lvl);
 export const KUT_PER_POINT = 1500; // seviye sınırından sonra bu kadar deneyim = 1 Kut puanı
 export const kutBonusPct = (kut: number) => Math.min(25, kut * 0.5); // küçük kalıcı bonus (%)
@@ -166,6 +169,8 @@ export interface Stats {
   maxHp: number; atk: number; def: number; crit: number; critMult: number; atkInterval: number;
   moveSpeed: number; leech: number; xpPct: number; spell: number; heal: number; aoe: number; shieldMult: number; dmgTaken: number;
 }
+/** Üst sınırlar: efsun/boy/uzmanlık yığılınca bile hesap uçmasın (BALANS_RAPORU §bonus hesapları) */
+export const STAT_CAP = { crit: 75, aspd: 0.6, leech: 0.15, mspd: 0.5 };
 export function computeStats(p: StatInput): Stats {
   const L = p.level;
   let hp = 150 + 34 * (L - 1);
@@ -190,6 +195,7 @@ export function computeStats(p: StatInput): Stats {
   def *= 1 + defPct + b.def + sp.def;
   atk *= 1 + atkPct / 100 + sp.atk + kutBonusPct(p.kut) / 100;
   aspd += b.aspd + sp.aspd; mspd += b.mspd;
+  crit = Math.min(STAT_CAP.crit, crit); aspd = Math.min(STAT_CAP.aspd, aspd); leech = Math.min(STAT_CAP.leech, leech); mspd = Math.min(STAT_CAP.mspd, mspd);
   return {
     maxHp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), crit, critMult: 1.6,
     atkInterval: 0.55 / (1 + aspd), moveSpeed: PLAYER_BASE_SPEED * (1 + mspd), leech, xpPct,
@@ -206,6 +212,10 @@ export function hitDamage(atk: number, mult: number, def: number, pvp: boolean, 
   return Math.max(1, Math.round(atk * mult * roll * defReduction(def) * (pvp ? PVP_COEF : PVE_COEF) * (cursed ? CURSE_DMG_MULT : 1)));
 }
 
+/** Seviye farkı (yaratık − oyuncu) PvE hasarını eğer: yüksek seviye yaratığa vuruşlar azalır, yaratığın vuruşları artar. */
+export const lvlDiffOut = (diff: number) => (diff > 0 ? Math.max(0.35, 1 - 0.05 * diff) : Math.min(1.1, 1 + 0.02 * -diff)); // oyuncunun yaratığa hasarı
+export const lvlDiffIn = (diff: number) => (diff > 0 ? Math.min(2, 1 + 0.05 * diff) : Math.max(0.5, 1 - 0.04 * -diff)); // yaratığın oyuncuya hasarı
+
 // ───────────────────────── Yaratıklar ─────────────────────────
 export type MobType = 'tepegoz' | 'albasti' | 'erlik' | 'cakal' | 'bekci';
 export interface MobDef {
@@ -217,14 +227,16 @@ export const MOBS: Record<MobType, MobDef> = {
   albasti: { hp: 0.9, atk: 1.0, def: 0.8, speed: 4.2, atkInterval: 1.6, range: 2.3, aggro: 11, scale: 1.0, onHit: { status: 'curse', chance: 0.3, dur: 6 } },
   erlik: { hp: 1.0, atk: 1.15, def: 1.0, speed: 4.4, atkInterval: 1.5, range: 2.3, aggro: 10, scale: 1.05, onHit: { status: 'poison', chance: 0.25, dur: 5 } },
   cakal: { hp: 0.6, atk: 0.8, def: 0.6, speed: 5.4, atkInterval: 1.0, range: 2.0, aggro: 10, scale: 0.9, onHit: { status: 'slow', chance: 0.25, dur: 2.5 } },
-  bekci: { hp: 14, atk: 1.7, def: 1.5, speed: 3.6, atkInterval: 2.2, range: 4.2, aggro: 30, scale: 3.2, onHit: { status: 'stun', chance: 0.2, dur: 1.2 } },
+  bekci: { hp: 16, atk: 2.8, def: 1.5, speed: 3.6, atkInterval: 2.2, range: 4.2, aggro: 30, scale: 3.2, onHit: { status: 'stun', chance: 0.2, dur: 1.2 } },
 };
-export const mobHp = (lvl: number) => 20 + 14 * lvl + 0.5 * lvl * lvl;
-export const mobAtk = (lvl: number) => 4 + 2.4 * lvl;
+/** Yaratık canı: temel eğri × (2,3 + 1,5/(1+L/12)). Hedef: referans oyuncu aynı seviye yaratığı ≈3–5 sn'de keser (docs/BALANS_RAPORU.md). */
+export const mobHp = (lvl: number) => (20 + 14 * lvl + 0.5 * lvl * lvl) * (2.3 + 1.5 / (1 + lvl / 12));
+export const mobAtk = (lvl: number) => 4 + 2.4 * lvl + 0.045 * lvl * lvl;
 export const mobDef = (lvl: number) => 1 + 1.4 * lvl;
 export const mobGold = (lvl: number) => 3 + 2 * lvl;
 export const MOB_RESPAWN: [number, number] = [10, 18];
-export const campLevel = (dist: number) => Math.max(1, Math.min(24, Math.round(1 + (dist - 40) / 5.2)));
+export const MAX_CAMP_LEVEL = 48;
+export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + (dist - 40) / 2.5)));
 export function campTypes(dist: number): MobType[] {
   if (dist < 75) return ['tepegoz', 'cakal'];
   if (dist < 115) return ['albasti', 'cakal', 'tepegoz'];
@@ -234,8 +246,11 @@ export function campTypes(dist: number): MobType[] {
 // ───────────────────────── Erlik çatlağı ─────────────────────────
 export const RIFT = {
   maxActive: 2, spawnEverySec: [150, 300] as [number, number], lifeSec: 600, activateR: 20, rewardR: 34, minDist: 70, maxDist: 135,
-  waves: 3, waveBase: 5, wavePerPlayer: 2, hpPerExtra: 0.35, guardianHpMult: 1,
+  waves: 3, waveBase: 5, wavePerPlayer: 1, hpPerExtra: 0.35, guardianHpMult: 1, rewardXpMult: 80, rewardGoldMult: 30, waveGapSec: 7, gapHealPct: 0.25,
 };
+
+/** Üretim maliyetleri (demirci). Tılsım ucuz olursa yok olma riski anlamsızlaşır: BALANS_RAPORU §artı basma */
+export const CRAFT = { book: { ore: 4, gold: 60 }, charm: { ore: 24, hide: 12, gold: 900 }, gear: { ore: 10, hide: 4, wood: 4, goldBase: 150, goldPerLevel: 20 } };
 
 // ───────────────────────── Oba ─────────────────────────
 export type BuildingKey = 'otag' | 'demir';
@@ -273,7 +288,7 @@ export const TUTORIAL_REWARD = { kill: { gold: 80 }, donate: { gold: 120 }, buil
 // Sohbet / sınırlar
 export const RATE = { msgPerSec: 60, rpcPerSec: 12, chatPerSec: 1.5 };
 export const BAD_WORDS = ['amk', 'aq', 'orospu', 'piç', 'siktir', 'fuck', 'shit', 'bitch'];
-export const DEATH_XP_LOSS = 0.06;
+export const DEATH_XP_LOSS = 0.1; // riskli bölgede ölünce mevcut seviye deneyiminin bu oranı gider (seviye düşmez)
 export const RESPAWN_SEC = 3;
 export const COMBAT_FLAG_SEC = 15;
 export const RANK_RECOVER_KILLS = 20;
