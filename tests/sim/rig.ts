@@ -8,7 +8,7 @@ import { World, Player, type Mob } from '../../server/world';
 import { newPlayerData, type Ctx, type PlayerData } from '../../server/types';
 import { runGm } from '../../server/gm';
 import { mulberry32 } from '../../shared/rng';
-import { HUB, SKILLS, TICK_HZ, itemStats, xpToNext, type Boy, type Item, type Slot, type Spec } from '../../shared/game';
+import { HUB, RANGED_MIN_RANGE, SKILLS, TICK_HZ, WEAPON_MODS, itemStats, xpToNext, type Boy, type Item, type Slot, type Spec } from '../../shared/game';
 import { dist2, type Camp } from '../../shared/world';
 
 export const DT = 0.1; // simülasyon adımı (sn); sunucu en çok 0,1 sn'lik adıma izin verir
@@ -41,7 +41,8 @@ export interface BotStats { levelAt: Record<number, number>; killsAt: Record<num
 const SK_PRIORITY = [0, 1, 5, 4, 3, 2];
 const slotScore = (it: Item): number => {
   const s = itemStats(it);
-  switch (it.slot) { case 'weapon': return s.atk * 3; case 'armor': case 'helmet': return s.def * 2 + s.hp / 12; case 'amulet': return s.critPct * 6 + s.atkPct * 4; }
+  // gerçek oyuncu gibi: yürürken vuramayan menzilli silahı bot koşarken kullanamaz, seçmez
+  switch (it.slot) { case 'weapon': return WEAPON_MODS[it.wk ?? 'kilic'].range > RANGED_MIN_RANGE ? 0 : s.atk * 3 * (1 + WEAPON_MODS[it.wk ?? 'kilic'].atk) / (1 + WEAPON_MODS[it.wk ?? 'kilic'].aspd); case 'armor': case 'helmet': return s.def * 2 + s.hp / 12; case 'amulet': return s.critPct * 6 + s.atkPct * 4; }
 };
 
 /** Makul bir oyuncunun yaptığını yapan bot: kamp seç, yaklaş, vur, yetenek kullan, can azalırsa çekil, ara sıra demirciye uğra. */

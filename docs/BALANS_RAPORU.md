@@ -30,23 +30,32 @@ Tarih: 2026-10-04 · Veri: `docs/balans/sonuc.json` (tablolar bu veriden üretil
 7. **Ölüm cezası** %6 → %10 deneyim.
 8. **Çatlak:** ödül XP ×20 → ×80 (seviyenin %2'siydi), altın ×22 → ×30; dalgalar arası 7 sn mola ve %25 can; ekstra oyuncu başına +1 yaratık (+2 değil); Bekçi can 14→16, saldırı 1,7→2,8.
 9. **Tılsım maliyeti** 200 akçe/14 cevher/6 deri → 900/24/12 (artık +9 akçesinin ~%5'i).
-10. **Üst sınırlar:** kritik %75, vuruş hızı +%60, can çalma %15, hız +%50.
+10. **Üst sınırlar:** kritik %75, vuruş hızı +%60, can çalma %20, hız +%50, tür savunması %40, vuruş bloğu %35, beceri bloğu %30, delme %40.
+
+### İkinci tur: savunma sistemi ve PvP (sokak lambası avı, bkz. `TEST_FELSEFESI.md`)
+
+11. **Savunma sistemi (Metin2 tarzı):** 5 silah türü (kılıç, çift el, bıçak, yay, büyü çanı), tür savunmaları, vuruş ve beceri bloğu, delme, her parçada slota göre temel efsun. Yaratıklar da türlüdür (Tepegöz=çift el, Albastı/Erlik=büyü, Çakal=bıçak).
+12. **Delme** bloğu ve tür savunmasını yok sayar ve **+%25 delici hasar** verir; aksi hâlde savunma yığmak baskındı.
+13. **Güvenli bölgeden yaratığa vurulamaz** (menzilli silahla bedava öldürme açığı); **menzilli silah yürürken otomatik vuruş yapamaz** (kaçarak vurmada kill başına hasar −%89'du).
+14. **PvP uzmanlık dengesi:** aynı donanımla Kalkan Alp aynalı düelloları %92–100 kazanıyordu. Kalkan sağlamlık bonusları kısıldı (can %22→%8, savunma %25→%8, hasar azaltma %12→%6), Kılıç Alp'in avantajları ayarlandı, uzmanlığa özel `pvpTaken` çarpanı (Kalkan +%10, yalnızca oyuncudan gelen hasarda) ve Tengri Kalkanı emilimi (%35→%18, kalkan çarpanı 1,6→1,2) düşürüldü.
+15. **Silah türü dengesi:** çift el (+%4 saldırı, −%12 hız), bıçak (−%6 saldırı, +%18 hız, +4 kritik), yay (−%9 saldırı, menzil 8,5), çan (−%8 saldırı, +%30 büyü, menzil 6,5). Yer boyu bonusu %8→%5 can, %8→%4 savunma.
+16. **Saha bosları** (5 adet), **kilometre taşı armağanları** ve **seviye grubu auraları** (retention içeriği; ölçümü §10b).
 
 ## 3. İlerleme (bot, Gök Kılıç Alp)
 
 | Seviye | Süre (sa) | Hedef (sa) | Seviyeye kadar öldürme | Kill/sa (o seviye) |
 |---|---|---|---|---|
-| 5 | 0.18 |  | 89 | 494 |
-| 10 | 1.38 | ≈1 | 1.408 | 1.096 |
-| 15 | 2.77 |  | 3.237 | 1.323 |
-| 20 | 7.04 | ≈6 | 8.912 | 1.328 |
-| 25 | 11.56 |  | 15.440 | 1.444 |
-| 30 | 23.35 | ≈20 | 28.313 | 1.092 |
-| 35 | 33.64 |  | 41.861 | 1.316 |
-| 40 | 51.09 | ≈55 | 66.041 | 1.386 |
-| 45 | 68.29 |  | 89.036 | 1.337 |
+| 5 | 0.21 |  | 94 | 444 |
+| 10 | 2.92 | ≈1 | 1.712 | 597 |
+| 15 | 4.33 |  | 3.498 | 1.268 |
+| 20 | 9.64 | ≈6 | 9.313 | 1.095 |
+| 25 | 14.58 |  | 16.244 | 1.405 |
+| 30 | 27.37 | ≈20 | 30.127 | 1.085 |
+| 35 | 38.37 |  | 44.840 | 1.337 |
+| 40 | 56.01 | ≈55 | 68.912 | 1.365 |
+| 45 | 81.18 |  | 95.496 | 1.056 |
 
-Koşu: 87.73200000000001 simüle saat, 485.8 sn gerçek süre; ulaşılan seviye **50**, 4 ölüm, 136.825 yaratık, artı basma: 82 başarı / 14 başarısız / 0 yok olan.
+Koşu: 100.084 simüle saat, 641.3 sn gerçek süre; ulaşılan seviye **50**, 39 ölüm, 144.973 yaratık, artı basma: 91 başarı / 11 başarısız / 0 yok olan.
 
 ## 4. Savaş tempo ve güç eğrisi (çözümsel)
 
@@ -89,81 +98,112 @@ Koşu: 87.73200000000001 simüle saat, 485.8 sn gerçek süre; ulaşılan seviye
 | Boy | Uzmanlık | DPS | Can | Savunma | Etkin can** | Hız | Büyü | Şifa |
 |---|---|---|---|---|---|---|---|---|
 | gok | none | 518 | 2.241 | 198 | 6.686 | 7.4 | 1 | 1 |
-| gok | kalkan | 479 | 2.734 | 247 | 10.858 | 7.4 | 1 | 1 |
-| gok | kilic | 659 | 2.062 | 198 | 6.152 | 7.4 | 1 | 1 |
-| yer | none | 494 | 2.420 | 214 | 7.590 | 7 | 1 | 1 |
-| yer | kalkan | 456 | 2.913 | 263 | 11.910 | 7 | 1 | 1 |
-| yer | kilic | 631 | 2.241 | 214 | 7.029 | 7 | 1 | 1 |
+| gok | kalkan | 489 | 2.420 | 214 | 8.075 | 7.4 | 1 | 1 |
+| gok | kilic | 638 | 2.151 | 198 | 6.418 | 7.4 | 1 | 1 |
+| yer | none | 494 | 2.353 | 206 | 7.196 | 7 | 1 | 1 |
+| yer | kalkan | 466 | 2.532 | 222 | 8.671 | 7 | 1 | 1 |
+| yer | kilic | 611 | 2.263 | 206 | 6.921 | 7 | 1 | 1 |
 | ay | none | 494 | 2.241 | 198 | 6.686 | 7 | 1.12 | 1.4 |
-| ay | kalkan | 456 | 2.734 | 247 | 10.858 | 7 | 1.12 | 1.4 |
-| ay | kilic | 631 | 2.062 | 198 | 6.152 | 7 | 1.12 | 1.4 |
+| ay | kalkan | 466 | 2.420 | 214 | 8.075 | 7 | 1.12 | 1.4 |
+| ay | kilic | 611 | 2.151 | 198 | 6.418 | 7 | 1.12 | 1.4 |
 
 Bot koşusu (5 saat, Sv0'dan):
 
 | Boy | Uzmanlık | Seviye | Kill/sa | Ölüm/sa | Can %/öldürme | Sv10 süresi (sa) |
 |---|---|---|---|---|---|---|
-| gok | kalkan | 19 | 1.432 | 0.8 | 0.9 | 1.32 |
-| gok | kilic | 19 | 1.474 | 0.8 | 1.5 | 1.32 |
-| yer | kalkan | 19 | 1.409 | 0.6 | 1 | 1.24 |
-| yer | kilic | 19 | 1.477 | 0 | 1.5 | 1.30 |
-| ay | kalkan | 19 | 1.471 | 0.6 | 0.8 | 1.18 |
-| ay | kilic | 19 | 1.513 | 1.2 | 1.2 | 1.25 |
+| gok | kalkan | 18 | 1.102 | 4.2 | 3.2 | 1.65 |
+| gok | kilic | 17 | 1.037 | 6.6 | 3.6 | 2.30 |
+| yer | kalkan | 17 | 1.085 | 10 | 2.7 | 2.66 |
+| yer | kilic | 17 | 1.022 | 11.6 | 4.2 | 2.20 |
+| ay | kalkan | 16 | 1.017 | 8.8 | 3.1 | 2.66 |
+| ay | kilic | 19 | 1.316 | 8 | 2.2 | 1.97 |
 
 Sonuç: boylar birbirinden %12'den az ayrışıyor. Kılıç Alp ≈%27 DPS kazanıp ≈%8 dayanıklılık kaybediyor; Kalkan Alp ≈%62 etkin can kazanıp ≈%8 DPS kaybediyor. Tek başına PvE'de Kılıç daha hızlıdır; Kalkan'ın değeri sürü çekme, grup ve PvP'dedir.
 
 ## 6. Yetenekler
 
-**Sv10** — temel vuruş 247/sn; 5 hedefe tam rotasyon 779/sn (×3.2)
+**Sv10** — temel vuruş 241/sn; 5 hedefe tam rotasyon 763/sn (×3.2)
 
 | Yetenek | Bekleme | Çarpan | 30 sn toplam (5 hedef) | Temel vuruşa oranı |
 |---|---|---|---|---|
-| savurma | 4 | 1.6 | 8.011 | ×1.1 |
-| sarsinti | 10 | 1.2 | 2.395 | ×0.3 |
-| nara | 12 | 0.35 | 582 | ×0.1 |
+| savurma | 4 | 1.6 | 7.853 | ×1.1 |
+| sarsinti | 10 | 1.2 | 2.364 | ×0.3 |
+| nara | 12 | 0.35 | 568 | ×0.1 |
 | kalkan | 20 | 0 | 0 | ×0 |
-| zehir | 8 | 0.7 | 4.951 | ×0.7 |
+| zehir | 8 | 0.7 | 4.880 | ×0.7 |
 
-**Sv20** — temel vuruş 457/sn; 5 hedefe tam rotasyon 1.894/sn (×4.1)
+**Sv20** — temel vuruş 442/sn; 5 hedefe tam rotasyon 1.856/sn (×4.2)
 
 | Yetenek | Bekleme | Çarpan | 30 sn toplam (5 hedef) | Temel vuruşa oranı |
 |---|---|---|---|---|
-| savurma | 4 | 1.6 | 16.500 | ×1.2 |
-| sarsinti | 10 | 1.2 | 4.958 | ×0.4 |
-| nara | 12 | 0.35 | 1.207 | ×0.1 |
+| savurma | 4 | 1.6 | 16.219 | ×1.2 |
+| sarsinti | 10 | 1.2 | 4.878 | ×0.4 |
+| nara | 12 | 0.35 | 1.181 | ×0.1 |
 | kalkan | 20 | 0 | 0 | ×0 |
-| zehir | 8 | 0.7 | 10.831 | ×0.8 |
-| hiddet | 30 | 7 | 9.627 | ×0.7 |
+| zehir | 8 | 0.7 | 10.675 | ×0.8 |
+| hiddet | 30 | 7 | 9.471 | ×0.7 |
 
-**Sv30** — temel vuruş 659/sn; 5 hedefe tam rotasyon 2.988/sn (×4.5)
+**Sv30** — temel vuruş 638/sn; 5 hedefe tam rotasyon 2.934/sn (×4.6)
 
 | Yetenek | Bekleme | Çarpan | 30 sn toplam (5 hedef) | Temel vuruşa oranı |
 |---|---|---|---|---|
-| savurma | 4 | 1.6 | 26.379 | ×1.3 |
-| sarsinti | 10 | 1.2 | 7.918 | ×0.4 |
-| nara | 12 | 0.35 | 1.922 | ×0.1 |
+| savurma | 4 | 1.6 | 26.011 | ×1.4 |
+| sarsinti | 10 | 1.2 | 7.803 | ×0.4 |
+| nara | 12 | 0.35 | 1.895 | ×0.1 |
 | kalkan | 20 | 0 | 0 | ×0 |
-| zehir | 8 | 0.7 | 18.259 | ×0.9 |
-| hiddet | 30 | 7 | 15.399 | ×0.8 |
+| zehir | 8 | 0.7 | 17.986 | ×0.9 |
+| hiddet | 30 | 7 | 15.165 | ×0.8 |
 
-**Sv40** — temel vuruş 972/sn; 5 hedefe tam rotasyon 5.127/sn (×5.3)
+**Sv40** — temel vuruş 941/sn; 5 hedefe tam rotasyon 5.036/sn (×5.4)
 
 | Yetenek | Bekleme | Çarpan | 30 sn toplam (5 hedef) | Temel vuruşa oranı |
 |---|---|---|---|---|
-| savurma | 4 | 1.6 | 46.594 | ×1.6 |
-| sarsinti | 10 | 1.2 | 13.974 | ×0.5 |
-| nara | 12 | 0.35 | 3.395 | ×0.1 |
+| savurma | 4 | 1.6 | 45.920 | ×1.6 |
+| sarsinti | 10 | 1.2 | 13.772 | ×0.5 |
+| nara | 12 | 0.35 | 3.353 | ×0.1 |
 | kalkan | 20 | 0 | 0 | ×0 |
-| zehir | 8 | 0.7 | 33.518 | ×1.1 |
-| hiddet | 30 | 7 | 27.179 | ×0.9 |
+| zehir | 8 | 0.7 | 33.027 | ×1.2 |
+| hiddet | 30 | 7 | 26.780 | ×0.9 |
 
-## 7. PvP
+## 7. PvP — eşleşme matrisi
 
-| Sv | Kılıç→Kalkan ölüm (sn) | Kalkan→Kılıç | Kılıç↔Kılıç | PvE denk. (Kılıç→Kalkan) | +9 efsanevi → çıplak ay |
-|---|---|---|---|---|---|
-| 10 | 23.1 | 18.4 | 13.8 | 8.1 | 4.4 |
-| 20 | 30.3 | 22.8 | 17.7 | 10.4 | 5 |
-| 30 | 37.5 | 28.1 | 22 | 13.2 | 5.4 |
-| 50 | 53.3 | 37.2 | 30.7 | 18.7 | 6.1 |
+12 yapı (eşit bütçe: 7 efsun; Sv30'da +4 destansı) her yapıyla iki yönde ve 3 tohumla düello eder (`tests/sim/pvp.ts`). Açık dünya PvP'si, PVP_COEF = 0,35.
+
+| Yapı | Sv20 (+3) kazanma % | Sv30 (+4) kazanma % | Sv40 (+5) kazanma % | Sv50 (+6) kazanma % |
+|---|---|---|---|---|
+| Dengeli Kılıç | 74 | 71 | 68 | 56 |
+| Ağır Çift El | 65 | 68 | 73 | 48 |
+| Hızlı Bıçak | 59 | 52 | 45 | 47 |
+| Yay (Ay) | 56 | 56 | 67 | 67 |
+| Büyü Çanı (Ay) | 50 | 55 | 53 | 58 |
+| Kalkan Alp (Yer) | 47 | 56 | 59 | 77 |
+| Blok Kalesi (Yer) | 30 | 35 | 48 | 45 |
+| Kılıç Savunmalı Kalkan | 39 | 41 | 36 | 38 |
+| Delici Kılıç (Gök) | 58 | 58 | 65 | 62 |
+| Büyü Savunmalı (Ay) | 5 | 5 | 5 | 14 |
+| Cam Top: Saf Saldırı | 62 | 55 | 45 | 50 |
+| Emici: Can Çalma | 55 | 50 | 35 | 38 |
+
+Ortalama düello süresi: Sv20: 16.2 sn · Sv30: 19.5 sn · Sv40: 22.4 sn · Sv50: 25.5 sn.
+
+Sv30 — satırdaki yapının sütundaki yapıya karşı kazanma %'si:
+
+|  | Dengeli | Ağır | Hızlı | Yay Ay | Büyü Ay | Kalkan Yer | Blok Yer | Kılıç | Delici Gök | Büyü Ay | Cam | Emici: |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Dengeli Kılıç** | — | 83 | 83 | 67 | 50 | 83 | 50 | 17 | 67 | 100 | 100 | 83 |
+| **Ağır Çift El** | 17 | — | 67 | 83 | 50 | 33 | 100 | 100 | 50 | 100 | 83 | 67 |
+| **Hızlı Bıçak** | 17 | 33 | — | 17 | 33 | 33 | 67 | 100 | 67 | 100 | 50 | 50 |
+| **Yay (Ay)** | 33 | 17 | 83 | — | 67 | 33 | 50 | 100 | 67 | 100 | 17 | 50 |
+| **Büyü Çanı (Ay)** | 50 | 50 | 67 | 33 | — | 50 | 67 | 100 | 33 | 83 | 50 | 17 |
+| **Kalkan Alp (Yer)** | 17 | 67 | 67 | 67 | 50 | — | 67 | 17 | 17 | 100 | 67 | 83 |
+| **Blok Kalesi (Yer)** | 50 | 0 | 33 | 50 | 33 | 33 | — | 17 | 0 | 100 | 17 | 50 |
+| **Kılıç Savunmalı Kalkan** | 83 | 0 | 0 | 0 | 0 | 83 | 83 | — | 33 | 100 | 0 | 67 |
+| **Delici Kılıç (Gök)** | 33 | 50 | 33 | 33 | 67 | 83 | 100 | 67 | — | 100 | 33 | 33 |
+| **Büyü Savunmalı (Ay)** | 0 | 0 | 0 | 0 | 17 | 0 | 0 | 0 | 0 | — | 33 | 0 |
+| **Cam Top: Saf Saldırı** | 0 | 17 | 50 | 83 | 50 | 33 | 83 | 100 | 67 | 67 | — | 50 |
+| **Emici: Can Çalma** | 17 | 33 | 50 | 50 | 83 | 17 | 50 | 33 | 67 | 100 | 50 | — |
+
+Okuma: hiçbir yapı baskın değil ve doğrusal sıralama yok; her ana yapının bir avı ve bir rakibi var (örn. kılıç savunmalı kalkan, kılıç türü vuranlara karşı güçlü; bıçak/çift el/yay ona karşı üstün). **Büyü Savunmalı** yapı yalnızca büyü türünü kestiği için PvP'de niş kalır; asıl değeri büyü boss'larında ve büyü hasarlı bölgelerdedir (bkz. `TEST_FELSEFESI.md` §3).
 
 ## 8. Artı basma (beklenen maliyet, Markov)
 
@@ -202,12 +242,12 @@ Bulgular: korumasız +9 fiilen imkânsız (~2.900 deneme, ~437 yok olan parça);
 
 | Kamp seviyesi | Kill/sa | Ölüm/sa | Can %/öldürme | XP/sa | XP/sa (seviyenin %) |
 |---|---|---|---|---|---|
-| Sv-3 | 1.581 | 0 | 1.1 | 200.215 | 103.8 |
-| Sv-1 | 1.714 | 0 | 1 | 250.503 | 129.9 |
-| Sv±0 | 1.817 | 0 | 1.7 | 314.757 | 163.2 |
-| Sv+1 | 1.525 | 0.7 | 1.9 | 261.025 | 135.4 |
-| Sv+2 | 1.548 | 0 | 3.2 | 326.197 | 169.2 |
-| Sv+4 | 996 | 2 | 3.7 | 155.012 | 80.4 |
+| Sv-3 | 1.607 | 0 | 1.2 | 208.212 | 108 |
+| Sv-1 | 1.780 | 0 | 1.1 | 261.093 | 135.4 |
+| Sv±0 | 1.819 | 0 | 1.5 | 288.750 | 149.7 |
+| Sv+1 | 1.440 | 1.3 | 2.5 | 229.799 | 119.2 |
+| Sv+2 | 1.528 | 0 | 3.2 | 316.867 | 164.3 |
+| Sv+4 | 1.032 | 0 | 3.4 | 220.035 | 114.1 |
 
 Sv+1…+2 verimi sıfır seviyeye yakın; Sv+4'te verim yarıya iner. Kendini zorlamanın bedeli var ama keşfe değer; "her zaman en yüksek kampı farm et" stratejisi yok.
 
@@ -215,34 +255,56 @@ Sv+1…+2 verimi sıfır seviyeye yakın; Sv+4'te verim yarıya iner. Kendini zo
 
 | Sv | Oyuncu | Sonuç | Temizleme (sn) | Toplam ölüm | Ödül XP (seviyenin %) |
 |---|---|---|---|---|---|
-| 20 | 1 | kapandı | 128.7 | 0 | 7.1 |
-| 20 | 2 | kapandı | 83.2 | 0 | 7.1 |
-| 20 | 3 | kapandı | 71 | 0 | 7.1 |
+| 20 | 1 | kapandı | 122.6 | 0 | 7.1 |
+| 20 | 2 | kapandı | 80.3 | 0 | 7.1 |
+| 20 | 3 | kapandı | 72.1 | 0 | 7.1 |
 | 20 | 4 | kapandı | 67.2 | 0 | 7.1 |
-| 20 | 6 | kapandı | 59.3 | 0 | 7.1 |
-| 40 | 1 | kapandı | 154.9 | 0 | 1.8 |
+| 20 | 6 | kapandı | 61.5 | 0 | 7.1 |
+| 40 | 1 | kapandı | 131.8 | 0 | 1.8 |
 | 40 | 2 | kapandı | 90.1 | 0 | 1.8 |
-| 40 | 3 | kapandı | 81.2 | 0 | 1.8 |
-| 40 | 4 | kapandı | 73.3 | 0 | 1.8 |
-| 40 | 6 | kapandı | 67.3 | 0 | 1.8 |
+| 40 | 3 | kapandı | 79.7 | 0 | 1.8 |
+| 40 | 4 | kapandı | 76.2 | 0 | 1.8 |
+| 40 | 6 | kapandı | 65.1 | 0 | 1.8 |
+
+## 10b. Saha bosları (referans yapı, bot)
+
+| Boss | Sv | Oyuncu | Sonuç | Süre (sn) | Ölüm | En düşük can % |
+|---|---|---|---|---|---|---|
+| 1 | 9 | 1 | öldü | 168.4 | 4 | 0 |
+| 1 | 9 | 2 | öldü | 55.5 | 2 | 4 |
+| 1 | 9 | 4 | öldü | 22.3 | 0 | 28 |
+| 2 | 19 | 1 | öldü | 94.6 | 2 | 3 |
+| 2 | 19 | 2 | öldü | 37.1 | 0 | 1 |
+| 2 | 19 | 4 | öldü | 19.3 | 0 | 53 |
+| 3 | 29 | 1 | öldü | 94.5 | 1 | 1 |
+| 3 | 29 | 2 | öldü | 60 | 1 | 3 |
+| 3 | 29 | 4 | öldü | 22.8 | 0 | 47 |
+| 4 | 39 | 1 | öldü | 159.6 | 2 | 1 |
+| 4 | 39 | 2 | öldü | 65.7 | 1 | 2 |
+| 4 | 39 | 4 | öldü | 27.3 | 0 | 38 |
+| 5 | 48 | 1 | öldü | 122.3 | 1 | 3 |
+| 5 | 48 | 2 | öldü | 60 | 0 | 4 |
+| 5 | 48 | 4 | öldü | 30 | 0 | 52 |
+
+Tek kişi boss'u kıl payı kazanır (en düşük can %1–10, bazen 1 ölüm); üç kişilik parti rahat kazanır. Boss ganimeti: garanti destansı+ parça (boss'un hasar türüne karşı savunma efsunlu), 2–3 kitap, %45 tılsım, 3 yazıt parçası, altın; yeniden doğuş 15 dk.
 
 ## 11. Yönetici hesabı uç durumları
 
 | Sv | Efsanevi +9 takım | Kill/sa | Ölüm | Can %/öldürme | Saldırı | Can |
 |---|---|---|---|---|---|---|
-| 50 | hayır | 1.649 | 3 | 0.7 | 1.002 | 4.335 |
-| 50 | evet | 1.798 | 0 | 0.1 | 2.024 | 7.295 |
-| 30 | evet | 1.244 | 0 | 0.4 | 959 | 4.515 |
+| 50 | hayır | 379 | 24 | 10.2 | 424 | 2.550 |
+| 50 | evet | 1.801 | 0 | 0.1 | 1.990 | 7.338 |
+| 30 | evet | 1.255 | 0 | 0.3 | 938 | 4.541 |
 
 ## 12. Ekonomi
 
 | Sv | Akçe/sa | Kill/sa | +9 (tılsımlı) toplam akçe | Kaç saatlik kazanç |
 |---|---|---|---|---|
-| 10 | 18.753 | 1.257 | 226.639 | 12.1 |
-| 20 | 86.109 | 1.667 | 368.288 | 4.3 |
-| 30 | 83.345 | 1.017 | 509.938 | 6.1 |
-| 40 | 149.304 | 1.375 | 651.587 | 4.4 |
-| 48 | 164.700 | 1.400 | 764.907 | 4.6 |
+| 10 | 5.611 | 1.221 | 226.639 | 40.4 |
+| 20 | 77.571 | 1.563 | 368.288 | 4.7 |
+| 30 | 81.390 | 1.009 | 509.938 | 6.3 |
+| 40 | 149.640 | 1.385 | 651.587 | 4.4 |
+| 48 | 172.967 | 1.384 | 764.907 | 4.4 |
 
 ## 13. Açık sorular ve bilinen sınırlar
 
