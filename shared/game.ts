@@ -8,11 +8,20 @@ export const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
 export type Tier = 0 | 1 | 2 | 3; // sıradan, nadir, destansı, efsanevi
 export const TIER_KEYS = ['common', 'rare', 'epic', 'legendary'] as const;
 export type Spec = 'none' | 'kalkan' | 'kilic';
-export type EnchKey = 'crit' | 'aspd' | 'mspd' | 'hpPct' | 'atkPct' | 'defPct' | 'leech' | 'xpPct';
+export type EnchKey = 'crit' | 'aspd' | 'mspd' | 'hpPct' | 'atkPct' | 'defPct' | 'leech' | 'xpPct'
+  | 'defKilic' | 'defCift' | 'defBicak' | 'defYay' | 'defBuyu' | 'blockHit' | 'blockSkill' | 'pierce';
+/** Hasar türü: silah türü + büyü. Savunmalar türe göre ayrıdır (Metin2: kılıç/çift el/bıçak/yay/büyü savunması). */
+export type DmgKind = 'kilic' | 'cift' | 'bicak' | 'yay' | 'buyu';
+export const DMG_KINDS: DmgKind[] = ['kilic', 'cift', 'bicak', 'yay', 'buyu'];
+export const DEF_ENCH: Record<DmgKind, EnchKey> = { kilic: 'defKilic', cift: 'defCift', bicak: 'defBicak', yay: 'defYay', buyu: 'defBuyu' };
 
 export interface Ench { k: EnchKey; v: number }
 export interface Item {
   id: string; slot: Slot; band: number; ilvl: number; tier: Tier; up: number; ench: Ench[]; lvlReq: number;
+  /** silah türü (yalnızca silah; eski kayıtlarda yok = kılıç) */
+  wk?: DmgKind;
+  /** temel efsun: her parçada slota göre garanti gelen sabit özellik (eski kayıtlarda yok) */
+  base?: Ench;
 }
 export interface Bag { ore: number; hide: number; wood: number; book: number; charm: number; frag: number }
 export type MatKey = 'ore' | 'hide' | 'wood';
@@ -50,7 +59,7 @@ export function zoneAt(x: number, z: number): 'safe' | 'risky' {
 // ───────────────────────── Boylar ─────────────────────────
 export const BOY_BONUS: Record<Boy, { mspd: number; aspd: number; hp: number; def: number; spell: number; heal: number }> = {
   gok: { mspd: 0.06, aspd: 0.05, hp: 0, def: 0, spell: 0, heal: 0 },
-  yer: { mspd: 0, aspd: 0, hp: 0.08, def: 0.08, spell: 0, heal: 0 },
+  yer: { mspd: 0, aspd: 0, hp: 0.05, def: 0.04, spell: 0, heal: 0 },
   ay: { mspd: 0, aspd: 0, hp: 0, def: 0, spell: 0.12, heal: 0.4 },
 };
 export const BOY_COLORS: Record<Boy, { main: string; accent: string; dark: string }> = {
@@ -64,26 +73,30 @@ export type StatusKey = 'stun' | 'slow' | 'poison' | 'curse' | 'shield';
 export interface SkillDef {
   id: string; lvl: number; cd: number; kind: 'aoe' | 'pull' | 'shield';
   r: number; mult: number; status?: Partial<Record<StatusKey, number>>; fx: string;
+  /** hasar türü; yoksa silahın türü */
+  dk?: DmgKind;
 }
 export const SKILLS: SkillDef[] = [
   { id: 'savurma', lvl: 1, cd: 4, kind: 'aoe', r: 4.4, mult: 1.6, fx: 'slash' },
   { id: 'sarsinti', lvl: 3, cd: 10, kind: 'aoe', r: 6.5, mult: 1.2, status: { stun: 1.8 }, fx: 'quake' },
-  { id: 'nara', lvl: 5, cd: 12, kind: 'pull', r: 14, mult: 0.35, status: { slow: 3.5 }, fx: 'roar' },
+  { id: 'nara', lvl: 5, cd: 12, kind: 'pull', dk: 'buyu', r: 14, mult: 0.35, status: { slow: 3.5 }, fx: 'roar' },
   { id: 'kalkan', lvl: 7, cd: 20, kind: 'shield', r: 0, mult: 0, status: { shield: 9 }, fx: 'shield' },
-  { id: 'zehir', lvl: 9, cd: 8, kind: 'aoe', r: 5.5, mult: 0.7, status: { poison: 6 }, fx: 'poison' },
+  { id: 'zehir', lvl: 9, cd: 8, kind: 'aoe', dk: 'buyu', r: 5.5, mult: 0.7, status: { poison: 6 }, fx: 'poison' },
   { id: 'hiddet', lvl: 12, cd: 30, kind: 'aoe', r: 9.5, mult: 7, fx: 'wrath' },
 ];
 /** Zehirli Kesik: saniyelik hasar = saldırı × bu katsayı × kademe × büyü (savunmayı yok sayar) */
 export const POISON_DOT = 0.2;
+/** Tengri Kalkanı emilimi = azami can × bu katsayı × kademe × uzmanlık çarpanı */
+export const SHIELD_ABSORB = 0.18;
 export const SKILL_MAX_RANK = 6;
 export const SKILL_RANK_LABEL = ['M1', 'M2', 'M3', 'M4', 'G1', 'P'];
 export const skillRankMult = (rank: number) => 1 + 0.14 * (rank - 1);
 export const skillRankGold = (rank: number) => 250 * rank * rank; // rank → rank+1 maliyeti
 export const SPEC_LEVEL = 10;
-export const SPEC_MODS: Record<Spec, { hp: number; def: number; atk: number; aspd: number; aoe: number; shield: number; taunt: boolean; dmgTaken: number }> = {
-  none: { hp: 0, def: 0, atk: 0, aspd: 0, aoe: 0, shield: 1, taunt: false, dmgTaken: 0 },
-  kalkan: { hp: 0.22, def: 0.25, atk: -0.08, aspd: 0, aoe: 0, shield: 1.6, taunt: true, dmgTaken: -0.12 },
-  kilic: { hp: -0.08, def: 0, atk: 0.16, aspd: 0.12, aoe: 0.2, shield: 1, taunt: false, dmgTaken: 0 },
+export const SPEC_MODS: Record<Spec, { hp: number; def: number; atk: number; aspd: number; aoe: number; shield: number; taunt: boolean; dmgTaken: number; blockHit: number; blockSkill: number; pierce: number; /** oyuncudan gelen hasara ek çarpan (PvP dengesi; PvE'yi etkilemez) */ pvpTaken: number }> = {
+  none: { hp: 0, def: 0, atk: 0, aspd: 0, aoe: 0, shield: 1, taunt: false, dmgTaken: 0, blockHit: 0, blockSkill: 0, pierce: 0, pvpTaken: 0 },
+  kalkan: { hp: 0.08, def: 0.08, atk: -0.06, aspd: 0, aoe: 0, shield: 1.2, taunt: true, dmgTaken: -0.06, blockHit: 0.06, blockSkill: 0.04, pierce: 0, pvpTaken: 0.1 },
+  kilic: { hp: -0.04, def: 0, atk: 0.14, aspd: 0.1, aoe: 0.2, shield: 1, taunt: false, dmgTaken: 0, blockHit: 0, blockSkill: 0, pierce: 0.06, pvpTaken: 0 },
 };
 
 // ───────────────────────── Seviye / deneyim ─────────────────────────
@@ -103,6 +116,18 @@ export function restedGain(level: number, hours: number, inHub: boolean) {
 
 // ───────────────────────── Eşya ─────────────────────────
 export const TIER_MULT = [1, 1.2, 1.45, 1.8];
+/** Silah türü etkileri: saldırı çarpanı, vuruş hızı, ek kritik, menzil. Kılıç dengeli; çift el ağır; bıçak hızlı; yay/çan uzaktan ama zayıf. */
+export const WEAPON_MODS: Record<DmgKind, { atk: number; aspd: number; crit: number; range: number; spell: number }> = {
+  kilic: { atk: 0, aspd: 0, crit: 0, range: 3.6, spell: 0 },
+  cift: { atk: 0.04, aspd: -0.12, crit: 0, range: 3.9, spell: 0 },
+  bicak: { atk: -0.06, aspd: 0.18, crit: 4, range: 3.2, spell: 0 },
+  yay: { atk: -0.09, aspd: 0, crit: 0, range: 8.5, spell: 0 },
+  buyu: { atk: -0.08, aspd: -0.04, crit: 0, range: 6.5, spell: 0.3 },
+};
+/** Menzilli silahlar (menzil > bu değer) yürürken otomatik vuruş yapamaz: durup nişan almak gerekir (aksi hâlde kaçarak vurma riski sıfırlıyordu). */
+export const RANGED_MIN_RANGE = 6;
+export const WEAPON_DROP: [DmgKind, number][] = [['kilic', 0.4], ['cift', 0.2], ['bicak', 0.15], ['yay', 0.15], ['buyu', 0.1]];
+export const weaponKindOf = (it: Pick<Item, 'wk'> | undefined | null): DmgKind => it?.wk ?? 'kilic';
 export const TIER_COLORS = ['#c9c2b0', '#4aa8ff', '#b46bff', '#ffb02e'];
 export const UP_PCT = [0, 10, 20, 30, 40, 60, 80, 105, 130, 160]; // +n → temel değere % ek
 export const upMult = (up: number) => 1 + UP_PCT[Math.min(9, up)] / 100;
@@ -134,7 +159,15 @@ export function itemStats(it: Item): ItemStats {
   return { atk: Math.round(b.atk * k), def: Math.round(b.def * k), hp: Math.round(b.hp * k), critPct: +(b.critPct * k).toFixed(1), atkPct: +(b.atkPct * k).toFixed(1) };
 }
 export const ENCH_TABLE: Record<EnchKey, [number, number]> = {
-  crit: [1, 5], aspd: [2, 8], mspd: [2, 6], hpPct: [3, 10], atkPct: [3, 9], defPct: [3, 10], leech: [1, 3], xpPct: [2, 6],
+  crit: [1, 5], aspd: [2, 8], mspd: [2, 6], hpPct: [3, 10], atkPct: [3, 9], defPct: [3, 10], leech: [2, 5], xpPct: [2, 6],
+  defKilic: [3, 9], defCift: [3, 9], defBicak: [3, 9], defYay: [3, 9], defBuyu: [3, 9], blockHit: [3, 9], blockSkill: [3, 9], pierce: [3, 9],
+};
+/** Temel efsun havuzu (slota göre, her parçada bir tane garanti). Zırh=tür savunması, miğfer=blok, silah=delme/vuruş, tılsım=yardımcı. */
+export const BASE_ENCH_POOL: Record<Slot, EnchKey[]> = {
+  weapon: ['pierce', 'crit', 'atkPct', 'aspd'],
+  armor: ['defKilic', 'defCift', 'defBicak', 'defYay', 'defBuyu'],
+  helmet: ['blockHit', 'blockSkill', 'hpPct', 'defPct'],
+  amulet: ['leech', 'xpPct', 'mspd', 'crit'],
 };
 export const ENCH_KEYS = Object.keys(ENCH_TABLE) as EnchKey[];
 
@@ -150,16 +183,19 @@ export function rollTier(r: Rng, minTier: Tier = 0, bonus = 0): Tier {
   if (bonus > 0 && x > 1) t = (Math.min(3, t + 1) as Tier);
   return (Math.max(t, minTier) as Tier);
 }
-export function makeItem(r: Rng, slot: Slot, ilvl: number, tier: Tier): Item {
+export function rollWeaponKind(r: Rng): DmgKind {
+  let x = r(); for (const [k, w] of WEAPON_DROP) { if (x < w) return k; x -= w; } return 'kilic';
+}
+export function makeItem(r: Rng, slot: Slot, ilvl: number, tier: Tier, wk?: DmgKind): Item {
   const ench: Ench[] = [];
   const n = tier;
-  const pool = [...ENCH_KEYS];
-  for (let i = 0; i < n && pool.length; i++) {
-    const k = pool.splice(Math.floor(r() * pool.length), 1)[0];
-    const [lo, hi] = ENCH_TABLE[k];
-    ench.push({ k, v: Math.round((lo + (hi - lo) * r()) * 10) / 10 });
-  }
-  return { id: newId(), slot, band: bandOf(ilvl), ilvl, tier, up: 0, ench, lvlReq: itemLvlReq(ilvl) };
+  const roll = (k: EnchKey): Ench => { const [lo, hi] = ENCH_TABLE[k]; return { k, v: Math.round((lo + (hi - lo) * r()) * 10) / 10 }; };
+  const poolB = BASE_ENCH_POOL[slot]; const base = roll(poolB[Math.floor(r() * poolB.length)]);
+  const pool = ENCH_KEYS.filter((k) => k !== base.k);
+  for (let i = 0; i < n && pool.length; i++) ench.push(roll(pool.splice(Math.floor(r() * pool.length), 1)[0]));
+  const it: Item = { id: newId(), slot, band: bandOf(ilvl), ilvl, tier, up: 0, ench, lvlReq: itemLvlReq(ilvl), base };
+  if (slot === 'weapon') it.wk = wk ?? rollWeaponKind(r);
+  return it;
 }
 export const randomSlot = (r: Rng): Slot => SLOTS[Math.floor(r() * SLOTS.length)];
 
@@ -168,9 +204,11 @@ export interface StatInput { level: number; boy: Boy; spec: Spec; equip: Partial
 export interface Stats {
   maxHp: number; atk: number; def: number; crit: number; critMult: number; atkInterval: number;
   moveSpeed: number; leech: number; xpPct: number; spell: number; heal: number; aoe: number; shieldMult: number; dmgTaken: number;
+  /** tür savunması (0–0,5): gelen hasarı o oranda azaltır */
+  defKind: Record<DmgKind, number>; blockHit: number; blockSkill: number; pierce: number; weaponKind: DmgKind; range: number;
 }
 /** Üst sınırlar: efsun/boy/uzmanlık yığılınca bile hesap uçmasın (BALANS_RAPORU §bonus hesapları) */
-export const STAT_CAP = { crit: 75, aspd: 0.6, leech: 0.15, mspd: 0.5 };
+export const STAT_CAP = { crit: 75, aspd: 0.6, leech: 0.2, mspd: 0.5, defKind: 0.4, blockHit: 0.35, blockSkill: 0.3, pierce: 0.4 };
 export function computeStats(p: StatInput): Stats {
   const L = p.level;
   let hp = 150 + 34 * (L - 1);
@@ -178,29 +216,51 @@ export function computeStats(p: StatInput): Stats {
   let def = 6 + 2.2 * (L - 1);
   let crit = 5; let aspd = 0; let mspd = 0; let leech = 0; let xpPct = 0;
   let hpPct = 0; let atkPct = 0; let defPct = 0;
+  const defKind: Record<DmgKind, number> = { kilic: 0, cift: 0, bicak: 0, yay: 0, buyu: 0 };
+  let blockHit = 0; let blockSkill = 0; let pierce = 0;
+  const apply = (e: Ench) => {
+    switch (e.k) {
+      case 'crit': crit += e.v; break; case 'aspd': aspd += e.v / 100; break; case 'mspd': mspd += e.v / 100; break;
+      case 'hpPct': hpPct += e.v / 100; break; case 'atkPct': atkPct += e.v; break; case 'defPct': defPct += e.v / 100; break;
+      case 'leech': leech += e.v / 100; break; case 'xpPct': xpPct += e.v; break;
+      case 'defKilic': defKind.kilic += e.v / 100; break; case 'defCift': defKind.cift += e.v / 100; break; case 'defBicak': defKind.bicak += e.v / 100; break;
+      case 'defYay': defKind.yay += e.v / 100; break; case 'defBuyu': defKind.buyu += e.v / 100; break;
+      case 'blockHit': blockHit += e.v / 100; break; case 'blockSkill': blockSkill += e.v / 100; break; case 'pierce': pierce += e.v / 100; break;
+    }
+  };
   for (const it of Object.values(p.equip)) {
     if (!it) continue;
     const s = itemStats(it);
     atk += s.atk; def += s.def; hp += s.hp; crit += s.critPct; atkPct += s.atkPct;
-    for (const e of it.ench) {
-      switch (e.k) {
-        case 'crit': crit += e.v; break; case 'aspd': aspd += e.v / 100; break; case 'mspd': mspd += e.v / 100; break;
-        case 'hpPct': hpPct += e.v / 100; break; case 'atkPct': atkPct += e.v; break; case 'defPct': defPct += e.v / 100; break;
-        case 'leech': leech += e.v / 100; break; case 'xpPct': xpPct += e.v; break;
-      }
-    }
+    if (it.base) apply(it.base);
+    for (const e of it.ench) apply(e);
   }
+  const wk = weaponKindOf(p.equip.weapon); const wm = WEAPON_MODS[wk];
   const b = BOY_BONUS[p.boy]; const sp = SPEC_MODS[p.spec];
   hp *= 1 + hpPct + b.hp + sp.hp;
   def *= 1 + defPct + b.def + sp.def;
-  atk *= 1 + atkPct / 100 + sp.atk + kutBonusPct(p.kut) / 100;
-  aspd += b.aspd + sp.aspd; mspd += b.mspd;
+  atk *= 1 + atkPct / 100 + sp.atk + wm.atk + kutBonusPct(p.kut) / 100;
+  aspd += b.aspd + sp.aspd + wm.aspd; mspd += b.mspd; crit += wm.crit;
+  blockHit += sp.blockHit; blockSkill += sp.blockSkill; pierce += sp.pierce;
   crit = Math.min(STAT_CAP.crit, crit); aspd = Math.min(STAT_CAP.aspd, aspd); leech = Math.min(STAT_CAP.leech, leech); mspd = Math.min(STAT_CAP.mspd, mspd);
+  for (const k of DMG_KINDS) defKind[k] = Math.min(STAT_CAP.defKind, defKind[k]);
   return {
     maxHp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), crit, critMult: 1.6,
-    atkInterval: 0.55 / (1 + aspd), moveSpeed: PLAYER_BASE_SPEED * (1 + mspd), leech, xpPct,
-    spell: 1 + b.spell, heal: 1 + b.heal, aoe: 1 + sp.aoe, shieldMult: sp.shield, dmgTaken: 1 + sp.dmgTaken,
+    atkInterval: 0.55 / (1 + Math.max(-0.5, aspd)), moveSpeed: PLAYER_BASE_SPEED * (1 + mspd), leech, xpPct,
+    spell: 1 + b.spell + wm.spell, heal: 1 + b.heal, aoe: 1 + sp.aoe, shieldMult: sp.shield, dmgTaken: 1 + sp.dmgTaken,
+    defKind, blockHit: Math.min(STAT_CAP.blockHit, blockHit), blockSkill: Math.min(STAT_CAP.blockSkill, blockSkill), pierce: Math.min(STAT_CAP.pierce, pierce), weaponKind: wk, range: wm.range,
   };
+}
+
+/** Delici vuruş savunmayı yok saymanın yanında bu kadar ek hasar verir (delme bedelini ödetmek için). */
+export const PIERCE_BONUS = 1.25;
+/** Gelen vuruşa savunma uygular. Delme (pierce) şansı tür savunmasını ve bloğu yok sayar. rng3: [delme, blok] zarları. */
+export function applyDefense(stats: Pick<Stats, 'defKind' | 'blockHit' | 'blockSkill'>, kind: DmgKind, skill: boolean, pierce: number, rollPierce: number, rollBlock: number): { mult: number; blocked: boolean; pierced: boolean } {
+  const pierced = rollPierce < pierce;
+  if (pierced) return { mult: PIERCE_BONUS, blocked: false, pierced: true };
+  const chance = skill ? stats.blockSkill : stats.blockHit;
+  if (rollBlock < chance) return { mult: 0, blocked: true, pierced: false };
+  return { mult: 1 - stats.defKind[kind], blocked: false, pierced: false };
 }
 
 /** Hasar formülü (savunma azaltımı). pvp = PvP katsayısı ayrı ayarlanır (PRD §5 denge). */
@@ -219,15 +279,15 @@ export const lvlDiffIn = (diff: number) => (diff > 0 ? Math.min(2, 1 + 0.05 * di
 // ───────────────────────── Yaratıklar ─────────────────────────
 export type MobType = 'tepegoz' | 'albasti' | 'erlik' | 'cakal' | 'bekci';
 export interface MobDef {
-  hp: number; atk: number; def: number; speed: number; atkInterval: number; range: number; aggro: number; scale: number;
+  kind: DmgKind; hp: number; atk: number; def: number; speed: number; atkInterval: number; range: number; aggro: number; scale: number;
   onHit?: { status: StatusKey; chance: number; dur: number };
 }
 export const MOBS: Record<MobType, MobDef> = {
-  tepegoz: { hp: 1.35, atk: 1.25, def: 1.1, speed: 3.3, atkInterval: 2.0, range: 2.6, aggro: 9, scale: 1.25, onHit: { status: 'stun', chance: 0.08, dur: 1 } },
-  albasti: { hp: 0.9, atk: 1.0, def: 0.8, speed: 4.2, atkInterval: 1.6, range: 2.3, aggro: 11, scale: 1.0, onHit: { status: 'curse', chance: 0.3, dur: 6 } },
-  erlik: { hp: 1.0, atk: 1.15, def: 1.0, speed: 4.4, atkInterval: 1.5, range: 2.3, aggro: 10, scale: 1.05, onHit: { status: 'poison', chance: 0.25, dur: 5 } },
-  cakal: { hp: 0.6, atk: 0.8, def: 0.6, speed: 5.4, atkInterval: 1.0, range: 2.0, aggro: 10, scale: 0.9, onHit: { status: 'slow', chance: 0.25, dur: 2.5 } },
-  bekci: { hp: 16, atk: 2.8, def: 1.5, speed: 3.6, atkInterval: 2.2, range: 4.2, aggro: 30, scale: 3.2, onHit: { status: 'stun', chance: 0.2, dur: 1.2 } },
+  tepegoz: { kind: 'cift', hp: 1.35, atk: 1.25, def: 1.1, speed: 3.3, atkInterval: 2.0, range: 2.6, aggro: 9, scale: 1.25, onHit: { status: 'stun', chance: 0.08, dur: 1 } },
+  albasti: { kind: 'buyu', hp: 0.9, atk: 1.0, def: 0.8, speed: 4.2, atkInterval: 1.6, range: 2.3, aggro: 11, scale: 1.0, onHit: { status: 'curse', chance: 0.3, dur: 6 } },
+  erlik: { kind: 'buyu', hp: 1.0, atk: 1.15, def: 1.0, speed: 4.4, atkInterval: 1.5, range: 2.3, aggro: 10, scale: 1.05, onHit: { status: 'poison', chance: 0.25, dur: 5 } },
+  cakal: { kind: 'bicak', hp: 0.6, atk: 0.8, def: 0.6, speed: 5.4, atkInterval: 1.0, range: 2.0, aggro: 10, scale: 0.9, onHit: { status: 'slow', chance: 0.25, dur: 2.5 } },
+  bekci: { kind: 'cift', hp: 16, atk: 2.8, def: 1.5, speed: 3.6, atkInterval: 2.2, range: 4.2, aggro: 30, scale: 3.2, onHit: { status: 'stun', chance: 0.2, dur: 1.2 } },
 };
 /** Yaratık canı: temel eğri × (2,3 + 1,5/(1+L/12)). Hedef: referans oyuncu aynı seviye yaratığı ≈3–5 sn'de keser (docs/BALANS_RAPORU.md). */
 export const mobHp = (lvl: number) => (20 + 14 * lvl + 0.5 * lvl * lvl) * (2.3 + 1.5 / (1 + lvl / 12));
@@ -251,6 +311,17 @@ export const RIFT = {
 
 /** Üretim maliyetleri (demirci). Tılsım ucuz olursa yok olma riski anlamsızlaşır: BALANS_RAPORU §artı basma */
 export const CRAFT = { book: { ore: 4, gold: 60 }, charm: { ore: 24, hide: 12, gold: 900 }, gear: { ore: 10, hide: 4, wood: 4, goldBase: 150, goldPerLevel: 20 } };
+
+// ───────────────────────── Saha bosları ve kilometre taşları ─────────────────────────
+/** Her 10 seviyelik grubun bir saha bossu vardır; yaratık gibi savunma türüne sahiptir ve o türe karşı savunma efsunlu ganimet düşürür. */
+export const FIELD_BOSS = {
+  respawnSec: 900, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
+  /** [seviye, hasar türü, ad anahtarı] */
+  list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5']] as [number, DmgKind, string][],
+};
+export const MILESTONE_LEVELS = [10, 20, 30, 40, 50];
+/** Kilometre taşı armağanı (Kut Armağanı): seviye 10·20·30·40·50 */
+export const milestoneGift = (level: number) => ({ gold: 400 * level, books: Math.round(level / 10), charms: Math.round(level / 10), itemTier: (level >= 40 ? 3 : 2) as Tier, frags: level / 10 * 5 });
 
 // ───────────────────────── Oba ─────────────────────────
 export type BuildingKey = 'otag' | 'demir';

@@ -2,11 +2,11 @@ import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
-  type Boy, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
+  type Boy, type DmgKind, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { dist, dist2, genCamps, genStones, stepMove, type Camp } from '../shared/world';
+import { dist, dist2, genBosses, genCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
 import { runGm } from './gm';
 import { irange, range } from '../shared/rng';
@@ -37,6 +37,8 @@ export interface Mob {
   hx: number; hz: number; campId: number; riftId: number; target: number; nextAtk: number; wanderAt: number; wx: number; wz: number;
   status: StatusMap; contrib: Map<number, number>; dead: boolean; respawnAt: number; leash: number; poisonAcc: number; tauntUntil: number; tauntBy: number;
   lastSwing: number; dummy?: boolean;
+  /** saha bossu kimliği (1–5); 0 = değil */
+  bossId: number; slamAt: number; slamHitAt: number;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -58,7 +60,7 @@ export class World {
   constructor(public ctx: Ctx, layer: number) {
     this.layer = layer;
     this.startedAt = ctx.clock.now();
-    if (ctx.cfg.spawnCamps) for (const c of this.camps) for (let i = 0; i < c.count; i++) this.spawnCampMob(c);
+    if (ctx.cfg.spawnCamps) { for (const c of this.camps) for (let i = 0; i < c.count; i++) this.spawnCampMob(c); for (const b of genBosses()) this.spawnBoss(b); }
     this.nextRiftAt = ctx.clock.now() + range(ctx.rng, ctx.cfg.riftEvery[0], ctx.cfg.riftEvery[1]) * 1000;
     ctx.worlds.add(this);
   }
@@ -79,7 +81,7 @@ export class World {
     const m: Mob = {
       kind: 'mob', id: this.nid(), type, lvl, x, z, rot: this.ctx.rng() * 6.28, hp, maxHp: hp, atk: mobAtk(lvl) * def.atk, def: mobDef(lvl) * def.def,
       hx: x, hz: z, campId, riftId, target: 0, nextAtk: 0, wanderAt: 0, wx: x, wz: z, status: {}, contrib: new Map(), dead: false, respawnAt: 0,
-      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0,
+      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0, bossId: 0, slamAt: 0, slamHitAt: 0,
     };
     this.mobs.set(m.id, m);
     return m;
@@ -172,6 +174,7 @@ export class World {
       this.emit({ k: 'lvl', id: p.id, lvl: p.d.level }, p.x, p.z);
       this.sys(p, 'sys.levelup', { lvl: p.d.level });
       if (p.d.level === SPEC_LEVEL) this.sys(p, 'sys.spec_ready');
+      if (MILESTONE_LEVELS.includes(p.d.level)) this.milestone(p);
     }
     p.meDirty = true;
     return xp;
@@ -250,13 +253,20 @@ export class World {
     return dmg;
   }
 
-  playerHit(p: Player, tgt: Player | Mob, mult: number, extra = 1) {
+  /** Güvenli bölgedeki oyuncu yaratığa vuramaz (yaratık karşılık veremediği için menzilli silahla bedava öldürme olurdu). Kukla ve yönetici hariç. */
+  canHitMob(p: Player, m: Mob) { return m.dummy === true || p.role === 'admin' || zoneAt(p.x, p.z) !== 'safe'; }
+  playerHit(p: Player, tgt: Player | Mob, mult: number, extra = 1, o: { skill?: boolean; dk?: DmgKind } = {}) {
     const pvp = tgt.kind === 'player';
     const crit = this.ctx.rng() * 100 < p.stats.crit;
     const roll = 0.92 + this.ctx.rng() * 0.16;
     const lv = tgt.kind === 'mob' && !tgt.dummy ? lvlDiffOut(tgt.lvl - p.d.level) : 1;
     let dmg = hitDamage(p.stats.atk, mult * extra * lv * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
     if (extra !== 1) dmg = Math.round(dmg); // beceri çarpanı zaten ekte
+    if (tgt.kind === 'player') {
+      const df = applyDefense(tgt.stats, o.dk ?? p.stats.weaponKind, !!o.skill, p.stats.pierce, this.ctx.rng(), this.ctx.rng());
+      if (tgt.deadUntil === 0 && !tgt.god && df.blocked) { tgt.lastCombat = this.now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
+      dmg = Math.max(1, Math.round(dmg * df.mult * (1 + SPEC_MODS[tgt.d.spec].pvpTaken)));
+    }
     return this.damage(p, tgt, dmg, { crit });
   }
 
@@ -268,10 +278,73 @@ export class World {
   }
 
   // ───────────── ölüm ─────────────
+  // ───────────── saha bosları ─────────────
+  spawnBoss(b: BossDef) {
+    const m = this.makeMob('bekci', b.level, b.x, b.z, -1, -1, FIELD_BOSS.hpMult);
+    m.bossId = b.id; m.hx = b.x; m.hz = b.z; m.leash = 70; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000;
+    return m;
+  }
+  respawnBoss(m: Mob) {
+    m.x = m.hx; m.z = m.hz; m.hp = m.maxHp; m.dead = false; m.target = 0; m.status = {}; m.contrib.clear(); m.nextAtk = 0; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000; m.slamHitAt = 0;
+    this.emit({ k: 'spawn', id: m.id }, m.x, m.z);
+    this.ctx.broadcastSys('sys.boss_up.' + m.bossId);
+  }
+  /** Boss'un özel hamlesi: işaretli alan darbesi (önce uyarı halkası, sonra hasar; beceri bloğu işler). */
+  bossSpecial(m: Mob, tgt: Player | undefined, now: number) {
+    if (m.slamHitAt === 0 && tgt && now >= m.slamAt) {
+      m.slamHitAt = now + FIELD_BOSS.slamTelegraphSec * 1000; m.slamAt = now + FIELD_BOSS.slamEverySec * 1000;
+      this.emit({ k: 'fx', fx: 'wrath', x: m.x, z: m.z, r: FIELD_BOSS.slamRadius, o: m.id }, m.x, m.z);
+    } else if (m.slamHitAt !== 0 && now >= m.slamHitAt) {
+      m.slamHitAt = 0; const kind = FIELD_BOSS.list[m.bossId - 1][1];
+      for (const p of this.players.values()) {
+        if (p.deadUntil > 0 || zoneAt(p.x, p.z) === 'safe' || dist(p, m) > FIELD_BOSS.slamRadius) continue;
+        const df = applyDefense(p.stats, kind, true, 0, 1, this.ctx.rng());
+        if (df.blocked && !p.god) { p.lastCombat = now; this.emit({ k: 'dmg', id: p.id, v: 0, blk: true, src: m.id, pl: true }, p.x, p.z); continue; }
+        const dmg = Math.max(1, Math.round(hitDamage(m.atk * FIELD_BOSS.slamMult * lvlDiffIn(m.lvl - p.d.level), 1, p.stats.def, false, false) * df.mult));
+        this.damage(m, p, dmg); if (p.deadUntil === 0) this.applyStatus(p, 'stun', 1);
+      }
+    }
+  }
+  fieldBossDown(m: Mob) {
+    const total = [...m.contrib.values()].reduce((a, b) => a + b, 0) || 1;
+    m.respawnAt = this.now + FIELD_BOSS.respawnSec * 1000; m.slamHitAt = 0;
+    const kind = FIELD_BOSS.list[m.bossId - 1][1]; let top: Player | undefined; let topD = 0;
+    for (const [pid, dmg] of m.contrib) {
+      const p = this.players.get(pid); if (!p) continue; if (dmg > topD) { topD = dmg; top = p; }
+      if (p.deadUntil > 0 || dmg / total < 0.05 || dist(p, m) > 60) continue;
+      const rng = this.ctx.rng;
+      this.addXp(p, mobXp(m.lvl) * FIELD_BOSS.xpMult, false);
+      const gold = Math.round(mobGold(m.lvl) * FIELD_BOSS.goldMult); for (let i = 0; i < 4; i++) this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold / 4) });
+      // garanti destansı+ parça; boss'un hasar türüne karşı savunma efsunuyla (build avcılığı)
+      const it = makeItem(rng, randomSlot(rng), m.lvl, rollTier(rng, 2, 0.6));
+      const dk = DEF_ENCH[kind]; const [lo, hi] = ENCH_TABLE[dk]; if (!it.ench.some((e) => e.k === dk) && it.base?.k !== dk) { if (it.ench.length >= 3) it.ench.pop(); it.ench.push({ k: dk, v: Math.round((lo + (hi - lo) * (0.7 + rng() * 0.3)) * 10) / 10 }); }
+      this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
+      if (rng() < 0.4) { const it2 = makeItem(rng, randomSlot(rng), m.lvl, rollTier(rng, 1)); this.spawnDrop(p, 'item', m.x, m.z, { item: it2, t: it2.tier, m: it2.slot }); }
+      for (let i = 0; i < 2 + (rng() < 0.5 ? 1 : 0); i++) this.spawnDrop(p, 'book', m.x, m.z);
+      if (rng() < 0.45) this.spawnDrop(p, 'charm', m.x, m.z);
+      for (let i = 0; i < 3; i++) this.spawnDrop(p, 'frag', m.x, m.z);
+      this.spawnDrop(p, 'mat', m.x, m.z, { m: 'ore', amount: irange(rng, 6, 12) });
+      this.ledger(p, 'boss.reward', { boss: m.bossId, tier: it.tier, gold });
+      this.sys(p, 'sys.boss_reward', {});
+    }
+    m.contrib.clear();
+    this.ctx.broadcastSys('sys.boss_down.' + m.bossId, { who: top?.name ?? '?' });
+  }
+
+  /** Kilometre taşı armağanı (Kut Armağanı) */
+  milestone(p: Player) {
+    const g = milestoneGift(p.d.level); const d = p.d; const rng = this.ctx.rng;
+    d.gold += g.gold; d.bag.book += g.books; d.bag.charm += g.charms; this.addFrag(p, g.frags);
+    const it = makeItem(rng, randomSlot(rng), p.d.level, g.itemTier); if (!this.giveItem(p, it)) this.spawnDrop(p, 'item', p.x, p.z, { item: it, t: it.tier, m: it.slot });
+    this.ledger(p, 'milestone', { level: d.level, gold: g.gold, books: g.books, charms: g.charms, tier: g.itemTier });
+    this.sys(p, 'sys.milestone', { lvl: d.level }); p.meDirty = true;
+  }
+
   killMob(m: Mob) {
     m.dead = true; m.hp = 0; m.target = 0;
     this.emit({ k: 'die', id: m.id }, m.x, m.z);
     const boss = m.type === 'bekci';
+    if (m.bossId) { this.fieldBossDown(m); return; }
     const total = [...m.contrib.values()].reduce((a, b) => a + b, 0) || 1;
     for (const [pid, dmg] of m.contrib) {
       const p = this.players.get(pid); if (!p || p.deadUntil > 0) continue;
@@ -402,13 +475,13 @@ export class World {
     let hit = 0;
     this.emit({ k: 'fx', fx: sk.fx, x: p.x, z: p.z, r: Math.max(r, 2), o: p.id }, p.x, p.z);
     if (sk.kind === 'shield') {
-      const absorb = Math.round(p.stats.maxHp * 0.35 * p.stats.shieldMult * rank);
+      const absorb = Math.round(p.stats.maxHp * SHIELD_ABSORB * p.stats.shieldMult * rank);
       this.applyStatus(p, 'shield', sk.status!.shield!, { absorb });
       p.meDirty = true; return;
     }
     const taunt = SPEC_MODS[p.d.spec].taunt;
     for (const m of this.mobs.values()) {
-      if (m.dead) continue;
+      if (m.dead || !this.canHitMob(p, m)) continue;
       const d = Math.sqrt(dist2(p, m)); if (d > r + 0.6) continue;
       if (sk.kind === 'pull') {
         const f = Math.max(0, d - 2.2); const k = d > 0.001 ? f / d : 0;
@@ -424,7 +497,8 @@ export class World {
     }
     for (const q of this.players.values()) {
       if (!this.canHitPlayer(p, q, false) || Math.sqrt(dist2(p, q)) > r + 0.6) continue;
-      if (sk.mult > 0) this.playerHit(p, q, sk.mult * sp);
+      const dealtQ = sk.mult > 0 ? this.playerHit(p, q, sk.mult * sp, 1, { skill: true, dk: sk.dk }) : 1;
+      if (dealtQ === 0) continue; // bloklanan beceri durum etkisi de uygulamaz
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {
         if (s === 'poison') this.applyStatus(q, s, dur, { dps: p.stats.atk * POISON_DOT * rank * p.stats.spell * 0.35, by: p.id });
         else this.applyStatus(q, s, dur);
@@ -674,7 +748,8 @@ export class World {
         p.rot = Math.atan2(p.dirx, p.dirz);
       }
       // otomatik saldırı
-      if (p.atk && !stunned && now >= p.nextAtk) this.autoAttack(p, now);
+      const moving = p.dirx !== 0 || p.dirz !== 0;
+      if (p.atk && !stunned && now >= p.nextAtk && !(moving && p.stats.range > RANGED_MIN_RANGE)) this.autoAttack(p, now);
       // yenilenme
       const ooc = now - p.lastCombat > 5000;
       if (ooc && p.hp < p.stats.maxHp) {
@@ -704,15 +779,15 @@ export class World {
   }
 
   autoAttack(p: Player, now: number) {
-    const range = 3.6;
+    const range = p.stats.range;
     let best: Player | Mob | null = null; let bd = range * range;
     if (p.focus) {
       const f = this.mobs.get(p.focus) ?? this.players.get(p.focus);
-      if (f && f.kind === 'mob' && !f.dead && dist2(p, f) <= (range + 1) ** 2) best = f;
+      if (f && f.kind === 'mob' && !f.dead && this.canHitMob(p, f) && dist2(p, f) <= (range + 1) ** 2) best = f;
       else if (f && f.kind === 'player' && this.canHitPlayer(p, f, true) && dist2(p, f) <= (range + 1) ** 2) best = f;
     }
     if (!best) {
-      for (const m of this.mobs.values()) { if (m.dead) continue; const d = dist2(p, m); if (d < bd) { bd = d; best = m; } }
+      for (const m of this.mobs.values()) { if (m.dead || !this.canHitMob(p, m)) continue; const d = dist2(p, m); if (d < bd) { bd = d; best = m; } }
     }
     if (!best && p.duelWith) { const q = this.players.get(p.duelWith); if (q && dist2(p, q) <= range * range) best = q; }
     if (!best) return;
@@ -725,7 +800,7 @@ export class World {
   updateMobs(dt: number, now: number) {
     for (const m of this.mobs.values()) {
       if (m.dummy) continue;
-      if (m.dead) { if (m.campId >= 0 && now >= m.respawnAt) this.respawnMob(m); continue; }
+      if (m.dead) { if (m.campId >= 0 && now >= m.respawnAt) this.respawnMob(m); else if (m.bossId && now >= m.respawnAt) this.respawnBoss(m); continue; }
       const def = MOBS[m.type];
       this.tickStatus(m, dt, now);
       if (m.dead) continue;
@@ -742,6 +817,7 @@ export class World {
         if (b) { tgt = b; m.target = b.id; }
       }
       let speed = def.speed * (this.hasStatus(m, 'slow') ? 0.5 : 1);
+      if (m.bossId) this.bossSpecial(m, tgt, now);
       if (tgt) {
         const d = dist(m, tgt);
         m.rot = Math.atan2(tgt.x - m.x, tgt.z - m.z);
@@ -750,11 +826,14 @@ export class World {
           stepMove(m, dx, dz, speed, dt, 0.5, true);
         }
         if (d <= def.range + 0.3 && now >= m.nextAtk) {
-          m.nextAtk = now + def.atkInterval * 1000;
+          m.nextAtk = now + (def.atkInterval / (m.bossId && m.hp < m.maxHp * FIELD_BOSS.enrageBelow ? FIELD_BOSS.enrageAtkSpeed : 1)) * 1000;
           this.emit({ k: 'swing', id: m.id, tx: tgt.x, tz: tgt.z }, m.x, m.z);
-          const dmg = hitDamage(m.atk * lvlDiffIn(m.lvl - tgt.d.level), 1, tgt.stats.def, false, this.hasStatus(m, 'curse'), 0.92 + this.ctx.rng() * 0.16);
-          this.damage(m, tgt, dmg);
-          if (def.onHit && tgt.deadUntil === 0 && this.ctx.rng() < def.onHit.chance) this.applyStatus(tgt, def.onHit.status, def.onHit.dur, def.onHit.status === 'poison' ? { dps: m.atk * 0.18, by: 0 } : undefined);
+          let dmg = hitDamage(m.atk * lvlDiffIn(m.lvl - tgt.d.level), 1, tgt.stats.def, false, this.hasStatus(m, 'curse'), 0.92 + this.ctx.rng() * 0.16);
+          const df = applyDefense(tgt.stats, m.bossId ? FIELD_BOSS.list[m.bossId - 1][1] : def.kind, false, 0, 1, this.ctx.rng());
+          let dealt = 0;
+          if (df.blocked && !tgt.god) { tgt.lastCombat = now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: m.id, pl: true }, tgt.x, tgt.z); }
+          else { dmg = Math.max(1, Math.round(dmg * df.mult)); dealt = this.damage(m, tgt, dmg); }
+          if (def.onHit && dealt > 0 && tgt.deadUntil === 0 && this.ctx.rng() < def.onHit.chance) this.applyStatus(tgt, def.onHit.status, def.onHit.dur, def.onHit.status === 'poison' ? { dps: m.atk * 0.18, by: 0 } : undefined);
         }
         if (dist(m, { x: m.hx, z: m.hz }) > m.leash) { m.target = 0; }
       } else {
@@ -933,7 +1012,7 @@ export class World {
       const mobs: Snapshot['mobs'] = [];
       for (const m of this.mobs.values()) {
         if (m.dead || dist2(p, m) > AOI_R * AOI_R) continue;
-        mobs.push({ i: m.id, t: m.type, l: m.lvl, x: r2(m.x), z: r2(m.z), r: r2(m.rot), h: Math.round(m.hp), H: m.maxHp, f: this.flags(m) });
+        mobs.push({ i: m.id, t: m.type, l: m.lvl, x: r2(m.x), z: r2(m.z), r: r2(m.rot), h: Math.round(m.hp), H: m.maxHp, f: this.flags(m), ...(m.bossId ? { b: m.bossId } : {}) });
       }
       const rifts: Snapshot['rifts'] = [];
       for (const r of this.rifts.values()) {

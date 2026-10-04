@@ -306,6 +306,41 @@ if (want('gizem')) {
   await pg.close();
 }
 
+// ───────── Seviye grubu içeriği: boss, kilometre taşı, aura, savunma paneli ─────────
+if (want('icerik')) {
+  const AN2 = 'Kahraman' + Math.floor(Math.random() * 900 + 100);
+  const seed2 = await new Bot(`ws://localhost:${srv.port}`, AN2).join('yer'); await seed2.leave(); await sleep(300); srv.ctx.db.setRole(AN2, 'admin');
+  const pg2: Page = await ctx.newPage(); pg2.on('pageerror', (e) => errors.push(e.message));
+  await pg2.goto(`${url}?name=${AN2}&pw=secret1&autoq=0`); await pg2.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  const sh = async (name: string) => { await pg2.screenshot({ path: `${OUT}/${name}.png` }); };
+  const g2 = <T>(expr: string): Promise<T> => pg2.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
+  const gmr = (line: string) => pg2.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
+  const me2 = [...world().players.values()].find((x) => x.name === AN2)!; const W = world();
+  // kilometre taşı: seviye 9 → 10 (gerçek addXp yolu)
+  me2.d.level = 9; me2.d.xp = 0; W.recalc(me2); const gold0 = me2.d.gold, book0 = me2.d.bag.book;
+  W.addXp(me2, (await import('../../shared/game')).xpToNext(9), false); await sleep(1200); await sh('26-kilometre-tasi');
+  check('H5.kilometre-tasi', me2.d.level === 10 && me2.d.gold > gold0 + 3000 && me2.d.bag.book > book0, `Seviye 10 kilometre taşı: akçe +${me2.d.gold - gold0}, kitap +${me2.d.bag.book - book0}, tılsım=${me2.d.bag.charm}`);
+  // savunma paneli + eşya ipucu (temel efsun, silah türü)
+  await gmr('level 30'); await gmr('kit +5'); await sleep(900);
+  await pg2.keyboard.press('c'); await sleep(900); await sh('30-karakter-savunmalar');
+  const ctext = await pg2.textContent('.panel');
+  check('H5.savunma-paneli', /Kılıç/.test(ctext ?? '') && /Büyü/.test(ctext ?? '') && /Vuruş bloğu/.test(ctext ?? '') && /Delme/.test(ctext ?? ''), 'Karakter panelinde tür savunmaları, vuruş/beceri bloğu ve delme gösteriliyor');
+  await pg2.keyboard.press('Escape'); await sleep(300); await pg2.keyboard.press('i'); await sleep(700);
+  const eqCell = await pg2.$('.panel .cell.item'); if (eqCell) { await eqCell.hover(); await sleep(500); }
+  await sh('31-esya-temel-efsun'); const tip = await pg2.textContent('.tip'); 
+  check('H5.temel-efsun', /Temel efsun/.test(tip ?? '') && /Silah türü/.test(tip ?? '') || /Temel efsun/.test(tip ?? ''), `Eşya ipucunda temel efsun gösteriliyor: “${(tip ?? '').replace(/\s+/g, ' ').slice(0, 90)}”`);
+  await pg2.keyboard.press('Escape'); await sleep(300);
+  // saha bossu: ışınlan, adı ve can çubuğu, alan darbesi uyarısı, aura
+  await gmr('level 30'); await gmr('god'); await gmr('tp boss 3'); await sleep(3500);
+  const boss = [...W.mobs.values()].find((m) => m.bossId === 3)!; boss.slamAt = W.now; boss.target = me2.id; await sleep(900);
+  await pg2.evaluate(([x, z]) => { const g = (window as any).__game; g.camYaw = Math.atan2(-(z - g.pos.z), -(x - g.pos.x)); g.camPitch = 0.75; g.camDist = 17; }, [boss.x, boss.z]); await sleep(900);
+  await sh('27-saha-bossu'); const plate = await pg2.$$eval('.plate.boss .nm', (els) => els.map((e) => e.textContent));
+  check('H5.saha-bossu', plate.some((x) => /Demir Dişli Börü/.test(x ?? '')), `Saha bossu adıyla görünüyor: ${plate.join(' | ')}; sv${boss.lvl}, can ${boss.maxHp}`);
+  boss.slamAt = W.now; await sleep(1700); await sh('28-boss-alan-darbesi');
+  await sleep(600); await sh('29-seviye-aurasi');
+  await pg2.close();
+}
+
 // ───────── 11. Ölçümler (F7, A10) ─────────
 const perf = await ev<{ fps: number; meshes: number; active: number; draw: number; tris: number; cpuMs: number }>(`(() => {
   const sc = g.gs.scene; const e = g.gs.engine; const t0 = performance.now(); for (let i = 0; i < 30; i++) sc.render(); const cpu = (performance.now() - t0) / 30;

@@ -51,7 +51,8 @@ describe('D6 Erlik çatlağı', () => {
     await a.until(() => solo.state === 1); const n1 = solo.mobs.size; const hp1 = w.mobs.get([...solo.mobs][0])!.maxHp; const lvl1 = solo.lvl;
     await a.leave(); w.rifts.clear(); w.mobs.clear();
     const squad = w.openRift()!;
-    const bots = await Promise.all([0, 1, 2].map((i) => joinAt('G' + i, 'yer', squad.x + 2 + i, squad.z, 9)));
+    const bots = await Promise.all([0, 1, 2].map((i) => joinAt('G' + i, 'yer', squad.x + 60, squad.z, 9)));
+    for (const [i, b] of bots.entries()) { const pl = playerOf(s, b); pl.x = squad.x + 2 + i; pl.z = squad.z; }   // üçü aynı anda yaklaşsın: dalga 3 kişiye göre kurulsun
     await bots[0].until(() => squad.state === 1);
     const n3 = squad.mobs.size; const hp3 = w.mobs.get([...squad.mobs][0])!.maxHp;
     expect(n3).toBeGreaterThanOrEqual(n1); expect(squad.scale).toBeCloseTo(1 + RIFT.hpPerExtra * 2, 2); expect(squad.lvl).toBeGreaterThan(lvl1);

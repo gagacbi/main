@@ -1,5 +1,5 @@
 {
- "at": "2026-10-04T22:32:41.744Z",
+ "at": "2026-10-04T22:50:13.415Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -172,61 +172,6 @@
    "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
   },
   {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt926"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=60, kontur ağı=313, toplam ShaderMaterial=99"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 136 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 16 SVG ikon"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=6.73 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
-  },
-  {
    "id": "B6.toplama",
    "ok": true,
    "detail": "Çağrı Narası: 7/7 yaratık 5 birim içine çekildi"
@@ -257,9 +202,84 @@
    "detail": "Ganimet mıknatısı: akçe 5000→5026"
   },
   {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt662"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=65, kontur ağı=331, toplam ShaderMaterial=104"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 145 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 16 SVG ikon"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=3.71 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
+  },
+  {
+   "id": "H5.kilometre-tasi",
+   "ok": true,
+   "detail": "Seviye 10 kilometre taşı: akçe +4000, kitap +1, tılsım=1"
+  },
+  {
+   "id": "H5.savunma-paneli",
+   "ok": true,
+   "detail": "Karakter panelinde tür savunmaları, vuruş/beceri bloğu ve delme gösteriliyor"
+  },
+  {
+   "id": "H5.temel-efsun",
+   "ok": true,
+   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Tengri Kılıcı +5Efsanevi · Silah · Eşya seviyesi 30Saldırı309Silah türüKılıç◆ T”"
+  },
+  {
+   "id": "H5.saha-bossu",
+   "ok": true,
+   "detail": "Saha bossu adıyla görünüyor: 29Demir Dişli Börü; sv29, can 48227"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=2.05 ms; aktif mesh=162/234; üçgen=933354; (yazılım rasterleştirmede FPS=10)"
+   "detail": "Kare başına JS/CPU maliyeti=250.34 ms; aktif mesh=297/792; üçgen=1021454; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -268,15 +288,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 6.7255859375,
+  "audioPeak": 3.7138671875,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 10,
-   "meshes": 234,
-   "active": 162,
+   "fps": 4,
+   "meshes": 792,
+   "active": 297,
    "draw": 0,
-   "tris": 933354,
-   "cpuMs": 2.05
+   "tris": 1021454,
+   "cpuMs": 250.34
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

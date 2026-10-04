@@ -3,6 +3,7 @@ import { BOYS, HUB, SKILLS, zoneAt, type Boy, type MobType, type Spec } from '@s
 import { F, type ChatMsg, type GameEvent, type Me, type SnapDrop, type SnapRift, type Snapshot } from '@shared/protocol';
 import { Audio } from '../audio';
 import { getLang, itemName, t } from '../i18n';
+import { AURA } from './entities';
 import { Net } from '../net';
 import type { UI } from '../ui/ui';
 import { ViewSystem, View } from './entities';
@@ -137,7 +138,7 @@ export class Game {
       v.hp = p.h; v.H = p.H; const nf = p.f; if ((nf & F.RED) !== (v.flags & F.RED) || v.level !== p.l) { v.flags = nf; v.level = p.l; v.refreshName(BOYS[p.b] === this.myBoy); } v.flags = nf;
     }
     for (const m of s.mobs) {
-      seen.add(m.i); const v = this.vs.ensure({ kind: 'mob', id: m.i, mob: m.t as MobType, name: '', level: m.l });
+      seen.add(m.i); const v = this.vs.ensure({ kind: 'mob', id: m.i, mob: m.t as MobType, name: '', level: m.l, bossId: m.b });
       const first = v.buf.length === 0; v.push(m.x, m.z, m.r, now); if (first) { v.x = m.x; v.z = m.z; v.r = m.r; }
       v.hp = m.h; v.H = m.H; v.flags = m.f;
       if (v.dyingT >= 0 && m.h > 0) { v.dyingT = -1; v.rig.root.rotation.z = 0; v.rig.root.rotation.x = 0; v.rig.baseY = 0; }
@@ -173,7 +174,8 @@ export class Game {
       }
       case 'dmg': {
         const v = this.vs.get(e.id); const mine = e.src === this.myId; const toMe = e.id === this.myId;
-        if (v) { v.hit = 1; const y = v.rig.height * v.rig.scale; this.fx.hitSpark(v.x, y * 0.55, v.z, !!e.crit);
+        if (v) { if (!e.blk) v.hit = 1; const y = v.rig.height * v.rig.scale; if (!e.blk) this.fx.hitSpark(v.x, y * 0.55, v.z, !!e.crit);
+          if (e.blk) { if (toMe || mine || near(v.x, v.z)) this.fx.popup(t('ui.block'), v.x, y + 0.4, v.z, 'dmg-block', 1.0); if (toMe) this.audio.sfx('ui', 0.8); return; }
           const cls = toMe ? 'dmg-me' : mine ? (e.crit ? 'dmg-crit' : 'dmg-out') : 'dmg-other'; if (toMe || mine || near(v.x, v.z)) this.fx.popup((e.crit ? '' : '') + e.v + (e.crit ? '!' : ''), v.x, y + 0.2, v.z, cls, e.crit ? 1.2 : 0.9); }
         if (toMe) { this.audio.sfx('hurt', 0.8); this.fx.shake = Math.max(this.fx.shake, 0.18); } else if (mine) this.audio.sfx(e.crit ? 'crit' : 'hit', 0.8); else if (v && near(v.x, v.z)) this.audio.sfx('hit', 0.25);
         break;
@@ -190,7 +192,7 @@ export class Game {
         if (near(e.x, e.z)) this.audio.sfx(e.fx === 'slash' ? 'skill' : e.fx, e.o === this.myId ? 1 : 0.5);
         break;
       }
-      case 'lvl': { const v = this.vs.get(e.id); if (v) { this.fx.levelUp(v.x, v.z); v.level = e.lvl; v.refreshName(); } if (e.id === this.myId) { this.audio.sfx('levelup'); this.fx.popup(`${t('ui.level')} ${e.lvl}!`, this.pos.x, 4.2, this.pos.z, 'lvl', 1.8); } break; }
+      case 'lvl': { const v = this.vs.get(e.id); if (v) { this.fx.levelUp(v.x, v.z); if (e.lvl % 10 === 0) this.fx.milestone(v.x, v.z, AURA[Math.min(5, e.lvl / 10)]); v.level = e.lvl; v.refreshName(); } if (e.id === this.myId) { this.audio.sfx('levelup'); this.fx.popup(`${t('ui.level')} ${e.lvl}!`, this.pos.x, 4.2, this.pos.z, 'lvl', 1.8); } break; }
       case 'status': { const v = this.vs.get(e.id); if (v && (v.self || near(v.x, v.z))) this.fx.popup(t('st.' + e.s), v.x, v.rig.height * v.rig.scale + 0.7, v.z, 'status ' + e.s, 1.1); break; }
       case 'guard': this.fx.burst('spark', e.tx, 1.4, e.tz, 20); this.fx.ring(e.tx, e.tz, 1.8, '#ff6a6a', 0.4); this.audio.sfx('guard', 0.6); break;
       case 'rift':

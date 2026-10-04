@@ -12,6 +12,8 @@ import {
 } from '../../shared/game';
 import { INSCRIPTIONS } from '../../shared/game';
 import type { Player } from '../../server/world';
+import { genBosses } from '../../shared/world';
+import { BUILDS, matrix } from './pvp';
 
 const QUICK = process.env.SIM_QUICK === '1';
 const OUT = 'docs/balans'; mkdirSync(OUT, { recursive: true });
@@ -51,13 +53,9 @@ R.skills = [10, 20, 30, 40].map((L) => {
   return { L, basicDps: Math.round(basic), rows, rotation5: Math.round(rows.reduce((a, r) => a + r.aoeDmgPer30s, 0) / 30 + basic) };
 });
 
-// PvP: aynı seviyede iki oyuncu, saldırı vs savunma (referans yapı), PVP_COEF etkisi
-R.pvp = [10, 20, 30, 50].map((L) => {
-  const a = refStats(L, 'gok', 'kilic'); const b = refStats(L, 'yer', 'kalkan'); const b2 = refStats(L, 'yer', 'kilic');
-  const t = (att: typeof a, def: typeof a, coef: boolean) => def.maxHp / ((hitDamage(att.atk, 1, def.def, coef, false) * (1 + (att.crit / 100) * (att.critMult - 1)) * def.dmgTaken) / att.atkInterval);
-  const lopsided = (() => { const top = refStats(L, 'gok', 'kilic', 3, 9); const low = refStats(L, 'ay', 'none', 0, 0); return t(top, low, true); })();
-  return { L, kilicVsKalkanSec: f1(t(a, b, true)), kalkanVsKilicSec: f1(t(b, a, true)), kilicVsKilicSec: f1(t(a, b2, true)), pveEquivSec: f1(t(a, b, false)), top9VsLow0Sec: f1(lopsided) };
-});
+// PvP: 12 yapı × 12 yapı düello matrisi (tests/sim/pvp.ts); hızlı kipte tek seviye
+log('[0] PvP eşleşme matrisi…');
+R.pvpMatrix = { builds: BUILDS.map((b) => b.name), runs: (QUICK ? [[30, 4]] : [[20, 3], [30, 4], [40, 5], [50, 6]]).map(([L, u]) => matrix(L, u, QUICK ? 2 : 3)) };
 
 // artı basma beklenen maliyeti (Markov), ilvl 20 ve 40
 R.upgradeEV = [20, 40].flatMap((il) => [['düz', {}], ['kitap', { book: true }], ['tılsım', { charm: true }], ['kitap+tılsım', { book: true, charm: true }]].flatMap(([name, pol]) => [4, 7, 9].map((stop) => { const e = upgradeEV(il, { ...(pol as object), stopAt: stop }); return { ilvl: il, policy: name, stopAt: stop, tries: f1(e.tries), gold: Math.round(e.gold), ore: Math.round(e.ore), books: f1(e.books), charms: f1(e.charms), lostItems: f1(e.items) }; })));
@@ -106,6 +104,18 @@ function riftRun(n: number, L: number, seed: number) {
 }
 log('[4/5] Erlik çatlağı: parti büyüklüğü…');
 R.rift = [20, 40].flatMap((L) => [1, 2, 3, 4, 6].map((n) => riftRun(n, L, 40 + n)));
+
+// saha bosları: referans yapı, boss seviyesinde, 1/2/4 kişi
+function bossRun(idx: number, n: number, seed: number) {
+  const rig = makeRig(seed, { spawnCamps: false }); const def = genBosses()[idx]; const boss = rig.world.spawnBoss(def); const L = def.level;
+  const ps: Player[] = []; for (let i = 0; i < n; i++) { const p = addRef(rig, 'gok', L, i % 2 ? 'kalkan' : 'kilic'); p.x = boss.x - 6; p.z = boss.z + i * 1.5; ps.push(p); }
+  const bots = ps.map((p) => new PlayBot(rig, p, { spec: p.d.spec, anchor: { x: boss.x, z: boss.z } }));
+  let t = 0; let minHp = 1;
+  for (; t < 3000 * 10; t++) { for (const b of bots) b.step(); rig.tick(); for (const p of ps) if (p.deadUntil === 0) minHp = Math.min(minHp, p.hp / p.stats.maxHp); if (boss.dead) break; }
+  return { boss: def.id, level: L, players: n, killed: boss.dead, sec: f1(t / 10), deaths: ps.reduce((a, p) => a + p.d.counters.deaths, 0), minHpPct: Math.round(minHp * 100) };
+}
+log('[4b] saha bosları…');
+R.bosses = [0, 1, 2, 3, 4].flatMap((i) => [1, 2, 4].map((n) => bossRun(i, n, 70 + i * 5 + n)));
 
 // yönetici hesabıyla uç durum: Sv50 + efsanevi +9 (gm kit) 1 saat kamp-48, ve çıplak Sv50
 log('[5/5] yönetici hesabıyla uç durumlar…');

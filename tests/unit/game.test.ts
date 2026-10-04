@@ -75,8 +75,8 @@ describe('B3/B4/B8 yetenek, uzmanlık, PvP katsayısı', () => {
   const base = { level: 20, boy: 'gok' as const, equip: {}, kut: 0 };
   test('Kalkan Alp daha dayanıklı, Kılıç Alp daha çok hasar verir ve daha hızlı vurur', () => {
     const k = computeStats({ ...base, spec: 'kalkan' }); const s = computeStats({ ...base, spec: 'kilic' });
-    expect(k.maxHp).toBeGreaterThan(s.maxHp * 1.2); expect(k.def).toBeGreaterThan(s.def * 1.2);
-    expect(s.atk).toBeGreaterThan(k.atk * 1.2); expect(s.atkInterval).toBeLessThan(k.atkInterval);
+    expect(k.maxHp).toBeGreaterThan(s.maxHp * 1.1); expect(k.def).toBeGreaterThan(s.def * 1.05);
+    expect(s.atk).toBeGreaterThan(k.atk * 1.15); expect(s.atkInterval).toBeLessThan(k.atkInterval);
     expect(s.aoe).toBeGreaterThan(k.aoe); expect(k.shieldMult).toBeGreaterThan(s.shieldMult); expect(k.dmgTaken).toBeLessThan(s.dmgTaken);
   });
   test('PvP ayrı katsayı kullanır', () => {

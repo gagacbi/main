@@ -1,5 +1,5 @@
 import { mulberry32 } from './rng';
-import { HUB, HUB_R, WORLD_R, campLevel, campTypes, type MobType } from './game';
+import { FIELD_BOSS, HUB, HUB_R, WORLD_R, campLevel, campTypes, type MobType } from './game';
 
 export interface Obstacle { x: number; z: number; r: number; kind: 'tree' | 'rock' | 'building'; s: number; v: number }
 export interface Camp { id: number; x: number; z: number; types: MobType[]; level: number; count: number }
@@ -52,6 +52,22 @@ export function genStones(): StoneDef[] {
       out.push({ n: i + 1, x, z }); break;
     }
   }
+  return out;
+}
+
+export interface BossDef { id: number; level: number; kind: string; nameKey: string; x: number; z: number }
+/** Saha bosları: seviye grubuna uygun uzaklıkta, sabit konum (kamplardan ve engellerden uzak). */
+export function genBosses(): BossDef[] {
+  const r = mulberry32(WORLD_SEED ^ 0xb055); const obs = genObstacles(); const out: BossDef[] = [];
+  FIELD_BOSS.list.forEach(([level, kind, nameKey], i) => {
+    const dist0 = 40 + (level - 1) * 2.5;
+    for (let t = 0; t < 600; t++) {
+      const a = (i / 5) * Math.PI * 2 + 0.4 + (r() - 0.5) * 0.8; const d = Math.min(150, dist0 + r() * 6);
+      const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 5) ** 2)) continue;
+      out.push({ id: i + 1, level, kind, nameKey, x, z }); break;
+    }
+  });
   return out;
 }
 

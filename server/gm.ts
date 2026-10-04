@@ -63,9 +63,10 @@ export function runGm(w: World, p: Player, line: string): { ok: boolean; msg: st
       if (t === 'hub') { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; return ok('Yurt'); }
       if (t === 'rift') { const r = [...w.rifts.values()][0]; if (!r) return bad('Açık çatlak yok (rift komutu)'); p.x = r.x - 16; p.z = r.z; return ok('Çatlağa ışınlandın'); }
       if (t === 'stone') { const st = genStones().find((q) => q.n === Math.floor(n(2))); if (!st) return bad('tp stone <1-8>'); p.x = st.x - 3; p.z = st.z; return ok(`Balbal taşı ${st.n}`); }
+      if (t === 'boss') { const m = [...w.mobs.values()].find((q) => q.bossId === Math.floor(n(2))); if (!m) return bad('tp boss <1-5>'); p.x = m.hx - 14; p.z = m.hz; return ok(`Saha bossu ${m.bossId} (sv ${m.lvl})`); }
       if (a.length >= 3 && Number.isFinite(Number(a[1])) && Number.isFinite(Number(a[2]))) { p.x = n(1); p.z = n(2); return ok(`(${p.x}, ${p.z})`); }
       for (const o of w.ctx.worlds) for (const q of o.players.values()) if (q.name.toLowerCase() === t) { p.x = q.x + 2; p.z = q.z; return ok('Oyuncuya ışınlandın'); }
-      return bad('tp hub | tp x z | tp rift | tp stone n | tp oyuncu');
+      return bad('tp hub | tp x z | tp rift | tp stone n | tp boss n | tp oyuncu');
     }
     case 'spawn': {
       const t = (a[1] ?? 'cakal') as MobType; if (!TYPES.includes(t)) return bad('Tür: ' + TYPES.join(', ')); const L = Math.max(1, Math.floor(n(2, d.level))); const c = Math.min(30, Math.max(1, Math.floor(n(3, 1))));

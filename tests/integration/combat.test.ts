@@ -1,3 +1,4 @@
+import { SHIELD_ABSORB } from '../../shared/game';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { HUB, SKILLS, computeStats, makeItem, mobXp, xpToNext, HUB_R } from '../../shared/game';
 import { F } from '../../shared/protocol';
@@ -110,7 +111,7 @@ describe('B4 uzmanlık (seviye 10)', () => {
     const m = mobAt(s, b, 'cakal', 1, 4, 0, 40); m.nextAtk = Infinity; m.target = other.id;
     b.send('sk', 1); await b.until(() => m.target === b.id);
     b.send('sk', 3); await b.until(() => (b.snap.you.f & F.SHIELD) !== 0);
-    expect(playerOf(s, b).status.shield!.absorb).toBeGreaterThan(p.stats.maxHp * 0.35 * 1.4);
+    expect(playerOf(s, b).status.shield!.absorb).toBeGreaterThan(p.stats.maxHp * SHIELD_ABSORB * 1.15);
     await b.leave(); await other.leave();
   });
 });

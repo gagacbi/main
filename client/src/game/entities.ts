@@ -1,5 +1,5 @@
 import { Color3, Mesh, MeshBuilder, type InstancedMesh, type Scene } from '@babylonjs/core';
-import {   type Boy, type MobType, type Spec } from '@shared/game';
+import { FIELD_BOSS, type Boy, type MobType, type Spec } from '@shared/game';
 import { F } from '@shared/protocol';
 import { t } from '../i18n';
 import { buildHuman, buildMob, type AnimState, type Rig } from './models';
@@ -12,16 +12,16 @@ const INTERP_MS = 110;
 
 export class View {
   kind: 'player' | 'mob'; id: number; rig: Rig; buf: Sample[] = []; x = 0; z = 0; r = 0; speed = 0; hp = 1; H = 1; flags = 0; name = ''; level = 1;
-  boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false;
+  boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false; bossId = 0; auraT = Math.random();
   attackT = -1; hit = 0; dyingT = -1; castT = -1; t = Math.random() * 10; removeAt = 0; shadow: InstancedMesh; shield: Mesh | null = null; stars: Mesh | null = null;
   plate: HTMLElement; barFill: HTMLElement; nameEl: HTMLElement; stEl: HTMLElement; lastFlags = 0; boss = false; baseY = 0; lastAtkDur = 0.55;
-  constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number }) {
+  constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number; bossId?: number }) {
     this.kind = o.kind; this.id = o.id; this.name = o.name; this.level = o.level;
     if (o.kind === 'player') { this.boy = o.boy ?? 'gok'; this.spec = o.spec ?? 'none'; this.rig = buildHuman(scene, { boy: this.boy, spec: this.spec }); }
-    else { this.mobType = o.mob!; this.boss = o.mob === 'bekci'; this.rig = buildMob(scene, o.mob!); const sc = ({ tepegoz: 1.15, albasti: 1.0, erlik: 1.0, cakal: 1.0, bekci: 1.6 } as Record<MobType, number>)[o.mob!]; this.rig.setScale(sc); }
+    else { this.mobType = o.mob!; this.boss = o.mob === 'bekci'; this.bossId = o.bossId ?? 0; this.rig = buildMob(scene, o.mob!); const sc = this.bossId ? FIELD_BOSS.scaleView : ({ tepegoz: 1.15, albasti: 1.0, erlik: 1.0, cakal: 1.0, bekci: 1.6 } as Record<MobType, number>)[o.mob!]; this.rig.setScale(sc); }
     for (const m of this.rig.meshes) if (!m.name.endsWith('_ol')) { m.isPickable = true; m.metadata = { eid: this.id }; }
     this.shadow = fx.shadowBase.createInstance('sh' + this.id); this.shadow.isPickable = false;
-    const sz = this.kind === 'player' ? 1.8 : this.boss ? 7.5 : this.mobType === 'tepegoz' ? 2.5 : 2.0; this.shadow.scaling.set(sz, 1, sz);
+    const sz = this.kind === 'player' ? 1.8 : this.bossId ? 10 : this.boss ? 7.5 : this.mobType === 'tepegoz' ? 2.5 : 2.0; this.shadow.scaling.set(sz, 1, sz);
     this.plate = document.createElement('div'); this.plate.className = 'plate ' + (this.kind === 'mob' ? 'mob' : 'pl') + (this.boss ? ' boss' : '');
     this.plate.innerHTML = '<div class="nm"></div><div class="hpbar"><i></i></div><div class="st"></div>';
     this.nameEl = this.plate.querySelector('.nm') as HTMLElement; this.barFill = this.plate.querySelector('.hpbar i') as HTMLElement; this.stEl = this.plate.querySelector('.st') as HTMLElement;
@@ -29,7 +29,7 @@ export class View {
     this.refreshName();
   }
   refreshName(friendly = true) {
-    const nm = this.kind === 'mob' ? t('mob.' + this.mobType) : this.name;
+    const nm = this.kind === 'mob' ? (this.bossId ? t('boss.' + this.bossId) : t('mob.' + this.mobType)) : this.name;
     const red = (this.flags & F.RED) !== 0;
     this.nameEl.innerHTML = `<b class="lv">${this.level}</b>${esc(nm)}`;
     this.plate.classList.toggle('red', red); this.plate.classList.toggle('foe', this.kind === 'player' && !friendly && !this.self); this.plate.classList.toggle('self', this.self);
@@ -53,6 +53,7 @@ export class View {
   private setPos(x: number, z: number, r: number) { this.x = x; this.z = z; this.r = r; }
 }
 
+export const AURA = ['', '#8be28b', '#6ab4ff', '#c58bff', '#ffa24a', '#ffd84a'];
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class ViewSystem {
@@ -79,6 +80,11 @@ export class ViewSystem {
       if (v.attackT >= 0) { v.attackT += dt / (v.kind === 'mob' ? 0.9 : Math.max(0.35, v.lastAtkDur)); if (v.attackT >= 1) v.attackT = -1; }
       if (v.castT >= 0) { v.castT += dt / 0.5; if (v.castT >= 1) v.castT = -1; }
       v.hit = Math.max(0, v.hit - dt * 5);
+      // seviye grubu aurası: 10+ seviyede ayakta yavaş yayılan halka; renk ve sıklık gruba göre
+      if (v.kind === 'player' && v.level >= 10 && v.dyingT < 0 && Math.hypot(v.x - camX, v.z - camZ) < 60) {
+        const band = Math.min(5, Math.floor(v.level / 10)); v.auraT += dt;
+        if (v.auraT > 1.5 - band * 0.15) { v.auraT = 0; this.fx.ring(v.x, v.z, 1.0 + band * 0.18, AURA[band], 1.1, { alpha: 0.55 }); if (band >= 4) this.fx.burst('holy', v.x, 0.3, v.z, 3); }
+      }
       const dead = (v.flags & F.DEAD) !== 0 || v.dyingT >= 0;
       if (dead && v.dyingT < 0) v.dyingT = 0;
       if (v.dyingT >= 0) { v.dyingT += dt / 0.7; }

@@ -32,7 +32,8 @@ button { font-family: var(--f-head); cursor: pointer; }
 .droplabel { position: absolute; left: 0; top: 0; font-family: var(--f-head); font-size: 13px; font-weight: 600; text-shadow: 0 2px 0 #1a1230, 0 0 5px #000; white-space: nowrap; }
 .poplayer { position: absolute; inset: 0; }
 .pop { position: absolute; left: 0; top: 0; font-family: var(--f-head); font-weight: 700; font-size: 20px; white-space: nowrap; text-shadow: 0 2px 0 #1a1230, 2px 0 0 #1a1230, -2px 0 0 #1a1230, 0 -2px 0 #1a1230, 0 0 8px rgba(0,0,0,.6); will-change: transform, opacity; }
-.pop.dmg-out { color: #fff1c0; font-size: 22px; } .pop.dmg-crit { color: #ffb02e; font-size: 32px; } .pop.dmg-me { color: #ff6a6a; font-size: 24px; } .pop.dmg-other { color: #d8d0e8; font-size: 15px; font-weight: 600; }
+.pop.dmg-out { color: #fff1c0; font-size: 22px; } .pop.dmg-crit { color: #ffb02e; font-size: 32px; } .pop.dmg-me { color: #ff6a6a; font-size: 24px; } .pop.dmg-block { color: #9fd8ff; font-size: 20px; font-weight: 700; letter-spacing: 1px; } .tip .en.base, .en.base { color: #ffd98a; }
+.pop.dmg-other { color: #d8d0e8; font-size: 15px; font-weight: 600; }
 .pop.gold { color: #ffd14a; font-size: 17px; } .pop.mat { color: #bfe2ff; font-size: 16px; } .pop.frag { color: #5ee6ff; font-size: 17px; }
 .pop.item { font-size: 19px; } .pop.item.t0 { color: #e6e0d0; } .pop.item.t1 { color: #6fb8ff; } .pop.item.t2 { color: #c58aff; } .pop.item.t3 { color: #ffb02e; font-size: 22px; }
 .pop.lvl { color: #fff1a8; font-size: 38px; letter-spacing: 1px; } .pop.status { font-size: 16px; color: #ffe27a; } .pop.status.poison { color: #8aff7a; } .pop.status.curse { color: #d6a0ff; } .pop.status.slow { color: #9fd0ff; }

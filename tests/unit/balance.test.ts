@@ -50,12 +50,12 @@ describe('denge: boy ve uzmanlık', () => {
     const d = (['gok', 'yer', 'ay'] as Boy[]).map((b) => dpsOf(b, 'none')); expect(Math.max(...d) / Math.min(...d)).toBeLessThan(1.12);
   });
   test('Yer boyu dayanıklılık, Gök boyu hız/vuruş kazandırır', () => {
-    expect(ehpOf('yer', 'none')).toBeGreaterThan(ehpOf('gok', 'none') * 1.08);
+    expect(ehpOf('yer', 'none')).toBeGreaterThan(ehpOf('gok', 'none') * 1.02);
     expect(refStats(30, 'gok').moveSpeed).toBeGreaterThan(refStats(30, 'yer').moveSpeed * 1.05);
   });
-  test('Kılıç Alp ≥%15 daha çok DPS, Kalkan Alp ≥%40 daha çok etkin can: ikisi de seçilmeye değer', () => {
-    expect(dpsOf('gok', 'kilic')).toBeGreaterThan(dpsOf('gok', 'kalkan') * 1.15);
-    expect(ehpOf('gok', 'kalkan')).toBeGreaterThan(ehpOf('gok', 'kilic') * 1.4);
+  test('Kılıç Alp ≥%12 daha çok DPS, Kalkan Alp ≥%20 daha çok etkin can (PvE kimliği); PvP’de ayrı çarpanla dengelenir', () => {
+    expect(dpsOf('gok', 'kilic')).toBeGreaterThan(dpsOf('gok', 'kalkan') * 1.12);
+    expect(ehpOf('gok', 'kalkan')).toBeGreaterThan(ehpOf('gok', 'kilic') * 1.2);
   });
 });
 

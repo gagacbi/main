@@ -7,7 +7,7 @@ import { lvlDiffIn, lvlDiffOut, MOBS, computeStats, hitDamage, makeItem, defRedu
 export const refUp = (L: number) => (L < 8 ? 0 : L < 16 ? 1 : L < 24 ? 2 : L < 32 ? 3 : L < 40 ? 4 : 5); // güvenli bölgede tipik artı
 export function refGear(L: number, tier: Tier = 1, up = refUp(L)): Partial<Record<Slot, Item>> {
   const eq: Partial<Record<Slot, Item>> = {}; const r = () => 0.5;
-  for (const s of SLOTS) { const it = makeItem(r, s, Math.max(1, L), tier); it.ench = []; it.up = up; eq[s] = it; }
+  for (const s of SLOTS) { const it = makeItem(r, s, Math.max(1, L), tier, 'kilic'); it.ench = []; delete it.base; it.up = up; eq[s] = it; }
   return eq;
 }
 export function refStats(L: number, boy: Boy = 'gok', spec: Spec = 'none', tier: Tier = 1, up = refUp(L)) {

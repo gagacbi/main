@@ -135,6 +135,8 @@ export class FX {
       case 'wrath': this.ring(x, z, r, '#ffd46a', 0.9, { fill: true }); this.ring(x, z, r * 0.65, '#fff1c0', 0.7); this.beam(x, z, 34, 1.7, '#ffc94a', 0.9); this.burst('spark', x, 1, z, 70); this.burst('holy', x, 0.5, z, 40); this.shake = Math.max(this.shake, 0.9); break;
     }
   }
+  /** kilometre taşı (10·20·30·40·50): yüksek ışın + üç halka + yağmur */
+  milestone(x: number, z: number, color: string) { this.beam(x, z, 40, 2.4, color, 2.2); for (let i = 0; i < 3; i++) setTimeout(() => this.ring(x, z, 4 + i * 3, color, 1.3, { fill: i === 0, alpha: 0.7 }), i * 220); this.burst('holy', x, 1.2, z, 120); this.burst('gold', x, 2, z, 60); }
   levelUp(x: number, z: number) { this.beam(x, z, 16, 1.2, '#ffe27a', 1.4); this.ring(x, z, 6, '#fff1a8', 1.0, { fill: true }); this.burst('holy', x, 0.4, z, 60); this.burst('gold', x, 1, z, 30); }
   hitSpark(x: number, y: number, z: number, crit: boolean) { this.burst('spark', x, y, z, crit ? 18 : 8); }
 

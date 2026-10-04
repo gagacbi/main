@@ -30,7 +30,16 @@ Tarih: {{TARIH}} · Veri: `docs/balans/sonuc.json` (tablolar bu veriden üretili
 7. **Ölüm cezası** %6 → %10 deneyim.
 8. **Çatlak:** ödül XP ×20 → ×80 (seviyenin %2'siydi), altın ×22 → ×30; dalgalar arası 7 sn mola ve %25 can; ekstra oyuncu başına +1 yaratık (+2 değil); Bekçi can 14→16, saldırı 1,7→2,8.
 9. **Tılsım maliyeti** 200 akçe/14 cevher/6 deri → 900/24/12 (artık +9 akçesinin ~%5'i).
-10. **Üst sınırlar:** kritik %75, vuruş hızı +%60, can çalma %15, hız +%50.
+10. **Üst sınırlar:** kritik %75, vuruş hızı +%60, can çalma %20, hız +%50, tür savunması %40, vuruş bloğu %35, beceri bloğu %30, delme %40.
+
+### İkinci tur: savunma sistemi ve PvP (sokak lambası avı, bkz. `TEST_FELSEFESI.md`)
+
+11. **Savunma sistemi (Metin2 tarzı):** 5 silah türü (kılıç, çift el, bıçak, yay, büyü çanı), tür savunmaları, vuruş ve beceri bloğu, delme, her parçada slota göre temel efsun. Yaratıklar da türlüdür (Tepegöz=çift el, Albastı/Erlik=büyü, Çakal=bıçak).
+12. **Delme** bloğu ve tür savunmasını yok sayar ve **+%25 delici hasar** verir; aksi hâlde savunma yığmak baskındı.
+13. **Güvenli bölgeden yaratığa vurulamaz** (menzilli silahla bedava öldürme açığı); **menzilli silah yürürken otomatik vuruş yapamaz** (kaçarak vurmada kill başına hasar −%89'du).
+14. **PvP uzmanlık dengesi:** aynı donanımla Kalkan Alp aynalı düelloları %92–100 kazanıyordu. Kalkan sağlamlık bonusları kısıldı (can %22→%8, savunma %25→%8, hasar azaltma %12→%6), Kılıç Alp'in avantajları ayarlandı, uzmanlığa özel `pvpTaken` çarpanı (Kalkan +%10, yalnızca oyuncudan gelen hasarda) ve Tengri Kalkanı emilimi (%35→%18, kalkan çarpanı 1,6→1,2) düşürüldü.
+15. **Silah türü dengesi:** çift el (+%4 saldırı, −%12 hız), bıçak (−%6 saldırı, +%18 hız, +4 kritik), yay (−%9 saldırı, menzil 8,5), çan (−%8 saldırı, +%30 büyü, menzil 6,5). Yer boyu bonusu %8→%5 can, %8→%4 savunma.
+16. **Saha bosları** (5 adet), **kilometre taşı armağanları** ve **seviye grubu auraları** (retention içeriği; ölçümü §10b).
 
 ## 3. İlerleme (bot, Gök Kılıç Alp)
 
@@ -62,9 +71,15 @@ Sonuç: boylar birbirinden %12'den az ayrışıyor. Kılıç Alp ≈%27 DPS kaza
 
 {{SKILLS}}
 
-## 7. PvP
+## 7. PvP — eşleşme matrisi
+
+12 yapı (eşit bütçe: 7 efsun; Sv30'da +4 destansı) her yapıyla iki yönde ve 3 tohumla düello eder (`tests/sim/pvp.ts`). Açık dünya PvP'si, PVP_COEF = 0,35.
 
 {{PVP}}
+
+{{PVPMAT}}
+
+Okuma: hiçbir yapı baskın değil ve doğrusal sıralama yok; her ana yapının bir avı ve bir rakibi var (örn. kılıç savunmalı kalkan, kılıç türü vuranlara karşı güçlü; bıçak/çift el/yay ona karşı üstün). **Büyü Savunmalı** yapı yalnızca büyü türünü kestiği için PvP'de niş kalır; asıl değeri büyü boss'larında ve büyü hasarlı bölgelerdedir (bkz. `TEST_FELSEFESI.md` §3).
 
 ## 8. Artı basma (beklenen maliyet, Markov)
 
@@ -83,6 +98,12 @@ Sv+1…+2 verimi sıfır seviyeye yakın; Sv+4'te verim yarıya iner. Kendini zo
 ## 10. Erlik çatlağı (aynı boydan parti, referans yapı)
 
 {{RIFT}}
+
+## 10b. Saha bosları (referans yapı, bot)
+
+{{BOSS}}
+
+Tek kişi boss'u kıl payı kazanır (en düşük can %1–10, bazen 1 ölüm); üç kişilik parti rahat kazanır. Boss ganimeti: garanti destansı+ parça (boss'un hasar türüne karşı savunma efsunlu), 2–3 kitap, %45 tılsım, 3 yazıt parçası, altın; yeniden doğuş 15 dk.
 
 ## 11. Yönetici hesabı uç durumları
 

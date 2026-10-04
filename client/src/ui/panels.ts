@@ -6,7 +6,7 @@ import type { ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
-import { INSCRIPTIONS, CRAFT } from '@shared/game';
+import { INSCRIPTIONS, CRAFT, DMG_KINDS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -32,6 +32,8 @@ export function itemTip(it: Item, cmp?: Item): string {
   const ln = (label: string, v: number, cv: number | null, unit = '') => v ? `<div class="ln"><span>${label}</span><span>${v}${unit}${cv !== null ? ` <span class="cmp ${v > cv ? 'up' : v < cv ? 'dn' : ''}">${v > cv ? '▲' : v < cv ? '▼' : '='}</span>` : ''}</span></div>` : '';
   return `<div class="tn" style="--tc:${TIER_COLORS[it.tier]}">${esc(itemName(it))}${it.up ? ` <b>+${it.up}</b>` : ''}</div><div class="ts">${tierName(it.tier)} · ${t('slot.' + it.slot)} · ${t('ui.ilvl')} ${it.ilvl}</div>`
     + ln(t('ui.atk'), s.atk, c ? c.atk : null) + ln(t('ui.def'), s.def, c ? c.def : null) + ln(t('ui.hp'), s.hp, c ? c.hp : null) + ln(t('ui.crit'), s.critPct, c ? c.critPct : null, '%') + ln(t('ui.atk') + '%', s.atkPct, c ? c.atkPct : null, '%')
+    + (it.slot === 'weapon' ? `<div class="ln"><span>${t('ui.weaponKind')}</span><b>${t('dk.' + (it.wk ?? 'kilic'))}</b></div>` : '')
+    + (it.base ? `<div class="en base">◆ ${t('ui.baseEnch')}: ${enchLine(it.base)}</div>` : '')
     + it.ench.map((e) => `<div class="en">✦ ${enchLine(e)}</div>`).join('') + `<div class="ts" style="margin-top:4px">${t('ui.lvlReq')}: ${it.lvlReq}</div>`;
 }
 
@@ -124,6 +126,7 @@ export class Panels {
       <div class="chip">${icon('akce')}${num(m.gold)}</div></div><div class="sub">${t('ui.stats')}</div><div class="stats">${ln(t('ui.hp'), num(s.maxHp))}${ln(t('ui.atk'), num(s.atk))}${ln(t('ui.def'), num(s.def))}${ln(t('ui.crit'), s.crit.toFixed(1) + '%')}
       ${ln(t('ui.aspd'), (1 / s.atkInterval).toFixed(2) + '/s')}${ln(t('ui.mspd'), s.moveSpeed.toFixed(1))}${ln(t('ui.leech'), (s.leech * 100).toFixed(0) + '%')}${ln(t('ui.xpb'), '+' + s.xpPct.toFixed(0) + '%')}
       ${ln(t('ui.spell'), '×' + s.spell.toFixed(2))}${ln(t('ui.rank'), m.rank < 0 ? `<span class="bad">${m.rank}</span>` : m.rank)}${ln(t('ui.kut'), m.kut)}${ln(t('ui.points'), num(m.points))}</div>
+      <div class="sub">${t('ui.defs')}</div><div class="stats">${DMG_KINDS.map((k) => ln(t('dk.' + k), (s.defKind[k] * 100).toFixed(0) + '%')).join('')}${ln(t('ui.blockHit'), (s.blockHit * 100).toFixed(0) + '%')}${ln(t('ui.blockSkill'), (s.blockSkill * 100).toFixed(0) + '%')}${ln(t('ui.pierce'), (s.pierce * 100).toFixed(0) + '%')}${ln(t('ui.weaponKind'), t('dk.' + s.weaponKind))}</div>
       <div class="sub">${t('boy.' + m.boy)}</div><div class="card">${t('boy.' + m.boy + '.bonus')}</div>${specBlock}</div>`);
   }
 
@@ -244,7 +247,7 @@ export class Panels {
   gm() {
     const B: [string, string][] = [['Sv 10', 'level 10'], ['Sv 25', 'level 25'], ['Sv 50', 'level 50'], ['Kit +9', 'kit +9'], ['İyileş', 'heal'], ['Ölümsüz', 'god'], ['Bekleme sıfırla', 'cdreset'], ['Tüm yetenek P', 'maxskills'],
       ['+10.000 akçe', 'gold 10000'], ['+100 cevher', 'give ore 100'], ['+20 kitap', 'give book 20'], ['+20 tılsım', 'give charm 20'], ['+100 yazıt', 'frag 100'], ['Oba: hepsini bitir', 'oba'],
-      ['Zaman +1 sa', 'time 1'], ['Zaman +12 sa', 'time 12'], ['Çatlak aç', 'rift'], ['Çatlağa git', 'tp rift'], ['Yurda git', 'tp hub'], ['Taş 1’e git', 'tp stone 1'],
+      ['Zaman +1 sa', 'time 1'], ['Zaman +12 sa', 'time 12'], ['Çatlak aç', 'rift'], ['Çatlağa git', 'tp rift'], ['Yurda git', 'tp hub'], ['Taş 1’e git', 'tp stone 1'], ['Boss 1’e git', 'tp boss 1'], ['Boss 3’e git', 'tp boss 3'], ['Boss 5’e git', 'tp boss 5'],
       ['Çakal ×10', 'spawn cakal 10 10'], ['Albastı ×6', 'spawn albasti 14 6'], ['Bekçi', 'spawn bekci 20 1'], ['Hepsini öldür', 'killall'], ['Kukla', 'dummy'], ['DPS', 'dps'],
       ['Tüm ipuçları', 'clue hepsi'], ['Rüya', 'dream'], ['Rütbe -3', 'rank -3'], ['Dinlenmiş', 'rested'], ['İstatistik', 'stats'], ['TTK (sv20)', 'ttk 20'], ['Ekonomi', 'econ'], ['Yardım', 'help']];
     return this.shell(t('gm.title'), 'skull', `<div style="min-width:700px"><div class="gmgrid">${B.map(([l, c]) => `<button class="btn small" data-act="gm" data-line="${c}" title="/gm ${c}">${l}</button>`).join('')}</div>

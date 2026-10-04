@@ -1,3 +1,0 @@
-import { upgradeEV } from './analytic';
-for (const il of [10, 20, 40]) for (const [n, pol] of [['düz', {}], ['kitap', { book: true }], ['tılsım', { charm: true }], ['kitap+tılsım', { book: true, charm: true }]] as const)
-  for (const stop of [4, 7, 9]) { const e = upgradeEV(il, { ...pol, stopAt: stop }); console.log(`ilvl${il} +${stop} ${n.padEnd(13)} deneme=${e.tries.toFixed(1).padStart(7)} akçe=${Math.round(e.gold).toString().padStart(9)} cevher=${Math.round(e.ore).toString().padStart(6)} kitap=${e.books.toFixed(1).padStart(5)} tılsım=${e.charms.toFixed(1).padStart(5)} yok-olan-parça=${e.items.toFixed(2)}`); }

@@ -84,6 +84,8 @@ uçtan uca testi (gerçek Chromium, ekran görüntüsü / ölçüm), **B** = bui
 | H4 | Gizem arayüzü: balbal taşı, rüya ekranı, kodeks | E |
 | H5 | Hızlandırılmış bot simülasyonu + çözümsel denge tabloları, belgeli ayarlar | simülasyon, doküman |
 | H6 | Denge değişmezleri testle korunur | U |
+| H7 | Savunma sistemi: silah türleri, tür savunmaları, blok, delme, temel efsun | U, I, E |
+| H8 | Seviye grubu içeriği: saha bossları, kilometre taşı armağanı, aura | I, E |
 
 ## G. Kalite kapısı
 | # | Kriter | Kanıt |

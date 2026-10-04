@@ -36,11 +36,11 @@ export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHI
 export const STATUS_FLAG: Record<StatusKey, number> = { stun: F.STUN, slow: F.SLOW, poison: F.POISON, curse: F.CURSE, shield: F.SHIELD };
 
 export interface SnapPlayer { i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
-export interface SnapMob { i: number; t: MobType; l: number; x: number; z: number; r: number; h: number; H: number; f: number }
+export interface SnapMob { i: number; t: MobType; l: number; x: number; z: number; r: number; h: number; H: number; f: number; /** saha bossu kimliği */ b?: number }
 export interface SnapRift { i: number; x: number; z: number; w: number; st: number; h: number; H: number }
 export interface SnapDrop { i: number; k: 'gold' | 'mat' | 'item' | 'book' | 'charm' | 'frag'; x: number; z: number; t: number; a: number; m?: string; o: number }
 export type GameEvent =
-  | { k: 'dmg'; id: number; v: number; crit?: boolean; heal?: boolean; src?: number; pl?: boolean }
+  | { k: 'dmg'; id: number; v: number; crit?: boolean; heal?: boolean; src?: number; pl?: boolean; blk?: boolean }
   | { k: 'swing'; id: number; tx?: number; tz?: number }
   | { k: 'fx'; fx: string; x: number; z: number; r: number; o: number }
   | { k: 'die'; id: number }
