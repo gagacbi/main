@@ -281,7 +281,7 @@ export class World {
   // ───────────── saha bosları ─────────────
   spawnBoss(b: BossDef) {
     const m = this.makeMob('bekci', b.level, b.x, b.z, -1, -1, FIELD_BOSS.hpMult);
-    m.bossId = b.id; m.hx = b.x; m.hz = b.z; m.leash = 70; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000;
+    m.bossId = b.id; m.hx = b.x; m.hz = b.z; m.leash = 45; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000;
     return m;
   }
   respawnBoss(m: Mob) {
@@ -809,7 +809,7 @@ export class World {
       let tgt = m.target ? this.players.get(m.target) : undefined;
       if (tgt && (tgt.deadUntil > 0 || zoneAt(tgt.x, tgt.z) === 'safe' || dist(tgt, { x: m.hx, z: m.hz }) > m.leash + 8)) { tgt = undefined; m.target = 0; }
       if (!tgt) {
-        let bd = def.aggro * def.aggro; let b: Player | undefined;
+        const aggro = m.bossId ? FIELD_BOSS.aggro : def.aggro; let bd = aggro * aggro; let b: Player | undefined;
         for (const p of this.players.values()) {
           if (p.deadUntil > 0 || zoneAt(p.x, p.z) === 'safe') continue;
           const d = dist2(p, m); if (d < bd) { bd = d; b = p; }

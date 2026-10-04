@@ -49,6 +49,16 @@ describe('saha bosları', () => {
   });
 });
 
+describe('saha bosları: yoldan geçeni çekmesin', () => {
+  test('boss kamplardan en az 24 birim uzakta doğar ve tespit yarıçapı 15’i geçmez (düşük seviyeli oyuncuyu uzaktan avlamasın)', () => {
+    const rig = makeRig(8); const camps = rig.world.camps;
+    for (const b of genBosses()) for (const c of camps) expect(Math.hypot(b.x - c.x, b.z - c.z), `boss${b.id}-kamp${c.id}`).toBeGreaterThan(24);
+    expect(FIELD_BOSS.aggro).toBeLessThanOrEqual(15);
+    const boss = [...rig.world.mobs.values()].find((m) => m.bossId === 1)!; const p = rig.add('gok'); p.x = boss.x + 20; p.z = boss.z;
+    for (let i = 0; i < 100; i++) rig.tick(); expect(boss.target).toBe(0); expect(p.hp).toBe(p.stats.maxHp);
+  });
+});
+
 describe('kilometre taşı armağanı', () => {
   test('seviye 10·20·30·40·50’de bir kez; akçe, kitap, tılsım, yazıt parçası ve destansı+ parça; ledger’a yazılır', () => {
     const rig = makeRig(6, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok');

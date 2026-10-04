@@ -315,7 +315,7 @@ export const CRAFT = { book: { ore: 4, gold: 60 }, charm: { ore: 24, hide: 12, g
 // ───────────────────────── Saha bosları ve kilometre taşları ─────────────────────────
 /** Her 10 seviyelik grubun bir saha bossu vardır; yaratık gibi savunma türüne sahiptir ve o türe karşı savunma efsunlu ganimet düşürür. */
 export const FIELD_BOSS = {
-  respawnSec: 900, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
+  respawnSec: 900, aggro: 13, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
   /** [seviye, hasar türü, ad anahtarı] */
   list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5']] as [number, DmgKind, string][],
 };
