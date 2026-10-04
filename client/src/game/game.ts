@@ -1,7 +1,6 @@
 import { Matrix, Vector3 } from '@babylonjs/core';
-import { BOYS, HUB, HUB_R, SKILLS, TIER_COLORS, zoneAt, type Boy, type Item, type MobType, type Spec } from '@shared/game';
+import { BOYS, HUB, SKILLS, zoneAt, type Boy, type MobType, type Spec } from '@shared/game';
 import { F, type ChatMsg, type GameEvent, type Me, type SnapDrop, type SnapRift, type Snapshot } from '@shared/protocol';
-import { stepMove } from '@shared/world';
 import { Audio } from '../audio';
 import { getLang, itemName, t } from '../i18n';
 import { Net } from '../net';
@@ -9,6 +8,7 @@ import type { UI } from '../ui/ui';
 import { ViewSystem, View } from './entities';
 import { DropView, FX, RiftView } from './fx';
 import { IDLE, buildHuman, type Rig } from './models';
+import { Predictor } from './predict';
 import { GameScene, type Quality } from './scene';
 import { World3D } from './world';
 
@@ -16,7 +16,7 @@ interface Npc { key: 'aksakal' | 'demirci' | 'guard'; rig: Rig; x: number; z: nu
 
 export class Game {
   gs: GameScene; world: World3D; fx: FX; audio = new Audio(); net = new Net(); vs: ViewSystem; ui!: UI;
-  me!: Me; prevMe: Me | null = null; myId = 0; myBoy: Boy = 'gok'; pos = { x: 0, z: 0 }; rot = 0; hp = 1; flags = 0; selfView: View | null = null;
+  me!: Me; prevMe: Me | null = null; myId = 0; myBoy: Boy = 'gok'; pred = new Predictor(); pos = this.pred.pos; rot = 0; hp = 1; flags = 0; selfView: View | null = null;
   serverYou = { x: 0, z: 0 }; snap: Snapshot | null = null; snapAt = 0;
   drops = new Map<number, DropView>(); rifts = new Map<number, RiftView>(); riftSnap: SnapRift[] = []; npcs: Npc[] = [];
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
@@ -69,7 +69,7 @@ export class Game {
       h.rig.root.position.z += ((sel ? h.z - 0.8 : h.z) - h.rig.root.position.z) * Math.min(1, dt * 5);
       h.rig.update({ ...IDLE, t: this.titleT + h.x, dt, speed: 0, attack: sel ? ((this.titleT * 0.7) % 1.6 < 0.6 ? ((this.titleT * 0.7) % 1.6) / 0.6 : -1) : -1 });
     }
-    this.updateNpcs(dt); this.world.update(dt, cam.position); this.fx.update(dt, this.projector);
+    this.updateNpcs(dt); this.world.update(dt); this.fx.update(dt, this.projector);
     this.fx.emitRate('fire', 28, HUB.fire.x, 0.7, HUB.fire.z); this.fx.emitRate('smoke', 3, HUB.fire.x, 3.2, HUB.fire.z);
     this.gs.scene.render();
   };
@@ -88,7 +88,7 @@ export class Game {
     this.net.on('duelInvite', (from) => this.ui.duelInvite(from));
     this.net.on('close', (code) => this.ui.disconnected(code));
     await new Promise<void>((res) => { const iv = setInterval(() => { if (this.me && this.snap) { clearInterval(iv); res(); } }, 30); });
-    this.myBoy = this.me.boy; this.pos = { x: this.snap!.you.x, z: this.snap!.you.z }; this.serverYou = { ...this.pos };
+    this.myBoy = this.me.boy; this.pos.x = this.snap!.you.x; this.pos.z = this.snap!.you.z; this.serverYou = { ...this.pos };
     this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level });
     this.selfView.self = true; this.vs.self = this.selfView; this.selfView.refreshName();
     this.world.setInscriptions(this.me.inscr.unlocked);
@@ -193,7 +193,7 @@ export class Game {
       case 'guard': this.fx.burst('spark', e.tx, 1.4, e.tz, 20); this.fx.ring(e.tx, e.tz, 1.8, '#ff6a6a', 0.4); this.audio.sfx('guard', 0.6); break;
       case 'rift':
         if (e.st === 'open') { this.audio.sfx('rift'); this.fx.beam(e.x, e.z, 60, 4, '#c27aff', 1.6); }
-        else if (e.st === 'wave' || e.st === 'boss') { this.fx.ring(e.x, e.z, 14, '#d27aff', 0.9, { fill: true }); this.audio.sfx('rift', 0.6); if (near(e.x, e.z)) this.ui.toast(e.st === 'boss' ? t('rift.boss') : t('rift.wave', { n: e.wave ?? 1 }), 'rift'); }
+        else if (e.st === 'wave' || e.st === 'boss') { this.fx.ring(e.x, e.z, 11, '#d27aff', 0.9, { fill: true, alpha: 0.7 }); this.audio.sfx('rift', 0.6); if (near(e.x, e.z)) this.ui.toast(e.st === 'boss' ? t('rift.boss') : t('rift.wave', { n: e.wave ?? 1 }), 'rift'); }
         else if (e.st === 'closed') { this.fx.beam(e.x, e.z, 50, 5, '#fff1a8', 1.8); this.fx.burst('holy', e.x, 1, e.z, 90); this.fx.burst('gold', e.x, 1, e.z, 60); this.audio.sfx('levelup'); }
         break;
       case 'spawn': { const v = this.vs.get(e.id); if (v) { v.dyingT = -1; v.flags &= ~F.DEAD; this.fx.burst('dust', v.x, 0.3, v.z, 8); } break; }
@@ -301,14 +301,11 @@ export class Game {
     // girdi + tahmin
     const dir = dead || stun ? { x: 0, z: 0 } : this.moveInput();
     const speed = this.me.stats.moveSpeed * ((this.flags & F.SLOW) ? 0.5 : 1);
-    if (dir.x || dir.z) { stepMove(this.pos, dir.x, dir.z, speed, dt); this.rot = Math.atan2(dir.x, dir.z); }
+    this.pred.step(dir, speed, dt); if (dir.x || dir.z) this.rot = Math.atan2(dir.x, dir.z);
     const tgt = this.atkHeld ? this.currentTarget() : null;
     if (tgt && !(dir.x || dir.z) && Math.hypot(tgt.x - this.pos.x, tgt.z - this.pos.z) < 5) this.rot = Math.atan2(tgt.x - this.pos.x, tgt.z - this.pos.z);
     if ((this.flags & F.ATK) && this.snap && !(dir.x || dir.z)) this.rot = this.snap.you.r;
-    const ex = this.serverYou.x - this.pos.x, ez = this.serverYou.z - this.pos.z; const err = Math.hypot(ex, ez);
-    if (err > 8) { this.pos.x = this.serverYou.x; this.pos.z = this.serverYou.z; }
-    else if (!(dir.x || dir.z)) { const k = Math.min(1, dt * 7); this.pos.x += ex * k; this.pos.z += ez * k; }
-    else if (err > 1.6) { const k = Math.min(1, dt * 3); this.pos.x += ex * k; this.pos.z += ez * k; }
+    this.pred.reconcile(this.serverYou, !!(dir.x || dir.z), dt);
     const changed = Math.abs(dir.x - this.lastDir.x) + Math.abs(dir.z - this.lastDir.z) > 0.03;
     if (changed || ((dir.x || dir.z) && now - this.lastSend > 80)) { this.net.input(dir.x, dir.z); this.lastSend = now; this.lastDir = dir; }
     const sv = this.selfView; sv.x = this.pos.x; sv.z = this.pos.z; sv.r = this.rot;
@@ -322,7 +319,7 @@ export class Game {
     for (const d of this.drops.values()) { const s = this.snap?.drops.find((x) => x.i === d.id); if (s) d.update(s.a + (now - this.snapAt), this.time, s.x, s.z); if (d.label) { const p = this.projector(d.root.position.x, 1.8, d.root.position.z); d.label.style.display = p.vis ? '' : 'none'; d.label.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; } }
     for (const r of this.rifts.values()) { const s = this.riftSnap.find((x) => x.i === r.id); r.update(dt, this.time, s?.st ?? 0); }
     this.updateNpcs(dt);
-    this.world.update(dt, this.gs.camera.position);
+    this.world.update(dt);
     this.fx.update(dt, this.projector);
     for (const f of this.world.flames) void f;
     this.fx.emitRate('fire', 28, HUB.fire.x, 0.7, HUB.fire.z); this.fx.emitRate('smoke', 3, HUB.fire.x, 3.2, HUB.fire.z);
@@ -362,4 +359,3 @@ export class Game {
   respawn() { return this.net.rpc('respawn'); }
   dispose() { this.gs.engine.stopRenderLoop(); this.net.leave(); }
 }
-void HUB_R; void TIER_COLORS; void ({} as Item);

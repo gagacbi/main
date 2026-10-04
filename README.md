@@ -21,10 +21,11 @@ Geliştirme (canlı yenileme): `npm run dev` → istemci `http://localhost:5173`
 
 | Komut | Ne yapar |
 |---|---|
-| `npm test` | Birim + sunucu entegrasyon testleri (79 test; gerçek Colyseus + gerçek SQLite) |
+| `npm test` | Birim + sunucu entegrasyon testleri (80 test; gerçek Colyseus + gerçek SQLite) |
 | `npm run typecheck` | TypeScript tür denetimi |
 | `npm run e2e` | Gerçek Chromium ile uçtan uca kanıt; ekran görüntüleri `docs/evidence/` altına yazılır |
 | `npm run build` | Tür denetimi + üretim derlemesi |
+| `npm run verify` | Hepsi: tür denetimi → derleme → testler → e2e → rapor (kanıtsız kriter varsa hata verir) |
 
 Ortam değişkenleri: `PORT` (2567), `KUT_DB` (`.data/kut.db`), `KUT_MAX_PER_LAYER` (150), `KUT_TEST=1` (zaman ileri sarma ucunu açar; yalnızca test).
 

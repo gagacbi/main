@@ -14,7 +14,10 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:int": "vitest run tests/integration",
-    "e2e": "tsx tests/e2e/run.ts"
+    "e2e": "tsx tests/e2e/run.ts",
+    "test:json": "vitest run --reporter=json --outputFile=docs/evidence/vitest.json",
+    "report": "tsx scripts/make-report.ts",
+    "verify": "npm run typecheck && npm run build && npm run test:json && npm run e2e && npm run report"
   },
   "dependencies": {
     "@babylonjs/core": "^9.29.0",
@@ -35,5 +38,8 @@
     "typescript": "5.9",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22.5"
   }
 }

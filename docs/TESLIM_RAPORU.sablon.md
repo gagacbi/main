@@ -8,8 +8,9 @@ Tarih: {{TARIH}} · Sürüm: 0.1 (PRD §14 Aşama 2 — **Prototip**) · Dal: `c
 
 PRD'de ayrı bir "kabul kriterleri" bölümü yoktur; kriterler PRD §14 Aşama 2 kapı koşulundan ve PRD'nin ölçülebilir ifadelerinden
 türetilip [`ACCEPTANCE.md`](ACCEPTANCE.md) olarak yazılmıştır. Aşağıdaki tablo her kriteri **çalıştırılmış** kanıta bağlar.
-Tablo elle yazılmış değildir: `scripts/make-report.ts` her satırdaki testin/kontrolün gerçekten **geçtiğini** ve ekran görüntüsünün var olduğunu
-doğrular; bir satır kanıtsızsa betik hata verir ve bu rapor "tamam" demez.
+Kriter→kanıt **eşlemesi** (hangi test/kontrol hangi kriteri kanıtlar) elle yazılmıştır (`scripts/make-report.ts`); ancak her eşleme **otomatik doğrulanır**:
+betik, referans verilen testin/kontrolün gerçekten **geçtiğini** ve ekran görüntüsünün var olduğunu denetler. Bir satır kanıtsız veya başarısızsa betik hata verir ve bu rapor "tamam" demez.
+Yani tablodaki ✅ işaretleri elle konmaz, koşulmuş sonuçtan gelir.
 
 * Birim + sunucu entegrasyon testleri: **{{TESTLER}}** geçti (gerçek Colyseus sunucusu, gerçek SQLite, gerçek istemci protokolü).
 * Tarayıcı uçtan uca kontrolleri: **{{E2E}}** geçti (gerçek Chromium, üretim derlemesi, gerçek sunucu).
@@ -32,7 +33,7 @@ Sıfırdan, bu klasörde, PRD'nin mimarisiyle (Babylon.js + TypeScript + Vite is
 * **Sunucu:** yetkili hareket/savaş/ekonomi, hız sınırlama, scrypt parola, `ledger` kayıt defteri, SQLite kalıcılığı, katmanlama, oymak yönlendirme.
 * **Görsel/ses/arayüz:** özel toon shader (bantlı ışık, serin gölge, kenar parlaması, sis) + ters-gövde kontur, bloom/MSAA, parçacık/halka/ışın efektleri;
   keçe-deri-kilim temalı arayüz, tamga ikonları, mini harita, Türkçe/İngilizce; WebAudio ile üretilmiş kopuz/davul/höömey esintili müzik ve efekt sesleri.
-  Dış asset yoktur: tüm modeller, dokular, ikonlar ve sesler kodla üretilir.
+  Dış model/doku/ses dosyası yoktur: tüm modeller, dokular, ikonlar ve sesler kodla üretilir (yalnızca Fredoka ve Nunito yazı tipleri, SIL OFL lisanslı `@fontsource` paketleriyle gelir).
 
 ## 3. Kabul kriterleri ve kanıtları
 
@@ -68,7 +69,7 @@ Prototip kapısı "tek bölge, Alp, temel savaş, ganimet, artı basma, basit ob
 
 1. **Gerçek GPU'da FPS ölçülemedi.** Bu ortamda yalnızca yazılım rasterleştirmeli Chromium var. Raporlanan FPS bu yüzden düşüktür; güvenilir olan ölçüm kare başına CPU maliyeti ve sahne karmaşıklığıdır. Kalite otomatiği düşük FPS'te grafiği kendiliğinden düşürür (e2e'de `?autoq=0` ile kapatılır).
 2. **Veritabanı SQLite (`node:sqlite`).** PRD PostgreSQL + Redis der. Yerel geliştirme/prototip için kurulumsuz çalışması seçildi; tüm erişim `server/db.ts` arkasındadır, geçiş tek dosyadır. Katmanlar arası sohbet/oymak yönlendirme tek süreçte bellekten yapılır.
-3. **Colyseus 0.16 hattı.** `colyseus.js` 0.16 ile tel uyumlu olması için sunucu `@colyseus/core@0.16` (legacy hat) kullanır; en yeni 0.18 çekirdeği bu istemciyle eşleşmedi. Durum senkronu Colyseus şeması yerine kendi anlık görüntü/olay protokolümüzle (AOI süzmeli, bireysel ganimetli) yapılır.
+3. **Colyseus 0.16 hattı.** npm'de `colyseus.js` için `latest` 0.16.22, `@colyseus/core` için `latest` 0.18.18'dir (sürüm hatları denk değil). Tel uyumunu garanti etmek için sunucu da `@colyseus/core@0.16` hattına sabitlendi; 0.18 çekirdeği bu istemciyle **denenmedi**. Durum senkronu Colyseus şeması yerine kendi anlık görüntü/olay protokolümüzle (AOI süzmeli, bireysel ganimetli) yapılır.
 4. **Denge sayıları taslaktır.** PRD de oranları "taslak" ilan eder. Artı basma oranları PRD tablosuna birebir uyar; hasar/deneyim eğrileri ise elle ayarlandı ve oynanarak ince ayar ister.
 5. **Zamanlayıcılar gerçek zamanlıdır** (bina 5 dk × seviye, seferler 1/4/12 sa). Testlerde `KUT_TEST=1` ile sunucu saati ileri sarılır; üretimde bu uç kapalıdır.
 6. **Görsel strateji farkı:** PRD hazır low-poly paketleri önerir; burada sıfır bütçe ve lisans riski için tüm modeller kodla (ilkel parçalardan) üretildi. Tek stile uyum bu sayede garantilidir; elle modellenmiş sanat kalitesi değildir.

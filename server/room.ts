@@ -30,7 +30,7 @@ export class WorldRoom extends Room {
     this.onMessage('atk', (c, m) => lag(() => { const p = this.pl(c, 'msgs'); if (p) this.world.onAttack(p, m); }));
     this.onMessage('sk', (c, m) => lag(() => { const p = this.pl(c, 'msgs'); if (p) this.world.onSkill(p, m); }));
     this.onMessage('chat', (c, m) => { const p = this.pl(c, 'msgs'); if (p && this.world.allow(p, 'chat')) this.world.chat(p, m); });
-    this.onMessage('ping', (c, m) => { c.send('pong', m); });
+    this.onMessage('ping', (c, m) => { c.send('pong', { ...m, st: this.ctx.clock.now() }); });
     this.onMessage('*', () => { /* bilinmeyen mesaj türleri yok sayılır */ });
     this.onMessage('rpc', (c, m: { id: number; op: RpcOp; a: unknown }) => {
       const p = this.byClient.get(c.sessionId); if (!p) return;
@@ -66,7 +66,7 @@ export class WorldRoom extends Room {
       const oy = ctx.db.assignNoviceOymak(boy, 20);
       const { salt, hash } = hashPassword(pw);
       const now = ctx.clock.now();
-      const data = newPlayerData(boy, now, HUB.spawn[boy], options.lang === 'en' ? 'en' : 'tr');
+      const data = newPlayerData(now, HUB.spawn[boy], options.lang === 'en' ? 'en' : 'tr');
       const id = ctx.db.insertPlayer({ name, salt, hash, boy, oymak_id: oy.id, points: 0, data: JSON.stringify(data), created: now, last_seen: now });
       row = ctx.db.playerById(id)!;
     } else {

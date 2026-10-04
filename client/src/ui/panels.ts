@@ -1,5 +1,5 @@
 import {
-  BOOK_BONUS, BOY_BONUS, BOY_COLORS, EXPEDITION_HOURS, OBA, SKILLS, SKILL_MAX_RANK, SKILL_RANK_LABEL, SLOTS, SPEC_LEVEL, TIER_COLORS, TUTORIAL_STEPS, TUTORIAL_TARGET,
+  BOOK_BONUS, BOY_COLORS, EXPEDITION_HOURS, OBA, SKILLS, SKILL_MAX_RANK, SKILL_RANK_LABEL, SLOTS, SPEC_LEVEL, TIER_COLORS, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, UP_PCT, itemStats, skillRankGold, upgradeCost, type ExpeditionResult, type Item, type MatKey, type Slot,
 } from '@shared/game';
 import type { ObaInfo } from '@shared/protocol';
@@ -8,6 +8,15 @@ import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
+const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd9ef"/></linearGradient></defs>
+  <path d="M-4 150 Q8 104 60 100 Q112 104 124 150 Z" fill="url(#rb)" stroke="#1a1230" stroke-width="3"/><path d="M44 104 L60 126 L76 104" fill="none" stroke="#4aa8ff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M26 66 Q22 120 60 140 Q98 120 94 66 Q60 84 26 66 Z" fill="#ffffff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M48 112 Q60 120 72 112 M54 124 Q60 128 66 124" fill="none" stroke="#cfd9ef" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="60" cy="66" rx="29" ry="31" fill="#f4c79c" stroke="#1a1230" stroke-width="3"/><path d="M32 70 Q60 96 88 70 Q76 100 60 102 Q44 100 32 70 Z" fill="#fff" stroke="#1a1230" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M48 82 Q60 88 72 82 Q60 78 48 82 Z" fill="#fff" stroke="#1a1230" stroke-width="2"/><ellipse cx="50" cy="62" rx="4.4" ry="5.6" fill="#2a1b12"/><ellipse cx="70" cy="62" rx="4.4" ry="5.6" fill="#2a1b12"/><circle cx="51.6" cy="60" r="1.6" fill="#fff"/><circle cx="71.6" cy="60" r="1.6" fill="#fff"/>
+  <path d="M40 54 Q50 46 58 53 M62 53 Q70 46 80 54" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M40 54 Q50 46 58 53 M62 53 Q70 46 80 54" fill="none" stroke="#1a1230" stroke-width="1.2" stroke-linecap="round" opacity=".4"/>
+  <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
+  <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
 export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
@@ -44,7 +53,7 @@ export class Panels {
   async show(n: PanelName) {
     this.open = n; this.lastResult = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
     if (n === 'oba') await this.refreshOba();
-    if (n === 'inscr') { const r = await this.g.net.rpc('inscription'); void r; }
+    if (n === 'inscr') { }
     this.render();
     if (n === 'oba') { clearInterval(this.obaTimer); this.obaTimer = window.setInterval(() => { if (this.open === 'oba') this.tickOba(); }, 500); }
   }
@@ -55,7 +64,7 @@ export class Panels {
   private readySig = '';
   /** Yalnızca geri sayımları ve ilerleme çubuklarını günceller; düğmeler yerinde kalır (tıklama kaybolmaz). */
   tickOba() {
-    const now = Date.now(); const m = this.me; const o = this.oba; if (!m || !o) return;
+    const now = this.g.net.now(); const m = this.me; const o = this.oba; if (!m || !o) return;
     const sig = m.expeditions.map((e) => (now >= e.endAt ? 1 : 0)).join('') + (o.upgrade && now >= o.upgrade.finishAt ? 'U' : '');
     if (sig !== this.readySig) { this.readySig = sig; if (o.upgrade && now >= o.upgrade.finishAt) { void this.refreshOba().then(() => this.render(true)); } else this.render(true); return; }
     this.el.querySelectorAll<HTMLElement>('[data-cd]').forEach((n) => { n.textContent = fmtDur(Number(n.dataset.cd) - now); });
@@ -95,7 +104,7 @@ export class Panels {
 
   // ─── karakter ───
   char() {
-    const m = this.me; const s = m.stats; const bb = BOY_BONUS[m.boy]; void bb;
+    const m = this.me; const s = m.stats;
     const ln = (a: string, b: string | number) => `<div class="ln"><span>${a}</span><b>${b}</b></div>`;
     const specBlock = m.level >= SPEC_LEVEL && m.spec === 'none'
       ? `<div class="sub">${t('ui.chooseSpec')}</div><div class="specs">${(['kalkan', 'kilic'] as const).map((k) => `<div class="card spec" data-act="spec" data-v="${k}"><h4>${t('spec.' + k)}</h4><p>${t('spec.' + k + '.desc')}</p><button class="btn primary small">${t('ui.select')}</button></div>`).join('')}</div><div class="muted">${t('ui.specNote')}</div>`
@@ -163,7 +172,7 @@ export class Panels {
   // ─── oba ───
   obaPanel() {
     const o = this.oba; const m = this.me; if (!o) return this.shell(t('oba.title'), 'oba', '…');
-    const now = Date.now(); const up = o.upgrade; const left = up ? up.finishAt - now : 0;
+    const now = this.g.net.now(); const up = o.upgrade; const left = up ? up.finishAt - now : 0;
     const bld = (b: 'otag' | 'demir') => {
       const lv = o.levels[b]; const nx = o.nextCost[b]; const busy = !!up; const isUp = up?.b === b;
       const have = (k: MatKey, n: number) => `<span class="chip ${o.storage[k] >= n ? 'need-ok' : 'need-no'}">${icon(k)}${n}</span>`;
@@ -193,7 +202,7 @@ export class Panels {
   elder() {
     const m = this.me; const step = m.tut.step;
     const steps = TUTORIAL_STEPS.map((k, i) => `<div class="tutstep ${i < step ? 'done' : i === step ? 'cur' : ''}"><div class="cb">${i < step ? '✓' : ''}</div><span>${t('tut.' + i)}${i === step ? ` <b>(${m.tut.prog}/${TUTORIAL_TARGET[k]})</b>` : ''}</span></div>`).join('');
-    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face"></div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= 5 ? `<div class="good" style="margin-top:6px">${t('tut.end')}</div>` : ''}</div></div>`);
+    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face">${ELDER_SVG}</div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= 5 ? `<div class="good" style="margin-top:6px">${t('tut.end')}</div>` : ''}</div></div>`);
   }
 
   // ─── yazıtlar ───
@@ -290,4 +299,3 @@ export class Panels {
     let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + h > innerHeight - 8) y = innerHeight - h - 8; this.tipEl.style.left = x + 'px'; this.tipEl.style.top = y + 'px';
   }
 }
-void ({} as { x: ObaInfo });

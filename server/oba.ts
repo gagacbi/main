@@ -1,8 +1,7 @@
 import {
-  BUILDINGS, COMPANION_NAMES, EXPEDITION_HOURS, NOVICE_MAX_LEVEL, OBA, TRAITS, TUTORIAL_REWARD,
-  makeItem, randomSlot, rollTier, type BuildingKey, type Boy, type Companion, type Expedition, type ExpeditionResult, type MatKey, type Trait,
+  BUILDINGS, COMPANION_NAMES, EXPEDITION_HOURS, NOVICE_MAX_LEVEL, OBA, TRAITS, makeItem, randomSlot, rollTier, type BuildingKey, type Boy, type Companion, type Expedition, type ExpeditionResult, type MatKey, type Trait,
 } from '../shared/game';
-import { irange, mulberry32, pick } from '../shared/rng';
+import {  mulberry32, pick } from '../shared/rng';
 import type { ObaInfo } from '../shared/protocol';
 import { GameError, type Ctx, type PlayerData } from './types';
 
@@ -169,4 +168,3 @@ export function collect(ctx: Ctx, a: Actor, expId: string): ExpeditionResult {
   ctx.db.ledger(ctx.clock.now(), a.dbId, 'exp.collect', { expId, gold: res.gold, mats: res.mats, items: res.items.length, frag: res.frag });
   return res;
 }
-void irange; void TUTORIAL_REWARD;

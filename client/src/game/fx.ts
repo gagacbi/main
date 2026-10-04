@@ -1,5 +1,5 @@
 import {
-  Color3, Color4, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ParticleSystem, ShaderMaterial, Texture, TransformNode, Vector3, type Scene,
+  Color3, Color4, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ParticleSystem, ShaderMaterial, TransformNode, Vector3, type Scene,
 } from '@babylonjs/core';
 import { build } from './meshkit';
 import { toonMaterial } from './toon';
@@ -8,7 +8,7 @@ import { toonMaterial } from './toon';
 Effect.ShadersStore['fxringVertexShader'] = `
 precision highp float;
 attribute vec3 position; uniform mat4 worldViewProjection; varying vec2 vP;
-void main(){ vP = position.xy * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+void main(){ vP = position.xz * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
 Effect.ShadersStore['fxringFragmentShader'] = `
 precision highp float;
 varying vec2 vP; uniform vec3 uColor; uniform float uProg; uniform float uInner; uniform float uAngle; uniform float uSpan; uniform float uAlpha; uniform float uMode; uniform float uThick;
@@ -16,12 +16,12 @@ void main(){
   float r = length(vP); float a = atan(vP.x, vP.y);
   float w = uThick * mix(1.5, 0.7, uProg);
   float band = smoothstep(uProg - w, uProg, r) * (1.0 - smoothstep(uProg, uProg + 0.03, r));
-  float fill = (1.0 - smoothstep(0.0, uProg, r)) * 0.22 * uMode;
+  float fill = (1.0 - smoothstep(0.0, uProg, r)) * 0.09 * uMode;
   float da = abs(mod(a - uAngle + 3.14159, 6.28318) - 3.14159);
   float arc = 1.0 - smoothstep(uSpan * 0.5 - 0.15, uSpan * 0.5, da);
   float inner = smoothstep(uInner, uInner + 0.05, r);
-  float al = (band + fill) * arc * inner * uAlpha * (1.0 - uProg * 0.55);
-  gl_FragColor = vec4(uColor * (1.0 + band * 0.8), al);
+  float al = (band * 0.8 + fill) * arc * inner * uAlpha * (1.0 - uProg * 0.6);
+  gl_FragColor = vec4(uColor * (0.8 + band * 0.3), al);
 }`;
 Effect.ShadersStore['fxbeamVertexShader'] = `
 precision highp float;
@@ -32,14 +32,14 @@ precision highp float;
 varying vec2 vUv; uniform vec3 uColor; uniform float uAlpha; uniform float uTime;
 void main(){
   float y = vUv.y; float edge = 1.0 - abs(fract(vUv.x * 4.0 + uTime * 0.5) - 0.5) * 0.0;
-  float a = smoothstep(0.0, 0.12, y) * (1.0 - smoothstep(0.35, 1.0, y)) * uAlpha * 0.62;
+  float a = smoothstep(0.0, 0.12, y) * (1.0 - smoothstep(0.3, 1.0, y)) * uAlpha * 0.42;
   float s = 0.75 + 0.25 * sin(vUv.x * 40.0 + uTime * 6.0 + y * 8.0);
-  gl_FragColor = vec4(uColor * (1.0 + (1.0 - y) * 0.6), a * s);
+  gl_FragColor = vec4(uColor * (0.85 + (1.0 - y) * 0.3), a * s);
 }`;
 Effect.ShadersStore['fxriftVertexShader'] = `
 precision highp float;
 attribute vec3 position; uniform mat4 worldViewProjection; varying vec2 vP;
-void main(){ vP = position.xy * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+void main(){ vP = position.xz * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
 Effect.ShadersStore['fxriftFragmentShader'] = `
 precision highp float;
 varying vec2 vP; uniform float uTime; uniform float uPower; uniform vec3 uColor;
@@ -62,7 +62,7 @@ void main(){
 Effect.ShadersStore['fxshadowVertexShader'] = `
 precision highp float;
 attribute vec3 position; uniform mat4 worldViewProjection; varying vec2 vP;
-void main(){ vP = position.xy * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+void main(){ vP = position.xz * 2.0; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
 Effect.ShadersStore['fxshadowFragmentShader'] = `
 precision highp float;
 varying vec2 vP; void main(){ float r = length(vP); float a = (1.0 - smoothstep(0.55, 1.0, r)) * 0.42; gl_FragColor = vec4(0.08, 0.04, 0.2, a); }`;
@@ -160,18 +160,21 @@ export class RiftView {
   root = new TransformNode('rift'); mat: ShaderMaterial; beam: Mesh; rocks: Mesh; power = 0;
   constructor(public scene: Scene, public fx: FX, public id: number, x: number, z: number) {
     this.root.position.set(x, 0, z);
-    const d = MeshBuilder.CreateDisc('riftdisc', { radius: 11, tessellation: 48 }, scene); d.rotation.x = Math.PI / 2; d.bakeCurrentTransformIntoVertices(); d.parent = this.root; d.position.y = 0.09; d.isPickable = false; d.renderingGroupId = 1;
+    const d = MeshBuilder.CreateDisc('riftdisc', { radius: 0.5, tessellation: 56 }, scene); d.rotation.x = Math.PI / 2; d.bakeCurrentTransformIntoVertices(); d.scaling.set(24, 1, 24); d.parent = this.root; d.position.y = 0.09; d.isPickable = false; d.renderingGroupId = 1;
     this.mat = new ShaderMaterial('riftmat', scene, 'fxrift', { attributes: ['position'], uniforms: ['worldViewProjection', 'uTime', 'uPower', 'uColor'], needAlphaBlending: true }); this.mat.backFaceCulling = false; this.mat.disableDepthWrite = true; this.mat.alphaMode = Engine.ALPHA_ADD;
     this.mat.setColor3('uColor', new Color3(0.55, 0.2, 0.9)); this.mat.setFloat('uPower', 0); this.mat.setFloat('uTime', 0); d.material = this.mat;
-    this.beam = MeshBuilder.CreateCylinder('riftbeam', { height: 46, diameterTop: 1.2, diameterBottom: 7, tessellation: 24, cap: Mesh.NO_CAP }, scene); this.beam.parent = this.root; this.beam.position.y = 23; this.beam.isPickable = false; this.beam.renderingGroupId = 1;
-    const bm = new ShaderMaterial('riftbeam', scene, 'fxbeam', { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uColor', 'uAlpha', 'uTime'], needAlphaBlending: true }); bm.backFaceCulling = false; bm.disableDepthWrite = true; bm.alphaMode = Engine.ALPHA_ADD; bm.setColor3('uColor', new Color3(0.8, 0.3, 0.9)); bm.setFloat('uAlpha', 0.55); bm.setFloat('uTime', 0); this.beam.material = bm;
-    const specs = Array.from({ length: 9 }, (_, i) => { const a = (i / 9) * 6.283; const rr = 7 + (i % 3) * 1.4; return { k: 'icos' as const, d: 1 + (i % 3) * 0.6, s: [1, 0.8, 1] as [number, number, number], p: [Math.cos(a) * rr, 2 + (i % 4) * 0.9, Math.sin(a) * rr] as [number, number, number], c: '#3c3458', c2: '#6a5c9a', sub: 0 }; });
-    this.rocks = build(scene, 'riftrocks', specs); this.rocks.material = toonMaterial(scene, { vertexColors: true, emissive: new Color3(0.2, 0.05, 0.3) }); this.rocks.parent = this.root;
+    this.beam = MeshBuilder.CreateCylinder('riftbeam', { height: 46, diameterTop: 0.9, diameterBottom: 4.2, tessellation: 24, cap: Mesh.NO_CAP }, scene); this.beam.parent = this.root; this.beam.position.y = 23; this.beam.isPickable = false; this.beam.renderingGroupId = 1;
+    const bm = new ShaderMaterial('riftbeam', scene, 'fxbeam', { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uColor', 'uAlpha', 'uTime'], needAlphaBlending: true }); bm.backFaceCulling = false; bm.disableDepthWrite = true; bm.alphaMode = Engine.ALPHA_ADD; bm.setColor3('uColor', new Color3(0.8, 0.3, 0.9)); bm.setFloat('uAlpha', 0.42); bm.setFloat('uTime', 0); this.beam.material = bm;
+    // yüzen mor kristaller (iki koni = elmas biçimli, açılı)
+    const specs = Array.from({ length: 10 }, (_, i) => { const a = (i / 10) * 6.283 + 0.3; const rr = 7.5 + (i % 3) * 1.6; const h = 1.6 + (i % 4) * 0.55; const y = 2.4 + (i % 3) * 1.1; const lean: [number, number, number] = [Math.sin(i) * 0.25, 0, Math.cos(i * 2) * 0.25];
+      return [{ k: 'cone' as const, db: 0.95, dt: 0, h, p: [Math.cos(a) * rr, y + h / 2, Math.sin(a) * rr] as [number, number, number], r: lean, c: '#7a46c8', c2: '#e0c4ff', seg: 5, gloss: 0.4 },
+        { k: 'cone' as const, db: 0.95, dt: 0, h: h * 0.6, p: [Math.cos(a) * rr, y - h * 0.3, Math.sin(a) * rr] as [number, number, number], r: [lean[0] + Math.PI, 0, lean[2]] as [number, number, number], c: '#4a2a88', c2: '#9a6ae0', seg: 5 }]; }).flat();
+    this.rocks = build(scene, 'riftrocks', specs); this.rocks.material = toonMaterial(scene, { vertexColors: true, emissive: new Color3(0.16, 0.05, 0.3) }); this.rocks.parent = this.root;
   }
   update(dt: number, t: number, state: number) {
     this.power += ((state > 0 ? 1 : 0) - this.power) * Math.min(1, dt * 2);
-    this.mat.setFloat('uTime', t); this.mat.setFloat('uPower', this.power); (this.beam.material as ShaderMaterial).setFloat('uTime', t); this.rocks.rotation.y += dt * 0.25;
-    this.rocks.position.y = Math.sin(t * 1.4) * 0.4;
+    this.mat.setFloat('uTime', t); this.mat.setFloat('uPower', this.power); (this.beam.material as ShaderMaterial).setFloat('uTime', t); this.rocks.rotation.y += dt * 0.22;
+    this.rocks.position.y = Math.sin(t * 1.4) * 0.35;
     if (Math.random() < dt * 14) this.fx.burst('ember', this.root.position.x + (Math.random() - 0.5) * 12, 0.2, this.root.position.z + (Math.random() - 0.5) * 12, 2);
   }
   dispose() { this.root.dispose(false, true); }

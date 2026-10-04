@@ -2,7 +2,6 @@ import { BOYS, BOY_COLORS, type Boy } from '@shared/game';
 import type { Game } from '../game/game';
 import { getLang, setLang, t } from '../i18n';
 import { emblemSvg } from './emblems';
-import { icon } from './icons';
 
 /** Giriş / karakter oluşturma ekranı. Başarılı girişte çözülür. */
 export function showLogin(g: Game, root: HTMLElement, onEnter: (name: string, pw: string, create: Boy | null) => Promise<string | null>): Promise<void> {

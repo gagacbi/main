@@ -1,16 +1,15 @@
 import {
-  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, HUB_R, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, OBA, RANK_RECOVER_KILLS,
+  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  campTypes, computeStats, hitDamage, itemLvlReq, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
-  type Boy, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, type Tier,
-} from '../shared/game';
+  type Boy, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
 import { dist, dist2, genCamps, stepMove, type Camp } from '../shared/world';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
-import { GameError, newPlayerData, type Ctx, type PlayerData } from './types';
+import { GameError, type Ctx, type PlayerData } from './types';
 import type { PlayerRow } from './db';
 
 type StatusMap = Partial<Record<StatusKey, { until: number; dps?: number; by?: number; absorb?: number }>>;
@@ -704,9 +703,6 @@ export class World {
         }
         if (b) { tgt = b; m.target = b.id; }
       }
-      if (tgt && now > m.tauntUntil) {
-        // alınan hasara göre en çok vuran
-      }
       let speed = def.speed * (this.hasStatus(m, 'slow') ? 0.5 : 1);
       if (tgt) {
         const d = dist(m, tgt);
@@ -921,4 +917,3 @@ export class World {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-void newPlayerData; void OBA; void itemLvlReq; void SKILL_MAX_RANK; void (null as unknown as Tier);

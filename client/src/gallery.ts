@@ -24,7 +24,7 @@ export function startGallery(canvas: HTMLCanvasElement) {
   else if (view === 'humans') { cam.setTarget(new Vector3(-3, 1.7, 0)); cam.alpha = -Math.PI / 2; cam.beta = 1.3; cam.radius = 9; cam.lowerRadiusLimit = 4; }
   else if (view === 'humans2') { cam.setTarget(new Vector3(7, 1.7, 0)); cam.alpha = -Math.PI / 2; cam.beta = 1.3; cam.radius = 12; cam.lowerRadiusLimit = 4; }
   gs.scene.onBeforeRenderObservable.add(() => {
-    const dt = gs.engine.getDeltaTime() / 1000; w.update(dt, cam.position);
+    const dt = gs.engine.getDeltaTime() / 1000; w.update(dt);
     for (const r of rigs) { r.t += dt; const att = r.attack >= 0 ? (r.attack + r.t * 0.0) : -1; r.rig.update({ ...IDLE, speed: r.speed, attack: att, t: r.t, dt }); }
   });
   (window as unknown as { __gs: GameScene }).__gs = gs;

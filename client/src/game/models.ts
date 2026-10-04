@@ -36,7 +36,6 @@ export class Rig {
 }
 
 const SKIN = '#f4c79c'; const SKIN_D = '#e0a97f'; const HAIR = '#1d1620'; const STEEL = '#cfd9e6'; const LEATHER = '#6b4326'; const GOLD = '#f2c14e';
-const sw = (a: number, f: number, t: number, ph = 0) => Math.sin(t * f + ph) * a;
 
 // ─────────────────────────── İNSANSI ───────────────────────────
 export interface HumanOpts { boy: Boy; spec?: Spec; kind?: 'player' | 'aksakal' | 'demirci' | 'guard'; red?: boolean }
@@ -52,12 +51,12 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   const stocky = kind === 'demirci' ? 1.18 : 1;
 
   // bacaklar
-  const legSpec = (side: number): PartSpec[] => [
+  const legSpec = (): PartSpec[] => [
     { k: 'cyl', d: 0.26, h: 0.62, p: [0, -0.33, 0], c: robe ? main : '#4b3a55', c2: robe ? main : '#5a4766' },
     { k: 'sphere', d: 0.38, s: [1, 0.72, 1.35], p: [0, -0.64, 0.07], c: LEATHER },
     { k: 'torus', d: 0.28, th: 0.07, p: [0, -0.5, 0], c: accent },
   ];
-  rig.part('legL', legSpec(-1), [-0.2, 0.8, 0]); rig.part('legR', legSpec(1), [0.2, 0.8, 0]);
+  rig.part('legL', legSpec(), [-0.2, 0.8, 0]); rig.part('legR', legSpec(), [0.2, 0.8, 0]);
 
   // gövde
   const body: PartSpec[] = [
@@ -125,13 +124,13 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   rig.part('hat', hat, [0, 0.27, 0], 'head');
 
   // kollar + eller
-  const sleeve = (side: number): PartSpec[] => [
+  const sleeve = (): PartSpec[] => [
     { k: 'cyl', d: 0.24 * stocky, h: 0.52, p: [0, -0.26, 0], c: kind === 'demirci' ? SKIN : main, c2: kind === 'demirci' ? SKIN : dark },
     { k: 'torus', d: 0.3, th: 0.07, p: [0, -0.48, 0], c: kind === 'demirci' ? '#3a2616' : accent },
     { k: 'sphere', d: 0.3 * stocky, p: [0, -0.58, 0.02], c: SKIN },
     { k: 'sphere', d: 0.3, p: [0, 0, 0], c: main },
   ];
-  rig.part('armL', sleeve(-1), [-0.52 * stocky, 1.38, 0]); rig.part('armR', sleeve(1), [0.52 * stocky, 1.38, 0]);
+  rig.part('armL', sleeve(), [-0.52 * stocky, 1.38, 0]); rig.part('armR', sleeve(), [0.52 * stocky, 1.38, 0]);
 
   // silah / kalkan
   const spec = o.spec ?? 'none';
@@ -329,9 +328,9 @@ export function buildMob(scene: Scene, type: MobType): Rig {
     }
     case 'cakal': {
       const FUR = '#59506b'; const FUR2 = '#8a7fa6'; const BELLY = '#d8cfe8';
-      const leg = (x: number, z: number) => [{ k: 'cyl', dt: 0.12, db: 0.18, h: 0.55, p: [0, -0.27, 0], c: FUR }, { k: 'sphere', d: 0.24, s: [1, 0.7, 1.4], p: [0, -0.55, 0.05], c: '#2a2236' }] as PartSpec[];
-      rig.part('legFL', leg(0, 0), [-0.22, 0.62, 0.5]); rig.part('legFR', leg(0, 0), [0.22, 0.62, 0.5]);
-      rig.part('legBL', leg(0, 0), [-0.22, 0.62, -0.45]); rig.part('legBR', leg(0, 0), [0.22, 0.62, -0.45]);
+      const leg = () => [{ k: 'cyl', dt: 0.12, db: 0.18, h: 0.55, p: [0, -0.27, 0], c: FUR }, { k: 'sphere', d: 0.24, s: [1, 0.7, 1.4], p: [0, -0.55, 0.05], c: '#2a2236' }] as PartSpec[];
+      rig.part('legFL', leg(), [-0.22, 0.62, 0.5]); rig.part('legFR', leg(), [0.22, 0.62, 0.5]);
+      rig.part('legBL', leg(), [-0.22, 0.62, -0.45]); rig.part('legBR', leg(), [0.22, 0.62, -0.45]);
       rig.part('body', [
         { k: 'sphere', d: 0.8, s: [0.95, 0.9, 1.7], p: [0, 0.72, 0], c: FUR, c2: FUR2 },
         { k: 'sphere', d: 0.6, s: [1, 0.7, 1.6], p: [0, 0.52, 0.05], c: BELLY },

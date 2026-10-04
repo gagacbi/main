@@ -1,4 +1,4 @@
-import type { Bag, Boy, Companion, Expedition, Item, Slot, Spec } from '../shared/game';
+import type { Bag, Companion, Expedition, Item, Slot, Spec } from '../shared/game';
 import type { Rng } from '../shared/rng';
 import type { Clock } from './clock';
 import type { Db } from './db';
@@ -26,7 +26,7 @@ export class GameError extends Error {
   constructor(public code: string, public p?: Record<string, string | number>) { super(code); }
 }
 
-export const newPlayerData = (boy: Boy, now: number, spawn: { x: number; z: number }, lang: 'tr' | 'en'): PlayerData => ({
+export const newPlayerData = (now: number, spawn: { x: number; z: number }, lang: 'tr' | 'en'): PlayerData => ({
   v: 1, level: 1, xp: 0, kut: 0, kutXp: 0, gold: 150, hp: 0, spec: 'none', skillRanks: [1, 1, 1, 1, 1, 1], skillPts: 0,
   bag: { ore: 6, hide: 0, wood: 0, book: 0, charm: 0, frag: 0 }, items: [], equip: {},
   claimAt: now, companions: [], expeditions: [], rested: 0, loggedOutAt: 0, outInHub: true, rank: 0, rankKills: 0,

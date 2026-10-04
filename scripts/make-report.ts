@@ -42,7 +42,7 @@ const CRITERIA: Crit[] = [
   { id: 'D3', text: 'Artı basma +0→+9, PRD oranları, +5 üstü yok olur, oranlar arayüzde', ev: E({ t: 'oranlar PRD taslağıyla uyumlu' }, { t: 'istatistiksel doğrulama' }, { t: '+1…+4 başarısızlıkta eşya korunur' }, { e: 'D3.oranlar-ui' }, { e: 'D3.basari' }, { e: 'D3.yok-olma' }, { s: '11-demirci-artibasma.png' }) },
   { id: 'D4', text: 'El kitabı şans artırır; koruma tılsımı korur; market/oyun içi eşitliği', ev: E({ t: 'demirci el kitabı +10 puan ekler' }, { t: 'el kitabı serbest, koruma tılsımı Demirhane 2' }, { e: 'D4.kitap' }, { e: 'D4.tilsim' }, { s: '11d-demirci-tilsim-korudu.png' }) },
   { id: 'D5', text: 'Ganimet kademeleri, efsunlar, bireysel ganimet', ev: E({ t: 'kademe dağılımı yaklaşık' }, { t: 'üst kademe aynı seviyede daha güçlü' }, { t: 'ganimet yalnızca vuran oyuncuya görünür' }, { e: 'D5.envanter' }, { s: '08-canta.png' }) },
-  { id: 'D6', text: 'Erlik çatlağı: rastgele, dalgalar + bekçi, ölçekleme, otomatik katılım, garanti ganimet', ev: E({ t: 'rastgele zamanda ve yerde açılır' }, { t: 'otomatik katılım: yaklaşınca dalgalar' }, { t: 'zorluk yakındaki oyuncu sayısı' }, { e: 'D6.catlak-ui' }, { s: '18-erlik-catlagi-dalga.png' }) },
+  { id: 'D6', text: 'Erlik çatlağı: rastgele, dalgalar + bekçi, ölçekleme, otomatik katılım, garanti ganimet', ev: E({ t: 'rastgele zamanda ve yerde açılır' }, { t: 'otomatik katılım: yaklaşınca dalgalar' }, { t: 'zorluk yakındaki oyuncu sayısı' }, { e: 'D6.catlak-acik' }, { e: 'D6.catlak-ui' }, { s: '17-erlik-catlagi-acik.png' }, { s: '18-erlik-catlagi-dalga.png' }) },
   { id: 'E1', text: 'Acemi oymak, otomatik giriş, NPC ak sakal öğretir', ev: E({ t: 'yeni oyuncu boyunun acemi oymağına' }, { t: 'öğretici adımları' }, { e: 'E1.ak-sakal' }, { e: 'E1.oba-paneli' }, { s: '12-ak-sakal.png' }, { s: '13-oba.png' }) },
   { id: 'E2', text: '2 bina; yükseltme bitiş zamanı DB’de, çevrimdışıyken ilerler', ev: E({ t: 'bitiş zamanı veritabanına yazılır' }, { e: 'E2.yukseltme' }, { s: '14-oba-yukseltme.png' }) },
   { id: 'E3', text: 'Otağ diğer binaların sınırını belirler; acemi oba sınırı', ev: E({ t: 'bitiş zamanı veritabanına yazılır' }, { t: 'acemi oba seviye sınırı vardır' }) },
@@ -56,7 +56,7 @@ const CRITERIA: Crit[] = [
   { id: 'F4', text: 'Keçe/deri paneller, tamga ikonları, minimal HUD, mini harita', ev: E({ e: 'F4.hud' }, { s: '03-oyun-yurt.png' }, { s: '13-oba.png' }, { s: '11-demirci-artibasma.png' }) },
   { id: 'F5', text: 'Üretilmiş kopuz/davul sesi, efekt sesleri, sessiz mod', ev: E({ e: 'F5.ses' }, { e: 'F5.sessiz' }) },
   { id: 'F6', text: 'Türkçe ve İngilizce, çalışma anında değişir; Türkçe karakterler doğru', ev: E({ e: 'F6.tr' }, { e: 'F6.en' }, { e: 'F6.font' }, { s: '01-giris-tr.png' }, { s: '01b-giris-en.png' }) },
-  { id: 'F7', text: 'Performans ölçülür ve raporlanır; 150 ms gecikmede akıcılık', ev: E({ e: 'F7.olcum' }, { e: 'B.gecikme150' }) },
+  { id: 'F7', text: 'Performans ölçülür ve raporlanır; 150 ms gecikmede akıcılık', ev: E({ e: 'F7.olcum' }, { t: 'B.gecikme150' }, { d: 'latency' }) },
   { id: 'G1', text: 'typecheck, test, build hatasız', ev: E({ d: 'gate' }) },
 ];
 
@@ -64,6 +64,7 @@ const OUT = 'docs/evidence';
 const j = <T>(p: string): T | null => (existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')) as T) : null);
 const vt = j<{ testResults: { assertionResults: { ancestorTitles: string[]; title: string; status: string }[] }[]; numTotalTests: number; numPassedTests: number; numFailedTests: number }>(`${OUT}/vitest.json`);
 const e2e = j<{ at: string; results: { id: string; ok: boolean; detail: string }[]; metrics: Record<string, unknown> }>(`${OUT}/e2e-report.json`);
+const lat2 = j<{ rttMs: number; speed: number; maxPredictionError: number; settledError: number; snaps: number; firstFrameMove: number }>(`${OUT}/metrics-latency.json`);
 const a9 = j<{ clients: number; tickAvgMs: number; tickMaxMs: number; budgetMs: number; tickHz: number; mobs: number }>(`${OUT}/metrics-a9.json`);
 if (!vt || !e2e) { console.error('vitest.json veya e2e-report.json eksik'); process.exit(2); }
 const tests = vt.testResults.flatMap((f) => f.assertionResults.map((a) => ({ name: [...a.ancestorTitles, a.title].join(' > '), ok: a.status === 'passed' })));
@@ -91,6 +92,7 @@ const detailOf = (e: Ev): { ok: boolean; label: string } => {
   if (e.s) { const ok = existsSync(`${OUT}/${e.s}`); return { ok, label: `Ekran görüntüsü: [${e.s}](evidence/${e.s})` }; }
   switch (e.d) {
     case 'stack': { const ok = ['@babylonjs/core', 'colyseus.js', '@colyseus/core', 'vite', 'typescript'].every((k) => k in deps) && tsc.status === 0; return { ok, label: `Bağımlılıklar: @babylonjs/core ${deps['@babylonjs/core']}, colyseus.js ${deps['colyseus.js']}, @colyseus/core ${deps['@colyseus/core']}, vite ${deps['vite']}, typescript ${deps['typescript']}; \`tsc --noEmit\` çıkış=${tsc.status}` }; }
+    case 'latency': return { ok: !!lat2 && lat2.snaps === 0 && lat2.maxPredictionError < 2.5, label: lat2 ? `Ölçüm (150 ms RTT, gerçek sunucu + istemci tahmin kodu): en büyük tahmin sapması **${lat2.maxPredictionError} birim** (hız ${lat2.speed} b/sn × RTT ≈ ${(lat2.speed * 0.15).toFixed(2)}), ışınlanma ${lat2.snaps}, durunca sapma ${lat2.settledError}, ilk karede tepki ${lat2.firstFrameMove} birim` : 'ölçüm yok' };
     case 'a9': return { ok: !!a9 && a9.tickAvgMs < a9.budgetMs / 5, label: a9 ? `Ölçüm: ${a9.clients} istemci, ${a9.mobs} yaratık, tick ort. **${a9.tickAvgMs} ms**, maks. ${a9.tickMaxMs} ms (bütçe ${a9.budgetMs} ms @ ${a9.tickHz} Hz)` : 'ölçüm yok' };
     case 'bundle': return { ok: initialRaw + fontBytes < 50 * 1048576, label: `Ölçüm: ilk yük (index.html + JS + CSS) ham ${mb(initialRaw)}, gzip **${mb(initialGz)}**; yazı tipleri ${mb(fontBytes)}; dist toplam ${mb(raw)} (sınır 50 MB)` };
     case 'gate': { const ok = tsc.status === 0 && vt.numFailedTests === 0 && dist.length > 0; return { ok, label: `\`tsc --noEmit\` çıkış=${tsc.status}; vitest ${vt.numPassedTests}/${vt.numTotalTests} geçti; dist/ derlendi (${dist.length} dosya)` }; }
@@ -106,7 +108,7 @@ for (const c of CRITERIA) {
 
 const shots = readdirSync(OUT).filter((f) => f.endsWith('.png')).sort();
 const perf = (e2e.metrics.perf ?? {}) as { fps?: number; meshes?: number; active?: number; tris?: number; cpuMs?: number };
-const lat = (e2e.metrics.latency150 ?? {}) as { maxPredictionError?: number; settled?: number };
+const lat = lat2 ?? { maxPredictionError: 0, settledError: 0 };
 
 const md = readFileSync('docs/TESLIM_RAPORU.sablon.md', 'utf8')
   .replace('{{TARIH}}', new Date().toISOString().slice(0, 10))
@@ -115,7 +117,7 @@ const md = readFileSync('docs/TESLIM_RAPORU.sablon.md', 'utf8')
   .replace('{{TESTLER}}', `${vt.numPassedTests}/${vt.numTotalTests}`)
   .replace('{{E2E}}', `${e2e.results.filter((r) => r.ok).length}/${e2e.results.length}`)
   .replace('{{PERF}}', `kare başına JS/CPU maliyeti **${perf.cpuMs ?? '?'} ms** (60 FPS bütçesi 16,7 ms); aktif mesh ${perf.active}/${perf.meshes}; çizilen üçgen ≈ ${Math.round(perf.tris ?? 0).toLocaleString('tr-TR')}; yazılım rasterleştirmede (SwiftShader) ölçülen FPS ≈ ${perf.fps}`)
-  .replace('{{GECIKME}}', `150 ms gidiş-dönüş yapay gecikmede yürürken tahmin sapması en çok **${(lat.maxPredictionError ?? 0).toFixed(2)} birim**, durunca **${(lat.settled ?? 0).toFixed(2)} birim**`)
+  .replace('{{GECIKME}}', `150 ms gidiş-dönüş yapay gecikmede yürürken tahmin sapması en çok **${(lat.maxPredictionError ?? 0).toFixed(2)} birim**, durunca **${(lat.settledError ?? 0).toFixed(2)} birim**`)
   .replace('{{BOYUT}}', `ilk yük gzip **${mb(initialGz)}** (ham ${mb(initialRaw)}) + yazı tipleri ${mb(fontBytes)}; toplam dist ${mb(raw)}`)
   .replace('{{GALERI}}', shots.map((s) => `- [\`${s}\`](evidence/${s})`).join('\n'));
 writeFileSync('docs/TESLIM_RAPORU.md', md);

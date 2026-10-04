@@ -4,7 +4,7 @@ export type V3 = [number, number, number];
 export interface PartSpec {
   k: 'sphere' | 'cyl' | 'cone' | 'box' | 'torus' | 'cap' | 'disc' | 'icos';
   p?: V3; r?: V3; s?: V3; c: string; gloss?: number;
-  d?: number; h?: number; dt?: number; db?: number; w?: number; dp?: number; th?: number; seg?: number; sub?: number;
+  d?: number; h?: number; dt?: number; db?: number; w?: number; dp?: number; th?: number; seg?: number; sub?: number; flat?: boolean;
   /** uç renk (dikey gradyan) */ c2?: string;
 }
 
@@ -14,7 +14,7 @@ function make(scene: Scene, s: PartSpec): Mesh {
   let m: Mesh;
   switch (s.k) {
     case 'sphere': m = MeshBuilder.CreateSphere('p', { diameter: s.d ?? 1, segments: s.seg ?? 10 }, scene); break;
-    case 'icos': m = MeshBuilder.CreateIcoSphere('p', { radius: (s.d ?? 1) / 2, subdivisions: s.sub ?? 1, flat: false }, scene); break;
+    case 'icos': m = MeshBuilder.CreateIcoSphere('p', { radius: (s.d ?? 1) / 2, subdivisions: s.sub ?? 1, flat: s.flat ?? false }, scene); break;
     case 'cyl': m = MeshBuilder.CreateCylinder('p', { height: s.h ?? 1, diameterTop: s.dt ?? s.d ?? 1, diameterBottom: s.db ?? s.d ?? 1, tessellation: s.seg ?? 12 }, scene); break;
     case 'cone': m = MeshBuilder.CreateCylinder('p', { height: s.h ?? 1, diameterTop: s.dt ?? 0, diameterBottom: s.db ?? s.d ?? 1, tessellation: s.seg ?? 12 }, scene); break;
     case 'box': m = MeshBuilder.CreateBox('p', { width: s.w ?? 1, height: s.h ?? 1, depth: s.dp ?? 1 }, scene); break;

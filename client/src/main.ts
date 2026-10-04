@@ -29,7 +29,7 @@ async function boot() {
     try {
       const ld = document.createElement('div'); ld.className = 'loading on'; ld.innerHTML = `<div style="text-align:center"><div class="spin"></div>${t('ui.connecting')}</div>`; uiRoot.appendChild(ld);
       try { await g.connect(name, pw, create); } finally { ld.remove(); }
-      g.stopTitle(); uiRoot.classList.remove('prelogin'); style.remove(); g.audio.start(); g.ui.sysLocal('sys.welcome');
+      g.stopTitle(); uiRoot.classList.remove('prelogin'); style.remove(); g.audio.start(); g.ui.sysLocal('sys.welcome'); setTimeout(() => { g.ui.toast(t('help.fight'), 'good'); setTimeout(() => g.ui.toast(t('help.move'), 'good'), 900); }, 1200);
       (window as unknown as { __ready: boolean }).__ready = true; return null;
     } catch (e) { return (e as Error).message || 'net'; }
   };

@@ -1,8 +1,8 @@
 import { Color3, Mesh, MeshBuilder, type InstancedMesh, type Scene } from '@babylonjs/core';
-import { BOYS, BOY_COLORS, type Boy, type MobType, type Spec } from '@shared/game';
+import {   type Boy, type MobType, type Spec } from '@shared/game';
 import { F } from '@shared/protocol';
 import { t } from '../i18n';
-import { buildHuman, buildMob, IDLE, type AnimState, type Rig } from './models';
+import { buildHuman, buildMob, type AnimState, type Rig } from './models';
 import { build } from './meshkit';
 import { toonMaterial } from './toon';
 import type { FX } from './fx';
@@ -125,4 +125,3 @@ function statusPips(f: number) {
   if (f & F.CURSE) s += '<i class="pip curse"></i>'; if (f & F.SHIELD) s += '<i class="pip shield"></i>'; if (f & F.DUEL) s += '<i class="pip duel"></i>';
   return s;
 }
-void BOYS; void BOY_COLORS; void IDLE; void ({} as Rig);

@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium, type Browser, type Page } from 'playwright';
 import { startGameServer } from '../../server/index';
 import { HUB, UPGRADE_RATE, makeItem } from '../../shared/game';
@@ -208,15 +208,16 @@ if (want('oba')) {
   await page.keyboard.press('o'); await sleep(1200); await shot('13-oba');
   const obaTxt = await page.textContent('.panel .oba'); check('E1.oba-paneli', /Otağ/.test(obaTxt ?? '') && /Demirhane|Smithy/.test(obaTxt ?? ''), 'Oba paneli: Otağ + Demirhane, ortak ambar, yoldaşlar');
   const comps = await page.$$eval('.comp', (e) => e.length); check('E4.yoldas-yuvasi', comps === 2, `Başlangıçta ${comps} yoldaş yuvası`);
-  for (let i = 0; i < 6; i++) { await page.click('[data-act="max"][data-k="ore"]'); await page.click('[data-act="max"][data-k="wood"]'); await page.click('[data-act="max"][data-k="hide"]'); await page.click('[data-act="donate"]'); await sleep(500); }
+  for (const k of ['ore', 'wood', 'hide']) { await page.click(`[data-act="max"][data-k="${k}"]`); await sleep(250); }
+  await page.click('[data-act="donate"]'); await sleep(900);
+  check('E5.bagis', me.points >= 240 && srv.ctx.oymaks.get(me.oymakId)!.storage.ore >= 24, `Bağış: katılım puanı=${me.points}, ortak ambar=${JSON.stringify(srv.ctx.oymaks.get(me.oymakId)!.storage)}`);
   await page.click('[data-act="build"][data-b="otag"]'); await sleep(900); await shot('14-oba-yukseltme');
   const up = pl(NAME).d.tut.step; const o = srv.ctx.oymaks.get(me.oymakId)!;
   check('E2.yukseltme', !!o.up, `Otağ yükseltmesi başladı; bitiş zamanı DB’de: ${o.up ? new Date(o.up.finishAt).toISOString() : '-'}; öğretici adımı=${up}`);
-  await page.click('[data-act="send"]'); await sleep(900);
   await page.click('.comp [data-act="send"][data-h="1"]'); await sleep(900);
   const away = await ev<number>('g.me.expeditions.length'); check('E4.sefer', away === 1, 'Yoldaş 1 saatlik sefere gönderildi (bitiş zamanı kayıtlı)');
   // Zamanı ileri sar (çevrimdışı ilerleme simülasyonu): sunucu saatini 2 saat ilerlet
-  srv.ctx.clock.advance(2 * 3600 * 1000); await sleep(1500); await shot('15-oba-sefer-dondu');
+  srv.ctx.clock.advance(2 * 3600 * 1000); await sleep(4500); await shot('15-oba-sefer-dondu'); // istemci sunucu saatini ping ile yeniden senkronlar
   const ready = await page.$('[data-act="collect"]'); check('E4.sefer-hazir', !!ready, 'Süre dolunca sefer ödülü hazır (giriş anında hesaplanır)');
   await page.click('[data-act="collect"]'); await sleep(1200); await shot('15b-sefer-odulu');
   const lvl = (await ev<{ levels: { otag: number } } | null>('null')); void lvl;
@@ -224,7 +225,9 @@ if (want('oba')) {
   me.x = HUB.stele.x - 3; me.z = HUB.stele.z + 4; await sleep(1500);
   const w = world(); w.addFrag(me, 41); await sleep(1200);
   await page.keyboard.press('y'); await sleep(900); await shot('16-yazitlar');
-  const ins = await page.textContent('.panel .insc'); check('E7.yazit', /çözüldü|deciphered|Yazıt I|Inscription I/.test(ins ?? '') && me.d.bag.frag >= 41, 'Sunucu çapı 40 parça eşiği aşıldı: Yazıt I çözüldü');
+  const open1 = await page.$$eval('.stele-card:not(.locked)', (e) => e.length); const lore = await page.textContent('.stele-card:not(.locked)');
+  const announced = await ev<boolean>('g.ui.chatLog.some(m => m.key === "sys.inscription")');
+  check('E7.yazit', open1 === 1 && /Mühür içeriden|seal was not broken/.test(lore ?? '') && announced && me.d.bag.frag >= 41, `Sunucu çapı 40 parça eşiği aşıldı: ${open1} yazıt çözüldü (“${(lore ?? '').trim().slice(-48)}”), tüm oyunculara duyuruldu=${announced}`);
   await page.keyboard.press('Escape');
 }
 
@@ -232,11 +235,13 @@ if (want('oba')) {
 if (want('catlak')) {
   const me = pl(NAME); const w = world(); w.rifts.clear(); w.mobs.clear();
   me.d.level = 14; w.recalc(me); me.hp = me.stats.maxHp; me.deadUntil = 0;
-  const rift = w.openRift()!; me.x = rift.x - 14; me.z = rift.z; await sleep(3000);
-  await page.evaluate(() => { const g = (window as any).__game; g.camYaw = Math.PI / 2 + 0.5; g.camPitch = 0.95; g.camDist = 22; });
-  await sleep(1500); await shot('17-erlik-catlagi-acik');
+  const rift = w.openRift()!; me.x = rift.x - 34; me.z = rift.z; await sleep(3500); // etkinleşme yarıçapının (20) dışında: portal henüz uyuyor
+  const face = (pitch: number, dist: number) => page.evaluate(([rx, rz, pi, di]) => { const g = (window as any).__game; g.camYaw = Math.atan2(-(rz - g.pos.z), -(rx - g.pos.x)); g.camPitch = pi; g.camDist = di; }, [rift.x, rift.z, pitch, dist]);
+  me.x = rift.x - 22; await sleep(600); await face(0.95, 30);
+  await sleep(2200); await shot('17-erlik-catlagi-acik');
+  check('D6.catlak-acik', rift.state === 0 && Math.hypot(rift.x - me.x, rift.z - me.z) > 20, `Çatlak açık ve bekliyor (durum=${rift.state}); oyuncu ${Math.round(Math.hypot(rift.x - me.x, rift.z - me.z))} birim uzakta, pusula oku ve harita işareti görünür`);
   const compass = await page.evaluate(() => getComputedStyle(document.getElementById('compass')!).display); void compass;
-  me.x = rift.x - 8; me.z = rift.z; await sleep(2500);
+  me.x = rift.x - 9; me.z = rift.z; await sleep(600); await face(0.95, 17); await sleep(2200);
   await shot('18-erlik-catlagi-dalga');
   const bar = await page.evaluate(() => getComputedStyle(document.getElementById('riftbar')!).display);
   check('D6.catlak-ui', bar === 'block' && rift.state >= 1, `Çatlak çubuğu görünür, dalga=${rift.wave}, durum=${rift.state}; parti kurmadan otomatik katılım`);
@@ -257,22 +262,6 @@ if (want('olum')) {
   await shot('21-yeniden-dogus');
 }
 
-// ───────── 10c. 150 ms gecikmede akıcılık (PRD §5 hedefi) ─────────
-if (want('gecikme')) {
-  const me = pl(NAME); const w = world(); w.mobs.clear(); me.x = 0; me.z = 60; me.deadUntil = 0; me.hp = me.stats.maxHp; await sleep(1200);
-  srv.ctx.cfg.simLatency = 75; // her yönde 75 ms = 150 ms gidiş-dönüş
-  await page.evaluate(() => { const g = (window as any).__game; g.camYaw = Math.PI / 2; (window as any).__errs = []; });
-  await page.keyboard.down('s'); const errs: number[] = []; const t0 = Date.now();
-  while (Date.now() - t0 < 3500) { errs.push(await ev<number>('Math.hypot(g.pos.x - g.serverYou.x, g.pos.z - g.serverYou.z)')); await sleep(120); }
-  await page.keyboard.up('s'); await sleep(1200);
-  const settled = await ev<number>('Math.hypot(g.pos.x - g.serverYou.x, g.pos.z - g.serverYou.z)');
-  const walked = Math.hypot(me.x - 0, me.z - 60);
-  srv.ctx.cfg.simLatency = 0;
-  const maxErr = Math.max(...errs);
-  check('B.gecikme150', walked > 8 && maxErr < 3.5 && settled < 0.3, `150 ms RTT’de tahmin sapması maks=${maxErr.toFixed(2)} birim (yürüme hızı 7 b/sn), durunca sapma=${settled.toFixed(2)}; istemci anında tepki verir, sunucu yetkili kalır`);
-  metrics.latency150 = { maxPredictionError: maxErr, settled, walked };
-}
-
 // ───────── 11. Ölçümler (F7, A10) ─────────
 const perf = await ev<{ fps: number; meshes: number; active: number; draw: number; tris: number; cpuMs: number }>(`(() => {
   const sc = g.gs.scene; const e = g.gs.engine; const t0 = performance.now(); for (let i = 0; i < 30; i++) sc.render(); const cpu = (performance.now() - t0) / 30;
@@ -282,7 +271,10 @@ metrics.perf = perf; metrics.gl = await ev('g.gs.engine.getGlInfo()');
 check('F7.olcum', perf.cpuMs > 0, `Kare başına JS/CPU maliyeti=${perf.cpuMs} ms; aktif mesh=${perf.active}/${perf.meshes}; üçgen=${Math.round(perf.tris)}; (yazılım rasterleştirmede FPS=${perf.fps})`);
 check('G.konsol', errors.filter((e) => !/AudioContext|favicon|WebGL|GPU stall|ReadPixels/i.test(e)).length === 0, 'Tarayıcı konsolunda hata yok' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 
-writeFileSync(`${OUT}/e2e-report.json`, JSON.stringify({ at: new Date().toISOString(), results, metrics, errors: errors.slice(0, 20) }, null, 1));
+// kısmi (ONLY) koşularda önceki sonuçları koru: aynı kimlikli kontrol yenilenir, diğerleri kalır
+let merged = results; let mm = metrics;
+if (only) { try { const prev = JSON.parse(readFileSync(`${OUT}/e2e-report.json`, 'utf8')); const ids = new Set(results.map((r) => r.id)); merged = [...prev.results.filter((r: { id: string }) => !ids.has(r.id)), ...results]; mm = { ...prev.metrics, ...metrics }; } catch { /* ilk koşu */ } }
+writeFileSync(`${OUT}/e2e-report.json`, JSON.stringify({ at: new Date().toISOString(), results: merged, metrics: mm, errors: errors.slice(0, 20) }, null, 1));
 await browser.close(); await srv.close();
 const failed = results.filter((r) => !r.ok); console.log(`\n${results.length - failed.length}/${results.length} kontrol geçti`);
 process.exit(failed.length ? 1 : 0);

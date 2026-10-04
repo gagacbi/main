@@ -1,7 +1,7 @@
 /** Üretilmiş ses: kopuz esintili pentatonik ezgi, davul, höömey benzeri bordo, efekt sesleri. Dış dosya yok. */
 export class Audio {
   ctx: AudioContext | null = null; master!: GainNode; analyser: AnalyserNode | null = null; sfxBus!: GainNode; musicBus!: GainNode; muted = false; started = false; vol = 0.6;
-  private timer = 0; private step = 0; private nextT = 0; tension = 0;
+  private step = 0; private nextT = 0; tension = 0;
   constructor() { try { this.muted = localStorage.getItem('kut.mute') === '1'; } catch { /* */ } }
   start() {
     if (this.started) { if (this.ctx?.state === 'suspended') void this.ctx.resume(); return; }
@@ -12,7 +12,7 @@ export class Audio {
     this.sfxBus = c.createGain(); this.sfxBus.gain.value = 0.9; this.sfxBus.connect(this.master);
     this.musicBus = c.createGain(); this.musicBus.gain.value = 0.34; this.musicBus.connect(this.master);
     this.started = true; this.nextT = c.currentTime + 0.2; this.drone(); if (c.state === 'suspended') void c.resume();
-    this.timer = window.setInterval(() => this.sched(), 120);
+    window.setInterval(() => this.sched(), 120);
   }
   /** Tanılama: ana çıkıştaki ses enerjisi (0 = sessiz) */
   level(): number { if (!this.analyser) return 0; const d = new Uint8Array(this.analyser.fftSize); this.analyser.getByteTimeDomainData(d); let s = 0; for (const v of d) s += Math.abs(v - 128); return s / d.length; }

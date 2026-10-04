@@ -1,8 +1,8 @@
-import { BOY_COLORS, HUB, HUB_R, RIFT, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL } from '@shared/game';
+import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { worldObstacles } from '@shared/world';
 import type { Game } from '../game/game';
-import { fmtDur, getLang, hasKey, itemName, num, t } from '../i18n';
+import { getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 import { Panels, type PanelName } from './panels';
@@ -122,7 +122,7 @@ export class UI {
     this.hudAcc = 1;
     if (prev && m.tut.step > prev.tut.step) this.sfx('upok');
     const alert = m.skillPts > 0 || (m.level >= 10 && m.spec === 'none'); this.e.btns.querySelector('[data-p="skills"]')?.classList.toggle('alert', alert);
-    this.e.btns.querySelector('[data-p="oba"]')?.classList.toggle('alert', m.expeditions.some((e) => Date.now() >= e.endAt));
+    this.e.btns.querySelector('[data-p="oba"]')?.classList.toggle('alert', m.expeditions.some((e) => this.g.net.now() >= e.endAt));
   }
 
   // ───────── HUD ─────────
@@ -209,6 +209,5 @@ export class UI {
     const ang = Math.atan2(Math.sin(g.rot) * rx + Math.cos(g.rot) * rz, Math.sin(g.rot) * fx + Math.cos(g.rot) * fz);
     ctx.translate(cx, cx); ctx.rotate(ang); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(7, 8); ctx.lineTo(0, 4); ctx.lineTo(-7, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
-    void RIFT; void itemName; void fmtDur;
   }
 }

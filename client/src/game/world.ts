@@ -1,5 +1,5 @@
 import {
-  Color3, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ShaderMaterial, StandardMaterial, TransformNode, Vector3, VertexBuffer, VertexData, type Scene,
+  Color3, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ShaderMaterial, StandardMaterial, TransformNode, VertexBuffer, VertexData, type Scene,
 } from '@babylonjs/core';
 import { BOYS, BOY_COLORS, HUB, HUB_R, WORLD_R, type Boy } from '@shared/game';
 import { mulberry32 } from '@shared/rng';
@@ -270,7 +270,7 @@ export class World3D {
     specs.push({ k: 'cyl', dt: 1.6, db: 1.9, h: 1.0, p: [D.x + 1.6, 0.5, D.z - 1.4], c: '#5b5870', c2: '#7a7894' }, { k: 'cyl', d: 1.3, h: 0.1, p: [D.x + 1.6, 1.02, D.z - 1.4], c: '#2a2432' });
     specs.push({ k: 'box', w: 1.5, h: 0.5, dp: 0.7, p: [D.x - 1.3, 1.0, D.z - 0.5], c: '#4d4a60', gloss: 0.6 }, { k: 'box', w: 0.9, h: 0.7, dp: 0.6, p: [D.x - 1.3, 0.35, D.z - 0.5], c: '#6b4326' }, { k: 'cone', db: 0.5, dt: 0.1, h: 0.5, p: [D.x - 2.3, 1.22, D.z - 0.5], r: [0, 0, Math.PI / 2], c: '#4d4a60', gloss: 0.6 });
     specs.push({ k: 'cyl', d: 1.0, h: 0.2, p: [D.x - 3.2, 1.1, D.z + 1.2], r: [0, 0, Math.PI / 2], c: '#9aa7b8', gloss: 0.7 });
-    for (const [dx, dz, rot] of [[2.4, 1.6, 0.4], [-1.8, 2.2, -0.3]]) specs.push({ k: 'cyl', d: 0.14, h: 1.6, p: [D.x + dx, 0.12, D.z + dz], r: [0, 0, Math.PI / 2], c: '#8a5a32' });
+    for (const [dx, dz] of [[2.4, 1.6], [-1.8, 2.2]]) specs.push({ k: 'cyl', d: 0.14, h: 1.6, p: [D.x + dx, 0.12, D.z + dz], r: [0, 0, Math.PI / 2], c: '#8a5a32' });
     // ateş çukuru + taşlar
     for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; specs.push({ k: 'icos', d: 0.85, s: [1, 0.7, 1], p: [Math.cos(a) * 1.5, 0.3, Math.sin(a) * 1.5], c: '#8a8aa6', c2: '#b9b9d2', sub: 0 }); }
     specs.push({ k: 'cyl', d: 0.2, h: 1.7, p: [0, 0.34, 0], r: [0, 0, Math.PI / 2], c: '#6b4326' }, { k: 'cyl', d: 0.2, h: 1.7, p: [0, 0.34, 0], r: [0, 1.57, Math.PI / 2], c: '#7a5030' });
@@ -317,10 +317,10 @@ export class World3D {
 
   setInscriptions(n: number) { this.steleMat.setColor3('uEmissive', new Color3(0.1 + n * 0.05, 0.35 + n * 0.12, 0.7 + n * 0.1)); }
 
-  update(dt: number, camPos: Vector3) {
+  update(dt: number) {
     this.time += dt; const t = this.time;
     for (const m of this.mats) { m.setFloat('uTime', t); }
-    this.clouds.rotation.y += dt * 0.004; void camPos;
+    this.clouds.rotation.y += dt * 0.004;
     for (const f of this.flames) { const ph = (f.metadata?.ph ?? 0) as number; f.scaling.y = 0.85 + Math.sin(t * 9 + ph * 3) * 0.2 + Math.sin(t * 17 + ph) * 0.08; f.scaling.x = f.scaling.z = 0.92 + Math.sin(t * 7 + ph) * 0.1; f.rotation.y = t * 0.8; }
     this.flagPivots.forEach((p, i) => { p.rotation.y = Math.sin(t * 1.6 + i) * 0.12; });
     this.steleMat.setColor3('uFlashColor', Color3.White());
