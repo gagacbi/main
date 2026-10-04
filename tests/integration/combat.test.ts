@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { HUB, SKILLS, computeStats, mobXp, xpToNext, HUB_R } from '../../shared/game';
+import { HUB, SKILLS, computeStats, makeItem, mobXp, xpToNext, HUB_R } from '../../shared/game';
 import { F } from '../../shared/protocol';
 import { Bot, mobAt, playerOf, startTestServer, tp, uniq, waitSnap, worldOf, type TestServer } from './helpers';
 
@@ -191,7 +191,7 @@ describe('C2/C3/C4 PvP, derece, muhafız, düello', () => {
   test('kırmızı adlı oyuncu ölünce eşya düşürebilir; kırmızıyı öldüren ceza almaz', async () => {
     const k = await fresh('yer', 'Av'); const red = await fresh('gok', 'Kirmizi'); const w = worldOf(s, k);
     const pr = playerOf(s, red), pk = playerOf(s, k); pr.d.rank = -1; tp(s, red, FAR.x, FAR.z + 1);
-    pr.d.items.push(w.ctx.rng && (await import('../../shared/game')).makeItem(() => 0.5, 'weapon', 3, 0));
+    pr.d.items.push(makeItem(() => 0.5, 'weapon', 3, 0));
     s.ctx.rng = () => 0.1; // eşya düşürme şansı tutsun
     w.killPlayer(pr, pk); s.ctx.rng = Math.random;
     expect(pk.d.rank).toBe(0); expect(pr.d.items.length).toBe(0);

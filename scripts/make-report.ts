@@ -1,0 +1,124 @@
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
+
+/**
+ * Teslim raporunu üretir ve her kabul kriterinin kanıtını DOĞRULAR:
+ *  - vitest JSON çıktısındaki testler gerçekten geçmiş mi,
+ *  - e2e raporundaki kontroller geçmiş mi,
+ *  - ekran görüntüsü dosyaları var mı.
+ * Herhangi bir kriter kanıtsız veya başarısızsa betik hata koduyla çıkar.
+ */
+type Ev = { t?: string; e?: string; s?: string; d?: string };
+interface Crit { id: string; text: string; ev: Ev[] }
+const E = (...ev: Ev[]) => ev;
+
+const CRITERIA: Crit[] = [
+  { id: 'A1', text: 'Babylon.js + TypeScript + Vite istemci, Node.js + Colyseus sunucu; tek dil TypeScript', ev: E({ d: 'stack' }) },
+  { id: 'A2', text: 'Sunucu yetkili: hasar/ganimet/yükseltme/ekonomi yalnızca sunucuda; istemci yalnızca niyet yollar', ev: E({ t: 'istemci yalnızca yön gönderir' }, { t: 'hasar ve ganimet istemciden verilemez' }, { t: 'öldürme: deneyim + akçe + ganimet' }) },
+  { id: 'A3', text: 'Hız aşımı / ışınlanma denemesi etkisiz', ev: E({ t: 'ışınlanma denemesi' }, { t: 'ağ kesilince girdi zaman aşımına' }) },
+  { id: 'A4', text: 'İstek hızı sınırlaması', ev: E({ t: 'saniyede çok sayıda RPC' }, { t: 'sohbet sıklığı sınırlanır' }) },
+  { id: 'A5', text: 'Kalıcılık: çıkış-giriş ve sunucu yeniden başlatma sonrası veri aynen döner', ev: E({ t: 'çıkış-giriş sonrası karakter' }, { t: 'sunucu yeniden başlasa da' }) },
+  { id: 'A6', text: 'Tüm ekonomi işlemleri ledger’a yazılır', ev: E({ t: 'çıkış-giriş sonrası karakter' }, { t: 'satış akçe verir' }, { t: 'RPC üzerinden: demirciye yakın olmak şart' }) },
+  { id: 'A7', text: 'Katmanlama ve oymak arkadaşını aynı katmana yönlendirme', ev: E({ t: 'oda dolunca ikinci katman açılır' }) },
+  { id: 'A8', text: 'Parola düz metin saklanmaz; hatalı parola/kopya ad reddedilir', ev: E({ t: 'parola düz metin saklanmaz' }, { t: 'aynı hesapla ikinci giriş' }) },
+  { id: 'A9', text: '10 eşzamanlı istemci birbirini görür; tick süresi bütçe içinde', ev: E({ t: '10 eşzamanlı istemci' }, { d: 'a9' }) },
+  { id: 'A10', text: 'Başlangıç yükü 50 MB altında', ev: E({ d: 'bundle' }) },
+  { id: 'B1', text: 'Saldırı basılı tutulunca en yakın düşmana otomatik seri vuruş', ev: E({ t: 'saldırı basılı tutulunca' }, { e: 'B1.otomatik' }) },
+  { id: 'B2', text: '6 yetenek, bekleme sunucuda doğrulanır, alan hasarı', ev: E({ t: 'bekleme sunucuda doğrulanır' }, { t: 'alan yeteneği tek seferde' }, { t: '6 aktif yetenek' }, { e: 'B2.alan' }, { e: 'B2.yetenek-temizleme' }, { s: '06c-alan-yetenegi.png' }) },
+  { id: 'B3', text: 'Yetenek kademeleri M1…G1, P', ev: E({ t: 'yetenek kademesi' }, { t: 'daha yüksek kademe daha çok hasar' }, { e: 'B3.kademe' }, { s: '10-yetenekler.png' }) },
+  { id: 'B4', text: 'Seviye 10 uzmanlık: Kalkan Alp / Kılıç Alp', ev: E({ t: 'seviye 10 öncesi seçilemez' }, { t: 'Kalkan Alp sarsıntıyla' }, { t: 'Kalkan Alp daha dayanıklı' }, { e: 'B4.uzmanlik' }, { s: '09-karakter-uzmanlik.png' }) },
+  { id: 'B5', text: 'Durum etkileri: sersemletme, yavaşlatma, zehir, lanet, kalkan', ev: E({ t: 'sersemletme: sersemlemiş yaratık' }, { t: 'zehir: zamanla hasar verir' }, { t: 'Albastı laneti' }, { t: 'Kalkan Alp sarsıntıyla' }, { t: 'Çağrı Narası uzaktaki' }) },
+  { id: 'B6', text: 'Yaratık toplama (Çağrı Narası) ve ganimet yağmuru', ev: E({ t: 'Çağrı Narası uzaktaki' }, { e: 'B6.toplama' }, { e: 'B6.ganimet' }, { e: 'B6.ganimet-toplandi' }, { s: '06b-cagri-narasi.png' }, { s: '07-ganimet-yagmuru.png' }) },
+  { id: 'B7', text: 'Ölüm cezası bölgeye göre işler', ev: E({ t: 'riskli bölgede yaratığa ölünce' }, { t: 'güvenli bölgede yaratık saldırmaz' }, { e: 'B7.olum-ekrani' }, { e: 'B7.yeniden-dogus' }, { s: '20-olum.png' }) },
+  { id: 'B8', text: 'PvE ve PvP için ayrı katsayı', ev: E({ t: 'PvP ayrı katsayı kullanır' }, { t: 'lanet verilen hasarı azaltır' }) },
+  { id: 'C1', text: '3 boy, seçim, pasif bonus, renk kimliği', ev: E({ t: 'Gök hız, Yer can+savunma' }, { e: 'C1.boy-secimi' }, { e: 'C1.boy-kaydi' }, { e: 'F2.boy-kimlik' }, { s: '02-karakter-olustur.png' }) },
+  { id: 'C2', text: 'Güvenli bölgede PvP yok (yalnızca düello); riskli bölgede açık', ev: E({ t: 'riskli bölgede farklı boyun oyuncusu' }, { t: 'güvenli bölgede yaratık saldırmaz' }, { t: 'düello: yalnızca güvenli bölgede' }) },
+  { id: 'C3', text: 'Derece sistemi: ceza, kırmızı ad, geri kazanma', ev: E({ t: 'derece: kendi boyunu' }, { t: 'kırmızı adlı oyuncu ölünce' }) },
+  { id: 'C4', text: 'Şehir muhafızları kırmızı adlıya saldırır', ev: E({ t: 'derece: kendi boyunu' }) },
+  { id: 'D1', text: '50 seviye, her 10 seviyede duvar, Kut puanı', ev: E({ t: '50 seviye; her 10 seviyede belirgin duvar' }, { t: 'seviye sınırından sonra deneyim Kut' }, { t: 'yaratık başına gereken sayı' }, { t: 'seviye atlama: deneyim eğrisine göre' }) },
+  { id: 'D2', text: 'Dinlenmiş deneyim: birikim, ≈1,5 seviye sınır, 2× deneyim, obada hızlı', ev: E({ t: 'üst sınır ≈ 1,5 seviye' }, { t: 'obada (otağ yakını) daha hızlı' }, { t: 'dinlenmiş deneyim: çevrimdışıyken birikir' }) },
+  { id: 'D3', text: 'Artı basma +0→+9, PRD oranları, +5 üstü yok olur, oranlar arayüzde', ev: E({ t: 'oranlar PRD taslağıyla uyumlu' }, { t: 'istatistiksel doğrulama' }, { t: '+1…+4 başarısızlıkta eşya korunur' }, { e: 'D3.oranlar-ui' }, { e: 'D3.basari' }, { e: 'D3.yok-olma' }, { s: '11-demirci-artibasma.png' }) },
+  { id: 'D4', text: 'El kitabı şans artırır; koruma tılsımı korur; market/oyun içi eşitliği', ev: E({ t: 'demirci el kitabı +10 puan ekler' }, { t: 'el kitabı serbest, koruma tılsımı Demirhane 2' }, { e: 'D4.kitap' }, { e: 'D4.tilsim' }, { s: '11d-demirci-tilsim-korudu.png' }) },
+  { id: 'D5', text: 'Ganimet kademeleri, efsunlar, bireysel ganimet', ev: E({ t: 'kademe dağılımı yaklaşık' }, { t: 'üst kademe aynı seviyede daha güçlü' }, { t: 'ganimet yalnızca vuran oyuncuya görünür' }, { e: 'D5.envanter' }, { s: '08-canta.png' }) },
+  { id: 'D6', text: 'Erlik çatlağı: rastgele, dalgalar + bekçi, ölçekleme, otomatik katılım, garanti ganimet', ev: E({ t: 'rastgele zamanda ve yerde açılır' }, { t: 'otomatik katılım: yaklaşınca dalgalar' }, { t: 'zorluk yakındaki oyuncu sayısı' }, { e: 'D6.catlak-ui' }, { s: '18-erlik-catlagi-dalga.png' }) },
+  { id: 'E1', text: 'Acemi oymak, otomatik giriş, NPC ak sakal öğretir', ev: E({ t: 'yeni oyuncu boyunun acemi oymağına' }, { t: 'öğretici adımları' }, { e: 'E1.ak-sakal' }, { e: 'E1.oba-paneli' }, { s: '12-ak-sakal.png' }, { s: '13-oba.png' }) },
+  { id: 'E2', text: '2 bina; yükseltme bitiş zamanı DB’de, çevrimdışıyken ilerler', ev: E({ t: 'bitiş zamanı veritabanına yazılır' }, { e: 'E2.yukseltme' }, { s: '14-oba-yukseltme.png' }) },
+  { id: 'E3', text: 'Otağ diğer binaların sınırını belirler; acemi oba sınırı', ev: E({ t: 'bitiş zamanı veritabanına yazılır' }, { t: 'acemi oba seviye sınırı vardır' }) },
+  { id: 'E4', text: 'Yoldaş seferleri 1/4/12 saat, giriş anında hesaplanır, yuva sınırı', ev: E({ t: 'sonuç tohuma bağlı deterministik' }, { t: '1/4/12 saat; erken toplanamaz' }, { t: 'yoldaş yuvası dolunca' }, { e: 'E4.sefer' }, { e: 'E4.sefer-hazir' }, { s: '15b-sefer-odulu.png' }) },
+  { id: 'E5', text: 'Katılım puanı ve puana göre paylaşım', ev: E({ t: 'bağış, yükseltme ve sefer katılım puanı' }, { t: 'katılım puanı olmayan üye de pay alır' }) },
+  { id: 'E6', text: 'Oba üretimi çevrimdışıyken birikir ve girişte toplanır', ev: E({ t: 'üretim çevrimdışıyken birikir' }) },
+  { id: 'E7', text: 'Kayıp Yazıtlar: sunucu çapı sayaç, eşik, duyuru', ev: E({ t: 'sunucu çapı parça sayacı' }, { e: 'E7.yazit' }, { s: '16-yazitlar.png' }) },
+  { id: 'F1', text: 'Cel-shade: bantlı gölge + kontur; PRD paleti', ev: E({ e: 'F1.toon' }, { e: 'F1.palet' }, { s: '03-oyun-yurt.png' }, { s: '05-yaratiklar.png' }) },
+  { id: 'F2', text: 'Boy renk kimliği; silüetten okunur sınıf/boy', ev: E({ e: 'F2.boy-kimlik' }, { s: '04-boylar-silueti.png' }) },
+  { id: 'F3', text: 'Yaratık türleri ayrı siluetli ve animasyonlu', ev: E({ e: 'F3.yaratiklar' }, { e: 'F3.siluet' }, { s: '05-yaratiklar.png' }) },
+  { id: 'F4', text: 'Keçe/deri paneller, tamga ikonları, minimal HUD, mini harita', ev: E({ e: 'F4.hud' }, { s: '03-oyun-yurt.png' }, { s: '13-oba.png' }, { s: '11-demirci-artibasma.png' }) },
+  { id: 'F5', text: 'Üretilmiş kopuz/davul sesi, efekt sesleri, sessiz mod', ev: E({ e: 'F5.ses' }, { e: 'F5.sessiz' }) },
+  { id: 'F6', text: 'Türkçe ve İngilizce, çalışma anında değişir; Türkçe karakterler doğru', ev: E({ e: 'F6.tr' }, { e: 'F6.en' }, { e: 'F6.font' }, { s: '01-giris-tr.png' }, { s: '01b-giris-en.png' }) },
+  { id: 'F7', text: 'Performans ölçülür ve raporlanır; 150 ms gecikmede akıcılık', ev: E({ e: 'F7.olcum' }, { e: 'B.gecikme150' }) },
+  { id: 'G1', text: 'typecheck, test, build hatasız', ev: E({ d: 'gate' }) },
+];
+
+const OUT = 'docs/evidence';
+const j = <T>(p: string): T | null => (existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')) as T) : null);
+const vt = j<{ testResults: { assertionResults: { ancestorTitles: string[]; title: string; status: string }[] }[]; numTotalTests: number; numPassedTests: number; numFailedTests: number }>(`${OUT}/vitest.json`);
+const e2e = j<{ at: string; results: { id: string; ok: boolean; detail: string }[]; metrics: Record<string, unknown> }>(`${OUT}/e2e-report.json`);
+const a9 = j<{ clients: number; tickAvgMs: number; tickMaxMs: number; budgetMs: number; tickHz: number; mobs: number }>(`${OUT}/metrics-a9.json`);
+if (!vt || !e2e) { console.error('vitest.json veya e2e-report.json eksik'); process.exit(2); }
+const tests = vt.testResults.flatMap((f) => f.assertionResults.map((a) => ({ name: [...a.ancestorTitles, a.title].join(' > '), ok: a.status === 'passed' })));
+
+// derleme / paket boyutu
+function walk(d: string): string[] { return readdirSync(d).flatMap((f) => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : [p]; }); }
+const dist = existsSync('dist') ? walk('dist') : [];
+const raw = dist.reduce((s, f) => s + statSync(f).size, 0);
+const entry = dist.filter((f) => /index-.*\.(js|css)$|index\.html$/.test(f));
+const html = readFileSync('dist/index.html', 'utf8');
+const usedFonts = [...html.matchAll(/href="([^"]+\.woff2?)"/g)].length;
+const initial = dist.filter((f) => /\.(js|css|html)$/.test(f) && (/index-/.test(f) || f.endsWith('index.html'))); void entry; void usedFonts;
+const initialRaw = initial.reduce((s, f) => s + statSync(f).size, 0);
+const initialGz = initial.reduce((s, f) => s + gzipSync(readFileSync(f)).length, 0);
+const fontBytes = dist.filter((f) => /\.woff2$/.test(f)).reduce((s, f) => s + statSync(f).size, 0);
+const mb = (n: number) => (n / 1048576).toFixed(2) + ' MB';
+
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const deps = { ...pkg.dependencies, ...pkg.devDependencies } as Record<string, string>;
+const tsc = spawnSync('npx', ['tsc', '--noEmit', '-p', 'tsconfig.json'], { encoding: 'utf8' });
+
+const detailOf = (e: Ev): { ok: boolean; label: string } => {
+  if (e.t) { const m = tests.filter((x) => x.name.includes(e.t!)); return { ok: m.length > 0 && m.every((x) => x.ok), label: `Test: ${m[0]?.name ?? '— BULUNAMADI —'}` }; }
+  if (e.e) { const r = e2e.results.find((x) => x.id === e.e); return { ok: !!r && r.ok, label: `E2E \`${e.e}\`: ${r?.detail ?? '— BULUNAMADI —'}` }; }
+  if (e.s) { const ok = existsSync(`${OUT}/${e.s}`); return { ok, label: `Ekran görüntüsü: [${e.s}](evidence/${e.s})` }; }
+  switch (e.d) {
+    case 'stack': { const ok = ['@babylonjs/core', 'colyseus.js', '@colyseus/core', 'vite', 'typescript'].every((k) => k in deps) && tsc.status === 0; return { ok, label: `Bağımlılıklar: @babylonjs/core ${deps['@babylonjs/core']}, colyseus.js ${deps['colyseus.js']}, @colyseus/core ${deps['@colyseus/core']}, vite ${deps['vite']}, typescript ${deps['typescript']}; \`tsc --noEmit\` çıkış=${tsc.status}` }; }
+    case 'a9': return { ok: !!a9 && a9.tickAvgMs < a9.budgetMs / 5, label: a9 ? `Ölçüm: ${a9.clients} istemci, ${a9.mobs} yaratık, tick ort. **${a9.tickAvgMs} ms**, maks. ${a9.tickMaxMs} ms (bütçe ${a9.budgetMs} ms @ ${a9.tickHz} Hz)` : 'ölçüm yok' };
+    case 'bundle': return { ok: initialRaw + fontBytes < 50 * 1048576, label: `Ölçüm: ilk yük (index.html + JS + CSS) ham ${mb(initialRaw)}, gzip **${mb(initialGz)}**; yazı tipleri ${mb(fontBytes)}; dist toplam ${mb(raw)} (sınır 50 MB)` };
+    case 'gate': { const ok = tsc.status === 0 && vt.numFailedTests === 0 && dist.length > 0; return { ok, label: `\`tsc --noEmit\` çıkış=${tsc.status}; vitest ${vt.numPassedTests}/${vt.numTotalTests} geçti; dist/ derlendi (${dist.length} dosya)` }; }
+  }
+  return { ok: false, label: '?' };
+};
+
+let failed = 0; const rows: string[] = [];
+for (const c of CRITERIA) {
+  const evs = c.ev.map(detailOf); const ok = evs.length > 0 && evs.every((x) => x.ok); if (!ok) failed++;
+  rows.push(`| **${c.id}** | ${c.text} | ${ok ? '✅' : '❌'} | ${evs.map((x) => `${x.ok ? '' : '❌ '}${x.label}`).join('<br>')} |`);
+}
+
+const shots = readdirSync(OUT).filter((f) => f.endsWith('.png')).sort();
+const perf = (e2e.metrics.perf ?? {}) as { fps?: number; meshes?: number; active?: number; tris?: number; cpuMs?: number };
+const lat = (e2e.metrics.latency150 ?? {}) as { maxPredictionError?: number; settled?: number };
+
+const md = readFileSync('docs/TESLIM_RAPORU.sablon.md', 'utf8')
+  .replace('{{TARIH}}', new Date().toISOString().slice(0, 10))
+  .replace('{{DURUM}}', failed === 0 ? `**${CRITERIA.length}/${CRITERIA.length} kabul kriteri kanıtla sağlandı.**` : `**${CRITERIA.length - failed}/${CRITERIA.length} kriter sağlandı; ${failed} kriter kanıtsız/başarısız.**`)
+  .replace('{{TABLO}}', rows.join('\n'))
+  .replace('{{TESTLER}}', `${vt.numPassedTests}/${vt.numTotalTests}`)
+  .replace('{{E2E}}', `${e2e.results.filter((r) => r.ok).length}/${e2e.results.length}`)
+  .replace('{{PERF}}', `kare başına JS/CPU maliyeti **${perf.cpuMs ?? '?'} ms** (60 FPS bütçesi 16,7 ms); aktif mesh ${perf.active}/${perf.meshes}; çizilen üçgen ≈ ${Math.round(perf.tris ?? 0).toLocaleString('tr-TR')}; yazılım rasterleştirmede (SwiftShader) ölçülen FPS ≈ ${perf.fps}`)
+  .replace('{{GECIKME}}', `150 ms gidiş-dönüş yapay gecikmede yürürken tahmin sapması en çok **${(lat.maxPredictionError ?? 0).toFixed(2)} birim**, durunca **${(lat.settled ?? 0).toFixed(2)} birim**`)
+  .replace('{{BOYUT}}', `ilk yük gzip **${mb(initialGz)}** (ham ${mb(initialRaw)}) + yazı tipleri ${mb(fontBytes)}; toplam dist ${mb(raw)}`)
+  .replace('{{GALERI}}', shots.map((s) => `- [\`${s}\`](evidence/${s})`).join('\n'));
+writeFileSync('docs/TESLIM_RAPORU.md', md);
+console.log(`Rapor yazıldı. Kriter: ${CRITERIA.length - failed}/${CRITERIA.length} ✅`);
+for (const c of CRITERIA) { const evs = c.ev.map(detailOf); if (!evs.every((x) => x.ok)) console.log('KANITSIZ', c.id, evs.filter((x) => !x.ok).map((x) => x.label).join(' | ')); }
+process.exit(failed ? 1 : 0);

@@ -15,7 +15,7 @@ export interface PlayerData {
 }
 
 export interface Config {
-  maxPerLayer: number; riftEvery: [number, number]; test: boolean; mobScale: number; rateLimit: boolean; spawnCamps: boolean;
+  maxPerLayer: number; riftEvery: [number, number]; test: boolean; mobScale: number; rateLimit: boolean; spawnCamps: boolean; /** yalnızca test: her yönde yapay gecikme (ms) */ simLatency: number;
 }
 export interface Ctx {
   db: Db; clock: Clock; rng: Rng; cfg: Config; worlds: Set<World>; oymaks: Map<number, OymakRec>;

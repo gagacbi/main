@@ -1,0 +1,214 @@
+import { BOY_COLORS, HUB, HUB_R, RIFT, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL } from '@shared/game';
+import { F, type ChatMsg, type Me } from '@shared/protocol';
+import { worldObstacles } from '@shared/world';
+import type { Game } from '../game/game';
+import { fmtDur, getLang, hasKey, itemName, num, t } from '../i18n';
+import { emblemSvg } from './emblems';
+import { icon } from './icons';
+import { Panels, type PanelName } from './panels';
+
+const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
+
+export class UI {
+  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement;
+  slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
+  constructor(public g: Game, root: HTMLElement) {
+    this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root);
+  }
+  sfx(n: string) { this.g.audio.sfx(n); }
+
+  private build() {
+    const r = this.root;
+    r.insertAdjacentHTML('beforeend', `
+      <div class="hud-tl leather" id="hudtl"><div class="portrait" id="portrait"></div><div class="lvl" id="lvl"></div><div class="nm"><span id="nm"></span><small id="spec"></small></div>
+        <div class="bar hp" id="hpbar"><i></i><span></span></div><div class="bar xp" id="xpbar"><i class="rest"></i><i class="base"></i></div><div class="statusrow" id="tags"></div></div>
+      <div class="hud-top"><div class="zonepill leather" id="zone"></div><div class="targetf leather" id="target"><div class="nm"><span></span><span></span></div><div class="bar hp"><i></i><span></span></div></div>
+        <div class="riftbar leather" id="riftbar"><div class="t"><span></span><span></span></div><div class="bar"><i></i></div></div></div>
+      <div class="hud-tr"><div class="minimap"><canvas id="mm" width="340" height="340"></canvas><div class="n">N</div></div>
+        <div class="btnrow" id="btns"></div><div class="quest leather" id="quest"></div><div class="info" id="info"></div></div>
+      <div class="skillbar leather" id="skillbar"></div>
+      <div class="chat" id="chat"><div class="tabs" id="ctabs"></div><div class="log" id="clog"></div><input id="cin" maxlength="140" autocomplete="off" /><div class="hint">${t('ui.chat.hint')}</div></div>
+      <div class="prompt leather" id="prompt"></div><div class="toasts" id="toasts"></div><div class="compass" id="compass"><i></i></div>
+      <div class="death" id="death"><div class="box felt"><h2>${t('ui.dead')}</h2><p id="deadp"></p><button class="btn primary" id="respawn" disabled></button></div></div>
+      <div class="duelbox leather" id="duelbox"><div id="duelt"></div><div class="row"><button class="btn green small" id="duelyes"></button><button class="btn small" id="duelno">${t('ui.cancel')}</button></div></div>
+      <div class="fpsbox" id="fps"></div>
+      <div class="conn" id="conn"><div class="felt" style="padding:28px 40px;text-align:center"><h2 style="margin:0 0 8px;font-family:var(--f-head)" id="connt"></h2><button class="btn primary" onclick="location.reload()">OK</button></div></div>`);
+    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
+    this.minimap = r.querySelector('#mm') as HTMLCanvasElement;
+    // yetenek çubuğu
+    this.e.skillbar.innerHTML = `<div class="slot atk" data-skill="-1" title="Space"><span class="key">␣</span>${icon('swords')}</div>` + SKILLS.map((s, i) => `<div class="slot" data-i="${i}" data-skill="${i}"><span class="key">${i + 1}</span>${icon(s.id)}<span class="rk"></span><div class="cd"></div><span class="cdt"></span><div class="lk"></div></div>`).join('');
+    this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
+    this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
+    // sağ üst düğmeler
+    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.inscr'], ['globe', 'settings', '', 'ui.settings']];
+    this.e.btns.innerHTML = btns.map(([ic, p, k, tt]) => `<button class="btn icon" data-p="${p}" title="${t(tt)}">${icon(ic)}${k ? `<span class="k">${k}</span>` : ''}<i class="dot"></i></button>`).join('');
+    this.e.btns.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('button[data-p]') as HTMLElement | null; if (b) this.open(b.dataset.p as PanelName); });
+    // sohbet
+    this.renderTabs();
+    this.e.ctabs.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('[data-t]') as HTMLElement | null; if (b) { this.chatTab = b.dataset.t as ChatTab; this.renderTabs(); this.renderChat(); } });
+    this.e.cin.addEventListener('keydown', (ev) => {
+      ev.stopPropagation();
+      if (ev.key === 'Enter') { const v = (this.e.cin as HTMLInputElement).value.trim(); if (v) this.sendChat(v); this.endTyping(); }
+      else if (ev.key === 'Escape') this.endTyping();
+    });
+    this.e.cin.addEventListener('blur', () => this.endTyping());
+    this.e.respawn.addEventListener('click', () => { void this.g.respawn(); });
+    this.e.duelyes.addEventListener('click', async () => { await this.g.net.rpc('duelAccept'); this.e.duelbox.style.display = 'none'; });
+    (this.e.duelbox.querySelector('#duelno') as HTMLElement).addEventListener('click', () => (this.e.duelbox.style.display = 'none'));
+    this.relocalize();
+  }
+  relocalize() {
+    this.e.respawn.textContent = t('ui.respawn'); (this.e.duelyes as HTMLElement).textContent = t('ui.accept'); this.e.cin.setAttribute('placeholder', t('ui.chat.ph'));
+    const h = this.root.querySelector('.death h2'); if (h) h.textContent = t('ui.dead'); const ch = this.root.querySelector('.chat .hint'); if (ch) ch.textContent = t('ui.chat.hint');
+    this.renderTabs(); this.e.btns.querySelectorAll('button[data-p]').forEach((b, i) => { const ks = ['ui.inventory', 'ui.character', 'ui.skills', 'ui.obaPanel', 'ui.inscr', 'ui.settings']; (b as HTMLElement).title = t(ks[i]); });
+    this.panels?.refresh(); this.hudAcc = 1; if (this.g.me) this.hud(0);
+  }
+  renderTabs() { const tabs: [ChatTab, string][] = [['all', getLang() === 'tr' ? 'Hepsi' : 'All'], ['near', t('ui.chat.near')], ['boy', t('ui.chat.boy')], ['oymak', t('ui.chat.oymak')]]; this.e.ctabs.innerHTML = tabs.map(([k, l]) => `<div class="tab ${this.chatTab === k ? 'on' : ''}" data-t="${k}">${l}</div>`).join(''); }
+  qualityChanged() { this.toast(getLang() === 'tr' ? 'Grafik kalitesi düşürüldü' : 'Graphics quality lowered', 'warn'); this.panels.refresh(); }
+
+  // ───────── girdi ─────────
+  key(k: string, e: KeyboardEvent) {
+    if (k === 'enter') { e.preventDefault(); this.startTyping(); return; }
+    if (k === 'escape') { if (this.panels.isOpen()) this.panels.close(); return; }
+    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', h: 'help', b: 'inv' };
+    if (map[k]) { e.preventDefault(); this.open(map[k], true); }
+    if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
+  }
+  open(p: PanelName | 'elder' | 'smith' | 'oba' | 'inscr', toggle = false) {
+    if (p === 'oba' || p === 'smith' || p === 'elder' || p === 'inscr') {
+      // etkileşimli paneller NPC/binaya yakınlık ister; uzaktaysa yalnızca bilgi gösterilir
+    }
+    if (toggle) this.panels.toggle(p as PanelName); else void this.panels.show(p as PanelName);
+  }
+  startTyping() { this.g.typing = true; this.e.chat.classList.add('typing'); (this.e.cin as HTMLInputElement).value = ''; this.e.cin.focus(); }
+  endTyping() { this.g.typing = false; this.e.chat.classList.remove('typing'); (this.e.cin as HTMLInputElement).blur(); this.g.canvas.focus(); }
+  sendChat(v: string) {
+    let ch: string = this.chatTab === 'all' ? 'near' : this.chatTab; let text = v; let to: string | undefined;
+    if (v.startsWith('/duel ')) { void this.g.net.rpc('duel', { name: v.slice(6).trim() }).then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); }); return; }
+    if (v.startsWith('/w ')) { const m = /^\/w\s+(\S+)\s+(.+)$/.exec(v); if (m) { ch = 'whisper'; to = m[1]; text = m[2]; } }
+    else if (v.startsWith('/b ')) { ch = 'boy'; text = v.slice(3); } else if (v.startsWith('/o ')) { ch = 'oymak'; text = v.slice(3); } else if (v.startsWith('/n ')) { ch = 'near'; text = v.slice(3); }
+    this.g.net.chat(ch, text, to);
+  }
+  chat(c: ChatMsg) {
+    this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
+    if (c.ch === 'sys' && c.key && hasKey(c.key)) {
+      if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
+      else if (['sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
+    }
+  }
+  renderChat() {
+    const log = this.e.clog; const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 12;
+    const rows = this.chatLog.filter((m) => this.chatTab === 'all' || m.ch === 'sys' || m.ch === 'whisper' || m.ch === this.chatTab);
+    log.innerHTML = rows.slice(-60).map((m) => {
+      if (m.ch === 'sys') return `<div class="m sys ${m.key?.startsWith('err') ? 'err' : ''}">✦ ${esc(m.key ? t(m.key, m.p) : m.text)}</div>`;
+      const label = m.ch === 'whisper' ? '✉' : m.ch === 'boy' ? '[' + t('ui.chat.boy') + ']' : m.ch === 'oymak' ? '[' + t('ui.chat.oymak') + ']' : '';
+      return `<div class="m ${m.ch}"><span class="who">${label} ${esc(m.from)}:</span> ${esc(m.text)}</div>`;
+    }).join('');
+    if (stick) log.scrollTop = log.scrollHeight;
+  }
+  sysLocal(key: string, p?: Record<string, string | number>) { this.chat({ ch: 'sys', from: '', text: '', key, p }); }
+  toast(text: string, kind = '') {
+    const d = document.createElement('div'); d.className = 'toast leather ' + kind; d.textContent = text; this.e.toasts.appendChild(d); setTimeout(() => d.remove(), 3300);
+    while (this.e.toasts.children.length > 4) this.e.toasts.firstElementChild?.remove();
+  }
+  duelInvite(from: string) { this.e.duelt.textContent = t('sys.duel_invite', { name: from }); this.e.duelbox.style.display = 'block'; setTimeout(() => (this.e.duelbox.style.display = 'none'), 30000); }
+  disconnected(code: number) { if (this.g.net.room && code !== 1000) { this.e.connt.textContent = code === 4001 ? t('err.duplicate') : t('err.disconnected'); this.e.conn.classList.add('on'); } }
+
+  private meSig = '';
+  onMe(m: Me, prev: Me | null) {
+    const sig = JSON.stringify([m.level, m.xp, m.gold, m.skillPts, m.spec, m.skillRanks, m.bag, m.items.map((i) => i.id + i.up), Object.values(m.equip).map((i) => i?.id + ':' + i?.up), m.tut, m.expeditions.map((e) => e.id), m.companions.map((c) => c.id + c.level), m.rank, m.inscr, m.points, m.oymakId]);
+    if (sig !== this.meSig) { this.meSig = sig; this.panels.refresh(); }
+    this.hudAcc = 1;
+    if (prev && m.tut.step > prev.tut.step) this.sfx('upok');
+    const alert = m.skillPts > 0 || (m.level >= 10 && m.spec === 'none'); this.e.btns.querySelector('[data-p="skills"]')?.classList.toggle('alert', alert);
+    this.e.btns.querySelector('[data-p="oba"]')?.classList.toggle('alert', m.expeditions.some((e) => Date.now() >= e.endAt));
+  }
+
+  // ───────── HUD ─────────
+  hud(dt: number) {
+    const g = this.g; const m = g.me; if (!m) return; const bc = BOY_COLORS[m.boy];
+    this.e.portrait.style.setProperty('--b1', bc.main); this.e.portrait.style.setProperty('--b2', bc.dark);
+    if (!this.e.portrait.firstChild) this.e.portrait.innerHTML = emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.4)');
+    this.e.lvl.textContent = String(m.level); this.e.nm.textContent = m.name; this.e.spec.textContent = t('spec.' + m.spec);
+    const hp = Math.max(0, g.hp); const mh = m.stats.maxHp;
+    (this.e.hpbar.querySelector('i') as HTMLElement).style.width = `${Math.min(100, (hp / mh) * 100)}%`; (this.e.hpbar.querySelector('span') as HTMLElement).textContent = `${num(hp)} / ${num(mh)}`; this.e.hpbar.classList.toggle('low', hp / mh < 0.3);
+    const base = this.e.xpbar.querySelector('.base') as HTMLElement; const rest = this.e.xpbar.querySelector('.rest') as HTMLElement;
+    const maxed = m.level >= MAX_LEVEL; base.style.width = `${Math.min(100, (m.xp / m.xpNext) * 100)}%`; rest.style.width = `${Math.min(100, ((m.xp + (maxed ? 0 : m.rested)) / m.xpNext) * 100)}%`;
+    this.e.xpbar.title = `${t('ui.xp')} ${num(m.xp)}/${num(m.xpNext)} · ${t('ui.rested')} ${num(m.rested)}/${num(m.restedCap)}`;
+    const tags: string[] = [`<span class="tag">${icon('akce')}${num(m.gold)}</span>`];
+    if (m.rested > 0) tags.push(`<span class="tag blue" title="${t('ui.rested')}">${icon('sound')}${t('ui.rested')} ${Math.round((m.rested / m.restedCap) * 100)}%</span>`);
+    if (m.rank < 0) tags.push(`<span class="tag red">${icon('skull')}${t('ui.rank')} ${m.rank}</span>`);
+    if (m.kut > 0) tags.push(`<span class="tag">${t('ui.kut')} ${m.kut}</span>`);
+    if (m.skillPts > 0) tags.push(`<span class="tag">${icon('skills')}${m.skillPts}</span>`);
+    this.e.tags.innerHTML = tags.join('');
+    // bölge
+    const risky = Math.hypot(g.pos.x, g.pos.z) >= HUB_R; this.e.zone.className = 'zonepill leather ' + (risky ? 'risky' : '');
+    this.e.zone.innerHTML = `${t(risky ? 'zone.risky' : 'zone.safe')} <span class="muted" style="color:#d8c49a;font-size:12px">· ${t('ui.layer')} ${g.net.welcome?.layer ?? 1} · ${g.snap?.pop ?? 1} ${t('ui.online').toLowerCase()}</span>`;
+    // hedef
+    const tg = g.focusId ? g.vs.get(g.focusId) : g.atkHeld ? g.currentTarget() : null;
+    if (tg && tg.dyingT < 0) { const tf = this.e.target; tf.style.display = 'block'; (tf.querySelector('.nm span') as HTMLElement).textContent = tg.kind === 'mob' ? t('mob.' + tg.mobType) : tg.name; (tf.querySelectorAll('.nm span')[1] as HTMLElement).textContent = `${t('ui.level')} ${tg.level}`; (tf.querySelector('.bar i') as HTMLElement).style.width = `${(tg.hp / tg.H) * 100}%`; (tf.querySelector('.bar span') as HTMLElement).textContent = `${num(tg.hp)} / ${num(tg.H)}`; } else this.e.target.style.display = 'none';
+    // çatlak çubuğu + pusula
+    let near: { x: number; z: number; d: number; w: number; st: number; h: number; H: number } | null = null;
+    for (const r of g.riftSnap) { const d = Math.hypot(r.x - g.pos.x, r.z - g.pos.z); if (!near || d < near.d) near = { x: r.x, z: r.z, d, w: r.w, st: r.st, h: r.h, H: r.H }; }
+    const rb = this.e.riftbar;
+    if (near && near.d < 70) { rb.style.display = 'block'; const sp = rb.querySelectorAll('.t span'); sp[0].textContent = t('rift.name'); sp[1].textContent = near.st === 0 ? t('rift.idle') : near.st === 2 ? t('rift.boss') : t('rift.wave', { n: near.w }); (rb.querySelector('.bar i') as HTMLElement).style.width = near.H ? `${(near.h / near.H) * 100}%` : '100%'; } else rb.style.display = 'none';
+    const cp = this.e.compass; if (near && near.d > 28) {
+      const dx = near.x - g.pos.x, dz = near.z - g.pos.z; const fx = -Math.cos(g.camYaw), fz = -Math.sin(g.camYaw); const rx = fz, rz = -fx;
+      const ang = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz); cp.style.display = 'block'; cp.style.transform = `translate(${Math.sin(ang) * Math.min(innerWidth, innerHeight) * 0.34}px, ${-Math.cos(ang) * Math.min(innerWidth, innerHeight) * 0.34}px) rotate(${ang}rad)`; cp.title = `${Math.round(near.d)}m`;
+    } else cp.style.display = 'none';
+    // görev takibi
+    const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
+    q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '');
+    // etkileşim ipucu
+    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + nb.key)}`; } else this.e.prompt.style.display = 'none';
+    // ölüm
+    const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
+    if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.textContent = left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : ''; }
+    void dt;
+  }
+  frame(dt: number, zone: string) {
+    void zone; this.hudAcc += dt; this.mapAcc += dt; this.fpsAcc += dt;
+    // yetenek bekleme (her kare)
+    const m = this.g.me; const now = performance.now();
+    this.slots.forEach((s, i) => {
+      const sk = SKILLS[i]; const locked = m.level < sk.lvl; s.classList.toggle('locked', locked);
+      (s.querySelector('.lk') as HTMLElement).textContent = locked ? t('ui.locked', { n: sk.lvl }) : ''; (s.querySelector('.lk') as HTMLElement).style.display = locked ? '' : 'none';
+      (s.querySelector('.rk') as HTMLElement).textContent = locked ? '' : SKILL_RANK_LABEL[m.skillRanks[i] - 1];
+      const left = Math.max(0, this.g.cdEnd[i] - now) / 1000; const cd = left > 0; const p = cd ? (left / sk.cd) * 100 : 0;
+      (s.querySelector('.cd') as HTMLElement).style.setProperty('--p', `${p}%`); const ct = s.querySelector('.cdt') as HTMLElement; ct.style.display = cd ? 'grid' : 'none'; if (cd) ct.textContent = left >= 1 ? String(Math.ceil(left)) : left.toFixed(1);
+      if (this.lastCd[i] && !cd && !locked) { s.classList.remove('ready-flash'); void s.offsetWidth; s.classList.add('ready-flash'); } this.lastCd[i] = cd;
+    });
+    if (this.hudAcc > 0.1) { this.hud(this.hudAcc); this.hudAcc = 0; }
+    if (this.mapAcc > 0.08) { this.drawMap(); this.mapAcc = 0; }
+    if (this.fpsAcc > 0.5) { this.fpsAcc = 0; this.e.fps.innerHTML = `${Math.round(this.g.fps)} ${t('ui.fps')} · ${t('ui.ping')} ${this.g.net.pingMs}ms<br>${this.g.gs.quality}`; this.e.info.innerHTML = ''; }
+  }
+
+  // ───────── mini harita ─────────
+  private drawMap() {
+    const g = this.g; const c = this.minimap; const ctx = c.getContext('2d')!; const S = c.width; const R = 95; const k = S / 2 / R; const cx = S / 2;
+    ctx.save(); ctx.clearRect(0, 0, S, S); ctx.beginPath(); ctx.arc(cx, cx, cx - 2, 0, Math.PI * 2); ctx.clip();
+    const yaw = g.camYaw; const fx = -Math.cos(yaw), fz = -Math.sin(yaw); const rx = fz, rz = -fx;
+    // dünya → harita (kamera yönü yukarı)
+    const P = (x: number, z: number): [number, number] => { const dx = x - g.pos.x, dz = z - g.pos.z; return [cx + (dx * rx + dz * rz) * k, cx - (dx * fx + dz * fz) * k]; };
+    const grd = ctx.createRadialGradient(cx, cx, 0, cx, cx, cx); grd.addColorStop(0, '#e8c765'); grd.addColorStop(1, '#c9a24a'); ctx.fillStyle = grd; ctx.fillRect(0, 0, S, S);
+    // Erlik bölgesi (mor halka) ve dünya sınırı
+    let [ox, oy] = P(0, 0); ctx.fillStyle = 'rgba(122,90,160,.55)'; ctx.beginPath(); ctx.arc(ox, oy, 150 * k, 0, 6.3); ctx.arc(ox, oy, 105 * k, 0, 6.3, true); ctx.fill();
+    ctx.fillStyle = '#4a2e6a'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, WORLD_R * k, 0, 6.3, true); ctx.fill();
+    ctx.fillStyle = '#5fbf6a'; ctx.beginPath(); ctx.arc(ox, oy, HUB_R * k, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff6df'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, 13 * k, 0, 6.3); ctx.fill();
+    ctx.fillStyle = 'rgba(30,120,60,.8)'; for (const o of worldObstacles()) if (o.kind === 'tree') { const [x, y] = P(o.x, o.z); if ((x - cx) ** 2 + (y - cx) ** 2 < cx * cx) { ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 6.3); ctx.fill(); } }
+    // NPC / bina
+    const icon2 = (x: number, z: number, col: string, r = 5, sq = false) => { const [a, b] = P(x, z); ctx.fillStyle = col; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2; ctx.beginPath(); if (sq) ctx.rect(a - r, b - r, r * 2, r * 2); else ctx.arc(a, b, r, 0, 6.3); ctx.fill(); ctx.stroke(); };
+    icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true); icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true);
+    for (const r of g.riftSnap) { const [x, y] = P(r.x, r.z); const pulse = 6 + Math.sin(performance.now() / 200) * 2; ctx.fillStyle = '#d27aff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, pulse, 0, 6.3); ctx.fill(); ctx.stroke(); }
+    for (const v of g.vs.views.values()) { if (v.self || v.dyingT >= 0) continue; const [x, y] = P(v.x, v.z); if (v.kind === 'mob') { ctx.fillStyle = v.boss ? '#ff2a6a' : '#e0453c'; ctx.beginPath(); ctx.arc(x, y, v.boss ? 6 : 2.8, 0, 6.3); ctx.fill(); } else { ctx.fillStyle = v.boy === g.myBoy ? '#4aa8ff' : '#ff9f43'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill(); ctx.stroke(); } }
+    for (const d of g.drops.values()) { const [x, y] = P(d.root.position.x, d.root.position.z); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); }
+    // oyuncu oku
+    ctx.save(); ctx.translate(cx, cx); ctx.rotate(Math.atan2(g.rot ? Math.sin(g.rot) * rx + Math.cos(g.rot) * rz : 0, 1)); ctx.restore();
+    const ang = Math.atan2(Math.sin(g.rot) * rx + Math.cos(g.rot) * rz, Math.sin(g.rot) * fx + Math.cos(g.rot) * fz);
+    ctx.translate(cx, cx); ctx.rotate(ang); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(7, 8); ctx.lineTo(0, 4); ctx.lineTo(-7, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    void RIFT; void itemName; void fmtDur;
+  }
+}

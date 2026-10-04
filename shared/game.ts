@@ -33,12 +33,14 @@ export const HUB = {
   akSakal: { x: -15, z: -2.5 },
   demirci: { x: 11, z: -6.5 },
   fire: { x: 0, z: 0 },
+  stele: { x: 2, z: -21 },
   spawn: { gok: { x: -7, z: 16 }, yer: { x: 0, z: 18 }, ay: { x: 7, z: 16 } },
   banners: { gok: { x: -9, z: 6 }, yer: { x: 0, z: 9 }, ay: { x: 9, z: 6 } },
   guards: [0, 1, 2, 3, 4, 5].map((i) => ({ x: Math.cos(i * 1.0472 + 0.5) * 30, z: Math.sin(i * 1.0472 + 0.5) * 30 })),
   interactOtag: 14,
   interactDemirci: 9,
   interactAkSakal: 9,
+  interactStele: 9,
 };
 
 export function zoneAt(x: number, z: number): 'safe' | 'risky' {

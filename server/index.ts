@@ -19,7 +19,7 @@ export async function startGameServer(opts: StartOptions = {}): Promise<GameServ
   const db = new Db(opts.dbPath ?? process.env.KUT_DB ?? '.data/kut.db');
   const cfg: Config = {
     maxPerLayer: Number(process.env.KUT_MAX_PER_LAYER ?? 150), riftEvery: [150, 300], test: process.env.KUT_TEST === '1',
-    mobScale: 1, rateLimit: true, spawnCamps: true, ...opts.cfg,
+    mobScale: 1, rateLimit: true, spawnCamps: true, simLatency: 0, ...opts.cfg,
   };
   const ctx: Ctx = {
     db, clock: new Clock(), rng: opts.rng ?? Math.random, cfg, worlds: new Set(), oymaks: new Map(),

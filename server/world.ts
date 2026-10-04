@@ -212,7 +212,6 @@ export class World {
       tgt.hp -= dmg;
       if (tgt.duelWith && tgt.hp <= 1) { tgt.hp = 1; this.endDuel(tgt, src?.kind === 'player' ? src : null); }
       this.emit({ k: 'dmg', id: tgt.id, v: dmg, crit: o.crit, src: src?.id, pl: true }, tgt.x, tgt.z);
-      tgt.meDirty = true;
       if (tgt.hp <= 0) this.killPlayer(tgt, src);
     } else {
       tgt.hp -= dmg;
@@ -227,7 +226,7 @@ export class World {
     }
     if (src?.kind === 'player' && !o.dot && src.stats.leech > 0 && dmg > 0) {
       const h = Math.round(dmg * src.stats.leech);
-      if (h > 0 && src.hp > 0) { src.hp = Math.min(src.stats.maxHp, src.hp + h); src.meDirty = true; }
+      if (h > 0 && src.hp > 0) src.hp = Math.min(src.stats.maxHp, src.hp + h);
     }
     return dmg;
   }
@@ -646,7 +645,7 @@ export class World {
         const inHub = zoneAt(p.x, p.z) === 'safe';
         const pct = (inHub ? 0.08 : 0.02) * p.stats.heal;
         p.regenAcc += p.stats.maxHp * pct * dt;
-        if (p.regenAcc >= 1) { const h = Math.floor(p.regenAcc); p.regenAcc -= h; p.hp = Math.min(p.stats.maxHp, p.hp + h); p.meDirty = true; }
+        if (p.regenAcc >= 1) { const h = Math.floor(p.regenAcc); p.regenAcc -= h; p.hp = Math.min(p.stats.maxHp, p.hp + h); }
       }
       if (p.duelWith) { const q = this.players.get(p.duelWith); if (!q || dist(p, q) > 45) this.endDuel(p, null); }
     }

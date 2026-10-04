@@ -11,6 +11,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["node", "vite/client"],
+    "baseUrl": ".",
+    "paths": { "@shared/*": ["shared/*"] },
     "experimentalDecorators": true,
     "useDefineForClassFields": false
   },

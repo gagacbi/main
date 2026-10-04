@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Client } from 'colyseus.js';
 import { HUB, PLAYER_BASE_SPEED, TICK_HZ } from '../../shared/game';
@@ -123,6 +124,7 @@ describe('A9 çoklu istemci', () => {
     const w = worldOf(s, bots[0]);
     const avg = w.tickMsSum / w.tickMsN;
     console.log(`[A9] tick ort=${avg.toFixed(3)} ms, maks=${w.tickMsMax.toFixed(2)} ms, oyuncu=${w.players.size}`);
+    mkdirSync('docs/evidence', { recursive: true }); writeFileSync('docs/evidence/metrics-a9.json', JSON.stringify({ clients: bots.length, mobs: w.mobs.size, tickAvgMs: +avg.toFixed(3), tickMaxMs: +w.tickMsMax.toFixed(2), budgetMs: 50, tickHz: TICK_HZ, snapshotsPerClient: Math.min(...bots.map((b) => b.snaps)) }, null, 1));
     expect(avg).toBeLessThan(10); // 50 ms bütçenin çok altında
     for (const b of bots) await b.leave();
   });

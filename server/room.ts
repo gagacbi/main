@@ -24,9 +24,11 @@ export class WorldRoom extends Room {
     this.setSimulationInterval((ms) => this.world.tick(ms / 1000), 1000 / TICK_HZ);
     this.setMetadata({ layer });
 
-    this.onMessage('in', (c, m) => { const p = this.pl(c, 'msgs'); if (p) this.world.onInput(p, m); });
-    this.onMessage('atk', (c, m) => { const p = this.pl(c, 'msgs'); if (p) this.world.onAttack(p, m); });
-    this.onMessage('sk', (c, m) => { const p = this.pl(c, 'msgs'); if (p) this.world.onSkill(p, m); });
+    // yapay gecikme yalnızca testlerde (cfg.simLatency); üretimde 0
+    const lag = (fn: () => void) => { const d = this.ctx.cfg.simLatency; if (d > 0) setTimeout(fn, d); else fn(); };
+    this.onMessage('in', (c, m) => lag(() => { const p = this.pl(c, 'msgs'); if (p) this.world.onInput(p, m); }));
+    this.onMessage('atk', (c, m) => lag(() => { const p = this.pl(c, 'msgs'); if (p) this.world.onAttack(p, m); }));
+    this.onMessage('sk', (c, m) => lag(() => { const p = this.pl(c, 'msgs'); if (p) this.world.onSkill(p, m); }));
     this.onMessage('chat', (c, m) => { const p = this.pl(c, 'msgs'); if (p && this.world.allow(p, 'chat')) this.world.chat(p, m); });
     this.onMessage('ping', (c, m) => { c.send('pong', m); });
     this.onMessage('*', () => { /* bilinmeyen mesaj türleri yok sayılır */ });
@@ -80,7 +82,7 @@ export class WorldRoom extends Room {
 
   onJoin(client: Client, _options: JoinOptions, auth: Auth) {
     const row = ctx_fresh(this.ctx, auth.row.id) ?? auth.row;
-    const p = this.world.join(row, (t, d) => client.send(t, d), (reason) => { try { client.leave(4001, reason); } catch { /* */ } });
+    const p = this.world.join(row, (t, d) => { const l = this.ctx.cfg.simLatency; if (l > 0) setTimeout(() => { try { client.send(t, d); } catch { /* */ } }, l); else client.send(t, d); }, (reason) => { try { client.leave(4001, reason); } catch { /* */ } });
     this.byClient.set(client.sessionId, p);
     client.send('welcome', { id: p.id, roomId: this.roomId, layer: this.world.layer, serverTime: this.ctx.clock.now(), tickHz: TICK_HZ } satisfies Welcome);
   }
