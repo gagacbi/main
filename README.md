@@ -41,6 +41,12 @@ npm start                                   # sonra oyuna Yonetici ile gir
 Oyunda `F2` (veya `/gm yardım`) yönetici panelini açar: seviye/kit/akçe/malzeme verme, ölümsüzlük, bekleme sıfırlama, ışınlanma (`tp hub|rift|stone N|player ad`),
 yaratık çağırma, kukla ve DPS ölçümü, çatlak aç/kapat, zaman ileri sarma (oba ve sefer sayaçları), tüm ipuçlarını açma, `stats/ttk/econ` ölçümleri. Her GM işlemi `ledger`'a `gm` olarak yazılır.
 
+## Savunma, boss ve test felsefesi
+
+* **Savunma (Metin2 tarzı):** 5 silah türü (kılıç, çift el, bıçak, yay, büyü çanı), tür savunmaları, vuruş/beceri bloğu, delme; her parçada temel efsun. Karakter paneli (`C`) hepsini gösterir.
+* **Saha bosları:** her 10 seviyelik grupta bir boss (alan darbesi, öfke, boss'un hasar türüne karşı savunma efsunlu garanti ganimet, 15 dk'da yeniden doğar); 10·20·30·40·50'de Kut Armağanı; seviye grubuna göre renkli aura.
+* **Test felsefesi:** [`docs/TEST_FELSEFESI.md`](docs/TEST_FELSEFESI.md) (sokak lambası etkisi) ve PvP eşleşme matrisi: `npx tsx tests/sim/pvp.ts`.
+
 ## Gizem
 
 Oyunun bir sırrı var: *Mühür dışarıdan açıldı.* Beş ayrı sistem birer iplik besler (Kayıp Yazıtlar, Kurdun Rüyaları, Ak Sakal, Balbal Taşları, Mühür Kırıkları);

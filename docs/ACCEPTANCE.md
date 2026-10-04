@@ -86,6 +86,7 @@ uçtan uca testi (gerçek Chromium, ekran görüntüsü / ölçüm), **B** = bui
 | H6 | Denge değişmezleri testle korunur | U |
 | H7 | Savunma sistemi: silah türleri, tür savunmaları, blok, delme, temel efsun | U, I, E |
 | H8 | Seviye grubu içeriği: saha bossları, kilometre taşı armağanı, aura | I, E |
+| H9 | Sokak lambası avı: sistemlerin kesiştiği yerlerde arayan testler, PvP eşleşme matrisi, belgelenmiş bulgular | I, doküman |
 
 ## G. Kalite kapısı
 | # | Kriter | Kanıt |
