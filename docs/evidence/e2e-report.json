@@ -1,5 +1,5 @@
 {
- "at": "2026-10-04T21:48:23.101Z",
+ "at": "2026-10-04T22:32:41.744Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -17,39 +17,9 @@
    "detail": "5 ayrı model imzası (parça sayısı + boy)"
   },
   {
-   "id": "B6.toplama",
-   "ok": true,
-   "detail": "Çağrı Narası: 7/7 yaratık 5 birim içine çekildi"
-  },
-  {
-   "id": "B2.alan",
-   "ok": true,
-   "detail": "Kılıç Savurma tek seferde 7/7 yaratığa vurdu"
-  },
-  {
-   "id": "B2.yetenek-temizleme",
-   "ok": true,
-   "detail": "Çağrı Narası + Savurma + Sarsıntı + Tengri Hiddeti: 7/7 yaratık yetenekle temizlendi"
-  },
-  {
-   "id": "B1.otomatik",
-   "ok": true,
-   "detail": "Yalnızca Space basılı (yetenek yok): 4/4 yaratığa otomatik hedefleme+yaklaşma+seri vuruş, öldü; deneyim +192"
-  },
-  {
-   "id": "B6.ganimet",
-   "ok": true,
-   "detail": "Ganimet yağmuru: aynı anda ekranda en çok 2 ganimet nesnesi (yalnızca vuran oyuncuya görünür)"
-  },
-  {
-   "id": "B6.ganimet-toplandi",
-   "ok": true,
-   "detail": "Ganimet mıknatısı: akçe 5000→5058"
-  },
-  {
    "id": "D5.envanter",
    "ok": true,
-   "detail": "Çanta paneli 11 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
+   "detail": "Çanta paneli 8 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
   },
   {
    "id": "B4.uzmanlik-ui",
@@ -124,7 +94,7 @@
   {
    "id": "E2.yukseltme",
    "ok": true,
-   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-04T08:03:44.035Z; öğretici adımı=3"
+   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-04T22:37:57.800Z; öğretici adımı=3"
   },
   {
    "id": "E4.sefer",
@@ -154,12 +124,52 @@
   {
    "id": "B7.olum-ekrani",
    "ok": true,
-   "detail": "Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=188"
+   "detail": "Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=0"
   },
   {
    "id": "B7.yeniden-dogus",
    "ok": true,
    "detail": "Yurda dönüldü (güvenli bölge)"
+  },
+  {
+   "id": "H1.yetkisiz-arayuz",
+   "ok": true,
+   "detail": "Rolü olmayan hesapta GM düğmesi yok, F2 yönetici panelini açmaz"
+  },
+  {
+   "id": "H1.rol",
+   "ok": true,
+   "detail": "Yönetici hesabı \"Yonetici904\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+  },
+  {
+   "id": "H1.panel",
+   "ok": true,
+   "detail": "F2 ile yönetici paneli açıldı (30+ hızlı komut)"
+  },
+  {
+   "id": "H1.komut",
+   "ok": true,
+   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=718"
+  },
+  {
+   "id": "H1.sohbet-gm",
+   "ok": true,
+   "detail": "Sohbetten /gm komutu çalıştı (altın=927, bağlantı: , kapalı=false)"
+  },
+  {
+   "id": "H2.tas-okuma",
+   "ok": true,
+   "detail": "Taşa yaklaşınca \"E\" ipucu: “EBalbal Taşı”; okununca kart: “nmış: «Gök dokuz kat. Sekizi kapalıdır.»”"
+  },
+  {
+   "id": "H3.ruya",
+   "ok": true,
+   "detail": "Rüya ekranı yazı yazı belirdi, \"Uyan\" ile ipucu kaydedildi"
+  },
+  {
+   "id": "H3.kodeks",
+   "ok": true,
+   "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
   },
   {
    "id": "F6.tr",
@@ -184,17 +194,17 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt684"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt926"
   },
   {
    "id": "F1.toon",
    "ok": true,
-   "detail": "Toon materyal=63, kontur ağı=329, toplam ShaderMaterial=102"
+   "detail": "Toon materyal=60, kontur ağı=313, toplam ShaderMaterial=99"
   },
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 143 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 136 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -209,57 +219,47 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=3.39 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=6.73 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
   },
   {
-   "id": "H1.yetkisiz-arayuz",
+   "id": "B6.toplama",
    "ok": true,
-   "detail": "Rolü olmayan hesapta GM düğmesi yok, F2 yönetici panelini açmaz"
+   "detail": "Çağrı Narası: 7/7 yaratık 5 birim içine çekildi"
   },
   {
-   "id": "H1.rol",
+   "id": "B2.alan",
    "ok": true,
-   "detail": "Yönetici hesabı \"Yonetici793\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+   "detail": "Kılıç Savurma tek seferde 7/7 yaratığa vurdu"
   },
   {
-   "id": "H1.panel",
+   "id": "B2.yetenek-temizleme",
    "ok": true,
-   "detail": "F2 ile yönetici paneli açıldı (30+ hızlı komut)"
+   "detail": "Çağrı Narası + Savurma + Sarsıntı + Tengri Hiddeti: 7/7 yaratık yetenekle temizlendi"
   },
   {
-   "id": "H1.komut",
+   "id": "B1.otomatik",
    "ok": true,
-   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=806"
+   "detail": "Yalnızca Space basılı (yetenek yok): 4/4 yaratığa otomatik hedefleme+yaklaşma+seri vuruş, öldü; deneyim +92"
   },
   {
-   "id": "H1.sohbet-gm",
+   "id": "B6.ganimet",
    "ok": true,
-   "detail": "Sohbetten /gm komutu çalıştı (altın=927, bağlantı: , kapalı=false)"
+   "detail": "Ganimet yağmuru: aynı anda ekranda en çok 2 ganimet nesnesi (yalnızca vuran oyuncuya görünür)"
   },
   {
-   "id": "H2.tas-okuma",
+   "id": "B6.ganimet-toplandi",
    "ok": true,
-   "detail": "Taşa yaklaşınca \"E\" ipucu: “EBalbal Taşı”; okununca kart: “nmış: «Gök dokuz kat. Sekizi kapalıdır.»”"
-  },
-  {
-   "id": "H3.ruya",
-   "ok": true,
-   "detail": "Rüya ekranı yazı yazı belirdi, \"Uyan\" ile ipucu kaydedildi"
-  },
-  {
-   "id": "H3.kodeks",
-   "ok": true,
-   "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
+   "detail": "Ganimet mıknatısı: akçe 5000→5026"
   },
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=448.9 ms; aktif mesh=276/766; üçgen=1041390; (yazılım rasterleştirmede FPS=2)"
+   "detail": "Kare başına JS/CPU maliyeti=2.05 ms; aktif mesh=162/234; üçgen=933354; (yazılım rasterleştirmede FPS=10)"
   },
   {
    "id": "G.konsol",
@@ -268,15 +268,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 3.38671875,
+  "audioPeak": 6.7255859375,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 2,
-   "meshes": 766,
-   "active": 276,
+   "fps": 10,
+   "meshes": 234,
+   "active": 162,
    "draw": 0,
-   "tris": 1041390,
-   "cpuMs": 448.9
+   "tris": 933354,
+   "cpuMs": 2.05
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

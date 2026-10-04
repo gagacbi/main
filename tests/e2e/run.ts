@@ -130,7 +130,7 @@ if (want('savas')) {
   check('B2.yetenek-temizleme', killedBySkills >= 5, `Çağrı Narası + Savurma + Sarsıntı + Tengri Hiddeti: ${killedBySkills}/7 yaratık yetenekle temizlendi`);
   // — B1: yalnızca Space (yetenek yok) —
   w.mobs.clear(); me.d.level = 6; w.recalc(me); me.hp = me.stats.maxHp; me.x = 0; me.z = 52; me.d.gold = 5000; await sleep(800);
-  const solo = Array.from({ length: 4 }, (_, i) => { const m = w.makeMob('cakal', 5, me.x - 4 + i * 2.7, me.z - 6 - (i % 2) * 3, -1); m.hx = m.x; m.hz = m.z; m.leash = 60; return m; });
+  const solo = Array.from({ length: 4 }, (_, i) => { const m = w.makeMob('cakal', 2, me.x - 4 + i * 2.7, me.z - 6 - (i % 2) * 3, -1); m.hx = m.x; m.hz = m.z; m.leash = 60; return m; });
   const xpA = me.d.xp + me.d.level * 1e6; const skillsBefore = JSON.stringify(me.cds);
   await page.keyboard.down('Space');
   const t0 = Date.now(); let shotLoot = false; let maxDrops = 0;
