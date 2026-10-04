@@ -62,10 +62,10 @@ export function genBosses(): BossDef[] {
   FIELD_BOSS.list.forEach(([level, kind, nameKey], i) => {
     const dist0 = 40 + (level - 1) * 2.5;
     for (let t = 0; t < 600; t++) {
-      const a = (i / 5) * Math.PI * 2 + 0.4 + (r() - 0.5) * 0.8; const d = Math.min(150, dist0 + r() * 6);
+      const a = t < 300 ? (i / 5) * Math.PI * 2 + 0.4 + (r() - 0.5) * 0.8 : r() * Math.PI * 2; const d = Math.min(150, dist0 + r() * (t < 300 ? 6 : 10));
       const x = Math.cos(a) * d, z = Math.sin(a) * d;
       if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 5) ** 2)) continue;
-      if (t < 500 && camps.some((c) => (c.x - x) ** 2 + (c.z - z) ** 2 < 26 * 26)) continue; // kampların üstüne doğup yoldan geçeni çekmesin
+      if (t < 590 && camps.some((c) => (c.x - x) ** 2 + (c.z - z) ** 2 < 26 * 26)) continue; // kampların üstüne doğup yoldan geçeni çekmesin
       out.push({ id: i + 1, level, kind, nameKey, x, z }); break;
     }
   });
