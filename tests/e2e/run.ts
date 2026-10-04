@@ -262,6 +262,50 @@ if (want('olum')) {
   await shot('21-yeniden-dogus');
 }
 
+// ───────── 10d. Yönetici hesabı ve gizem sistemleri (H) ─────────
+if (want('gizem')) {
+  // yetkisiz oyuncu: GM düğmesi yok, F2 işe yaramaz
+  await page.keyboard.press('F2'); await sleep(500);
+  const normalGm = await page.$('[data-p="gm"]'); const normalOpen = await page.$('.panel .gmgrid');
+  check('H1.yetkisiz-arayuz', !normalGm && !normalOpen, 'Rolü olmayan hesapta GM düğmesi yok, F2 yönetici panelini açmaz');
+  // yönetici hesabı (veritabanında rol verilmiş), ikinci sayfa
+  const AN = 'Yonetici' + Math.floor(Math.random() * 900 + 100);
+  const seed = await new Bot(`ws://localhost:${srv.port}`, AN).join('gok'); await seed.leave(); await sleep(300); srv.ctx.db.setRole(AN, 'admin');
+  const pg: Page = await ctx.newPage(); pg.on('pageerror', (e) => errors.push(e.message));
+  await pg.goto(`${url}?name=${AN}&pw=secret1&autoq=0`); await pg.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  const gev = <T>(expr: string): Promise<T> => pg.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
+  const gshot = async (name: string) => { await pg.screenshot({ path: `${OUT}/${name}.png` }); };
+  const ap = [...world().players.values()].find((x) => x.name === AN)!;
+  check('H1.rol', (await gev<string>('g.me.role')) === 'admin' && !!(await pg.$('[data-p="gm"]')), `Yönetici hesabı "${AN}": rol=admin, GM düğmesi görünür, HUD etiketi var`);
+  await pg.keyboard.press('F2'); await sleep(900);
+  check('H1.panel', !!(await pg.$('.panel .gmgrid')) && (await pg.$$('.gmgrid button')).length >= 30, 'F2 ile yönetici paneli açıldı (30+ hızlı komut)');
+  await pg.click('[data-line="level 25"]'); await sleep(900); await pg.click('[data-line="kit +9"]'); await sleep(900); await pg.click('[data-line="maxskills"]'); await sleep(700); await pg.click('[data-line="stats"]'); await sleep(700);
+  const out = await pg.textContent('.gmout');
+  check('H1.komut', ap.d.level === 25 && Object.keys(ap.d.equip).length === 4 && /Sv25/.test(out ?? ''), `GM komutları sunucuda uygulandı: sv=${ap.d.level}, kuşanılan=${Object.keys(ap.d.equip).length}, atk=${ap.stats.atk}`);
+  await gshot('25-yonetici-paneli'); await pg.keyboard.press('Escape'); await sleep(300);
+  // sohbetten /gm
+  await pg.keyboard.press('Enter'); await pg.keyboard.type('/gm gold 777'); await pg.keyboard.press('Enter'); await sleep(900);
+  check('H1.sohbet-gm', ap.d.gold >= 777, `Sohbetten /gm komutu çalıştı (altın=${ap.d.gold}, bağlantı: ${await pg.textContent('#connt')}, kapalı=${await pg.evaluate("document.getElementById('conn').classList.contains('on')")})`);
+  // balbal taşı
+  const st1 = (await import('../../shared/world')).genStones()[0]; ap.x = st1.x - 3; ap.z = st1.z; await sleep(1800);
+  await pg.evaluate(([x, z]) => { const g = (window as any).__game; g.camYaw = Math.atan2(-(z - g.pos.z), -(x - g.pos.x)); g.camPitch = 0.95; g.camDist = 11; }, [st1.x, st1.z]); await sleep(1400);
+  const prompt = await pg.textContent('#prompt'); await gshot('22a-balbal-tasi');
+  await pg.keyboard.press('e'); await sleep(1500); await gshot('22-balbal-tasi-okundu');
+  const lore = await pg.textContent('#lore');
+  check('H2.tas-okuma', ap.d.clues.includes('stone.1') && /Gök dokuz kat/.test(lore ?? '') && /Balbal/.test(prompt ?? ''), `Taşa yaklaşınca "E" ipucu: “${(prompt ?? '').trim()}”; okununca kart: “${(lore ?? '').trim().slice(-40)}”`);
+  // rüya
+  await pg.keyboard.press('F2'); await sleep(600); await pg.click('[data-line="dream"]'); await sleep(1500); await pg.keyboard.press('Escape');
+  await pg.waitForSelector('.dream.on', { timeout: 15000 }); await sleep(7000); await gshot('23-kurdun-ruyasi');
+  const dtxt = await pg.textContent('.dream p'); await pg.click('#wake'); await sleep(1200);
+  check('H3.ruya', /Kar yağıyor/.test(dtxt ?? '') && ap.d.clues.includes('dream.1') && ap.d.pendingDream === 0, 'Rüya ekranı yazı yazı belirdi, "Uyan" ile ipucu kaydedildi');
+  // kodeks
+  await pg.keyboard.press('F2'); await sleep(600); await pg.click('[data-line="clue hepsi"]'); await sleep(1200); await pg.keyboard.press('Escape'); await sleep(300);
+  await pg.keyboard.press('y'); await sleep(1000); await gshot('24a-kodeks-yazitlar'); await pg.click('.tab2[data-v="stone"]'); await sleep(500); await gshot('24b-kodeks-taslar'); await pg.click('.tab2[data-v="truth"]'); await sleep(500); await gshot('24-kodeks-muhurun-disi');
+  const truth = await pg.textContent('.stele-card:not(.locked)'); const total = await pg.textContent('.codex .chip');
+  check('H3.kodeks', /dıştaki el/.test(truth ?? '') && /27\/27|2[67]\/27/.test(total ?? '') && ap.d.clues.includes('truth.1'), `Kodeks: ${total?.trim()}; "Mühürün Dışı" açıldı ve metni gösteriyor`);
+  await pg.close();
+}
+
 // ───────── 11. Ölçümler (F7, A10) ─────────
 const perf = await ev<{ fps: number; meshes: number; active: number; draw: number; tris: number; cpuMs: number }>(`(() => {
   const sc = g.gs.scene; const e = g.gs.engine; const t0 = performance.now(); for (let i = 0; i < 30; i++) sc.render(); const cpu = (performance.now() - t0) / 30;

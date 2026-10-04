@@ -263,7 +263,7 @@ export interface ExpeditionResult { gold: number; mats: Partial<Record<MatKey, n
 export const COMPANION_NAMES = ['Börte', 'Kürşad', 'Umay', 'Tonyukuk', 'Alpagut', 'Kaan', 'Ayaz', 'Boğaç', 'Gökçe', 'Yıldız', 'Tarkan', 'Selcen'];
 
 // Kayıp Yazıtlar (sunucu çapı)
-export const INSCRIPTIONS = [40, 120, 300]; // toplam parça eşikleri (prototip)
+export const INSCRIPTIONS = [40, 120, 300, 700, 1500]; // toplam parça eşikleri (prototip)
 
 // Öğretici (ak sakal)
 export const TUTORIAL_STEPS = ['kill', 'donate', 'build', 'expedition', 'upgrade'] as const;

@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { Boy } from '../shared/game';
 
-export interface PlayerRow { id: number; name: string; salt: string; hash: string; boy: Boy; oymak_id: number; points: number; data: string; created: number; last_seen: number }
+export interface PlayerRow { id: number; name: string; salt: string; hash: string; boy: Boy; oymak_id: number; points: number; data: string; created: number; last_seen: number; role: 'player' | 'admin' }
 export interface OymakRow { id: number; boy: Boy; name: string; npc: string; data: string }
 
 const OYMAK_NAMES: Record<Boy, string[]> = {
@@ -27,8 +27,17 @@ export class Db {
       CREATE TABLE IF NOT EXISTS ledger(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, player_id INTEGER, kind TEXT NOT NULL, detail TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS idx_ledger_player ON ledger(player_id);
     `);
+    this.migrate();
   }
   close() { this.db.close(); }
+  /** eski veritabanlarına rol sütunu ekler */
+  private migrate() {
+    const cols = this.db.prepare('PRAGMA table_info(players)').all() as unknown as { name: string }[];
+    if (!cols.some((c) => c.name === 'role')) this.db.exec("ALTER TABLE players ADD COLUMN role TEXT NOT NULL DEFAULT 'player'");
+  }
+  setRole(name: string, role: 'player' | 'admin'): boolean {
+    return this.db.prepare('UPDATE players SET role = ? WHERE name = ?').run(role, name).changes > 0;
+  }
   tx<T>(fn: () => T): T {
     this.db.exec('BEGIN IMMEDIATE');
     try { const r = fn(); this.db.exec('COMMIT'); return r; } catch (e) { this.db.exec('ROLLBACK'); throw e; }
@@ -40,9 +49,9 @@ export class Db {
   playerById(id: number): PlayerRow | undefined {
     return this.db.prepare('SELECT * FROM players WHERE id = ?').get(id) as unknown as PlayerRow | undefined;
   }
-  insertPlayer(r: Omit<PlayerRow, 'id'>): number {
-    const res = this.db.prepare('INSERT INTO players(name,salt,hash,boy,oymak_id,points,data,created,last_seen) VALUES(?,?,?,?,?,?,?,?,?)')
-      .run(r.name, r.salt, r.hash, r.boy, r.oymak_id, r.points, r.data, r.created, r.last_seen);
+  insertPlayer(r: Omit<PlayerRow, 'id' | 'role'> & { role?: 'player' | 'admin' }): number {
+    const res = this.db.prepare('INSERT INTO players(name,salt,hash,boy,oymak_id,points,data,created,last_seen,role) VALUES(?,?,?,?,?,?,?,?,?,?)')
+      .run(r.name, r.salt, r.hash, r.boy, r.oymak_id, r.points, r.data, r.created, r.last_seen, r.role ?? 'player');
     return Number(res.lastInsertRowid);
   }
   savePlayer(id: number, data: string, points: number, oymakId: number, lastSeen: number) {

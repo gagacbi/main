@@ -40,6 +40,21 @@ export function genObstacles(): Obstacle[] {
   return out;
 }
 
+export interface StoneDef { n: number; x: number; z: number }
+/** Bozkıra dağılmış 8 balbal taşı; uzaklığa göre sıralı (1 en yakın, 8 Erlik'in en dibinde). */
+export function genStones(): StoneDef[] {
+  const r = mulberry32(WORLD_SEED ^ 0x51ed270b); const obs = genObstacles(); const out: StoneDef[] = [];
+  for (let i = 0; i < 8; i++) {
+    const dMin = 46 + i * 13; const dMax = dMin + 10;
+    for (let t = 0; t < 400; t++) {
+      const a = (i / 8) * Math.PI * 2 + (r() - 0.5) * 0.7; const d = dMin + r() * (dMax - dMin); const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 3.5) ** 2)) continue;
+      out.push({ n: i + 1, x, z }); break;
+    }
+  }
+  return out;
+}
+
 /** Yaratık kampları (sunucu doğurur). */
 export function genCamps(): Camp[] {
   const r = mulberry32(WORLD_SEED ^ 0x9e3779b9);

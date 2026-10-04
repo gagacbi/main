@@ -5,6 +5,8 @@ import {
 import type { ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
+import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
+import { INSCRIPTIONS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -17,7 +19,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help';
+export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -36,7 +38,7 @@ export function itemTip(it: Item, cmp?: Item): string {
 export class Panels {
   open: PanelName | null = null; el: HTMLElement; tipEl: HTMLElement;
   selUp = ''; smithTab: 'up' | 'craft' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
-  oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
+  codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
     this.tipEl = document.createElement('div'); this.tipEl.className = 'tip'; root.appendChild(this.tipEl);
@@ -45,6 +47,14 @@ export class Panels {
     this.el.addEventListener('contextmenu', (e) => { const c = (e.target as HTMLElement).closest('[data-item]') as HTMLElement | null; if (c) { e.preventDefault(); this.quick(c.dataset.item!); } });
     root.addEventListener('mouseover', (e) => this.hover(e)); root.addEventListener('mousemove', (e) => this.moveTip(e)); root.addEventListener('mouseout', () => (this.tipEl.style.display = 'none'));
     this.el.addEventListener('change', (e) => this.onChange(e));
+    this.el.addEventListener('input', (e) => { const el = e.target as HTMLInputElement; if (el.id === 'gmline') this.gmLine = el.value; });
+    this.el.addEventListener('keydown', (e) => { e.stopPropagation(); const el = e.target as HTMLInputElement; if (el.id === 'gmline' && e.key === 'Enter') void this.runGm(this.gmLine); if (e.key === 'Escape') this.close(); });
+  }
+  async runGm(line: string) {
+    if (!line.trim()) return; this.gmLine = ''; this.gmOut.push('> ' + line);
+    const r = await this.g.net.rpc('gm', { line });
+    if (!r.ok) this.gmOut.push('✖ ' + t('err.' + (r.err ?? 'internal'))); else { const d = r.data as { ok: boolean; msg: string }; this.gmOut.push((d.ok ? '' : '✖ ') + d.msg); }
+    this.render(true);
   }
   get me() { return this.g.me; }
   isOpen(n?: PanelName) { return n ? this.open === n : this.open !== null; }
@@ -53,7 +63,7 @@ export class Panels {
   async show(n: PanelName) {
     this.open = n; this.lastResult = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
     if (n === 'oba') await this.refreshOba();
-    if (n === 'inscr') { }
+    if (n === 'elder') await this.g.net.rpc('elder');
     this.render();
     if (n === 'oba') { clearInterval(this.obaTimer); this.obaTimer = window.setInterval(() => { if (this.open === 'oba') this.tickOba(); }, 500); }
   }
@@ -78,8 +88,9 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), settings: () => this.settings(), help: () => this.help() }[this.open];
-    this.el.innerHTML = fn();
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
+    if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
   }
 
@@ -202,15 +213,43 @@ export class Panels {
   elder() {
     const m = this.me; const step = m.tut.step;
     const steps = TUTORIAL_STEPS.map((k, i) => `<div class="tutstep ${i < step ? 'done' : i === step ? 'cur' : ''}"><div class="cb">${i < step ? '✓' : ''}</div><span>${t('tut.' + i)}${i === step ? ` <b>(${m.tut.prog}/${TUTORIAL_TARGET[k]})</b>` : ''}</span></div>`).join('');
-    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face">${ELDER_SVG}</div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= 5 ? `<div class="good" style="margin-top:6px">${t('tut.end')}</div>` : ''}</div></div>`);
+    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face">${ELDER_SVG}</div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= 5 ? `<div class="good" style="margin-top:6px">${t('tut.end')}</div>` : ''}
+      ${m.clues.some((c) => c.startsWith('elder.')) ? `<div class="sub">${t('thread.elder')}</div>${m.clues.filter((c) => c.startsWith('elder.')).sort().map((c) => `<div class="card" style="margin-bottom:6px;font-style:italic">${t(c)}</div>`).join('')}` : ''}</div></div>`);
   }
 
   // ─── yazıtlar ───
+  /** Kodeks: gizemin beş ipliği + "Mühürün Dışı". Yazıt kartlarının sınıfları (.stele-card/.locked) e2e testleriyle uyumludur. */
   inscr() {
-    const m = this.me; const i = m.inscr; const next = i.thresholds.find((x) => i.frags < x) ?? i.thresholds[i.thresholds.length - 1]; const prev = [0, ...i.thresholds].filter((x) => x <= i.frags).pop() ?? 0;
+    const m = this.me; const i = m.inscr; const th = this.codexTab; const own = (x: Thread) => m.clues.filter((c) => c.startsWith(x + '.')).length;
+    const cnt = (x: Thread) => (x === 'insc' ? i.unlocked : own(x));
+    const total = THREADS.reduce((n, x) => n + THREAD_SIZE[x], 0); const found = THREADS.reduce((n, x) => n + cnt(x), 0);
+    const tabs = THREADS.map((x) => `<div class="tab2 ${x === th ? 'on' : ''}" data-act="cx" data-v="${x}">${t('thread.' + x)} <small>${cnt(x)}/${THREAD_SIZE[x]}</small></div>`).join('');
+    const known = (n: number) => (th === 'insc' ? n <= i.unlocked : m.clues.includes(`${th}.${n}`));
+    const rom = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+    const cards = Array.from({ length: THREAD_SIZE[th] }, (_, k) => {
+      const n = k + 1; const ok = known(n);
+      const label = th === 'insc' ? `${t('thread.insc')} ${rom[k]} <span class="muted">(${num(INSCRIPTIONS[k])} ${icon('frag')})</span>` : `${t('thread.' + th)} ${rom[k]}`;
+      return `<div class="card stele-card ${ok ? '' : 'locked'}"><div class="sg">${ok ? rom[k] : '?'}</div><div><b>${label}</b><div style="margin-top:4px;font-size:15px;font-style:italic">${ok ? t(`${th}.${n}`) : t('ui.locked.clue')}</div></div></div>`;
+    }).join('');
+    const prev = [0, ...i.thresholds].filter((x) => x <= i.frags).pop() ?? 0; const next = i.thresholds.find((x) => i.frags < x) ?? i.thresholds[i.thresholds.length - 1];
     const pct = i.unlocked >= i.thresholds.length ? 100 : Math.round(((i.frags - prev) / Math.max(1, next - prev)) * 100);
-    const cards = i.thresholds.map((th, k) => `<div class="card stele-card ${k < i.unlocked ? '' : 'locked'}"><div class="sg">${['I', 'II', 'III'][k]}</div><div><b>${t('insc.title')} ${['I', 'II', 'III'][k]}</b> <span class="muted">(${th} ${icon('frag')})</span><div style="margin-top:4px;font-size:15px;font-style:italic">${k < i.unlocked ? t('insc.' + (k + 1)) : t('insc.locked')}</div></div></div>`).join('');
-    return this.shell(t('insc.title'), 'stele', `<div class="insc"><div class="muted">${t('insc.hint')}</div><div class="sub">${t('insc.progress')}</div><div class="ratebar mid"><i style="width:${pct}%"></i><b>${num(i.frags)} / ${next}</b></div><div class="row" style="margin:8px 0"><span class="chip">${icon('frag')} ${t('mat.frag')}: ${m.bag.frag}</span></div>${cards}</div>`);
+    const fragBar = th === 'insc' ? `<div class="sub">${t('insc.progress')}</div><div class="ratebar mid"><i style="width:${pct}%"></i><b>${num(i.frags)} / ${next}</b></div><div class="row" style="margin:8px 0"><span class="chip">${icon('frag')} ${t('mat.frag')}: ${m.bag.frag}</span></div>` : '';
+    const titles = titlesOf(m.clues).map((x) => `<span class="chip">★ ${t(x)}</span>`).join(' ');
+    return this.shell(t('ui.codex'), 'stele', `<div class="insc codex"><div class="row"><div class="grow muted">${t('ui.codex.sub')}</div><span class="chip">${found}/${total} ${t('ui.clues')}</span></div>
+      ${titles ? `<div class="row" style="margin:6px 0;flex-wrap:wrap"><b>${t('ui.titles')}:</b> ${titles}</div>` : ''}<div class="tabs2" style="flex-wrap:wrap;margin-top:8px">${tabs}</div>
+      <div class="card hint-card">${t('thread.' + th + '.hint')}</div>${fragBar}<div style="margin-top:8px">${cards}</div></div>`);
+  }
+
+  /** Yönetici paneli: yalnızca rolü admin olan hesapta açılır; her komut sunucuda yeniden doğrulanır. */
+  gm() {
+    const B: [string, string][] = [['Sv 10', 'level 10'], ['Sv 25', 'level 25'], ['Sv 50', 'level 50'], ['Kit +9', 'kit +9'], ['İyileş', 'heal'], ['Ölümsüz', 'god'], ['Bekleme sıfırla', 'cdreset'], ['Tüm yetenek P', 'maxskills'],
+      ['+10.000 akçe', 'gold 10000'], ['+100 cevher', 'give ore 100'], ['+20 kitap', 'give book 20'], ['+20 tılsım', 'give charm 20'], ['+100 yazıt', 'frag 100'], ['Oba: hepsini bitir', 'oba'],
+      ['Zaman +1 sa', 'time 1'], ['Zaman +12 sa', 'time 12'], ['Çatlak aç', 'rift'], ['Çatlağa git', 'tp rift'], ['Yurda git', 'tp hub'], ['Taş 1’e git', 'tp stone 1'],
+      ['Çakal ×10', 'spawn cakal 10 10'], ['Albastı ×6', 'spawn albasti 14 6'], ['Bekçi', 'spawn bekci 20 1'], ['Hepsini öldür', 'killall'], ['Kukla', 'dummy'], ['DPS', 'dps'],
+      ['Tüm ipuçları', 'clue hepsi'], ['Rüya', 'dream'], ['Rütbe -3', 'rank -3'], ['Dinlenmiş', 'rested'], ['İstatistik', 'stats'], ['TTK (sv20)', 'ttk 20'], ['Ekonomi', 'econ'], ['Yardım', 'help']];
+    return this.shell(t('gm.title'), 'skull', `<div style="min-width:700px"><div class="gmgrid">${B.map(([l, c]) => `<button class="btn small" data-act="gm" data-line="${c}" title="/gm ${c}">${l}</button>`).join('')}</div>
+      <div class="row" style="margin-top:10px"><input id="gmline" class="gminput" placeholder="${t('gm.cmd')}" value="${esc(this.gmLine)}" autocomplete="off" /><button class="btn primary small" data-act="gmrun">${t('gm.send')}</button></div>
+      <div class="sub">${t('gm.out')}</div><pre class="gmout">${esc(this.gmOut.slice(-14).join('\n'))}</pre></div>`);
   }
 
   settings() {
@@ -241,6 +280,9 @@ export class Panels {
     const d = el.dataset;
     switch (act) {
       case 'close': this.close(); break;
+      case 'cx': this.codexTab = d.v as Thread; break;
+      case 'gm': await this.runGm(d.line!); return;
+      case 'gmrun': await this.runGm(this.gmLine); return;
       case 'equip': await this.act('equip', { id: d.id }); this.selBag = ''; this.g.ui.sfx('ui'); break;
       case 'sell': { const r = await this.act('sell', { id: d.id }); if (r.ok) { this.g.ui.toast(t('sold', { n: (r.data as { price: number }).price }), 'good'); this.g.audio.sfx('coin'); this.selBag = ''; } break; }
       case 'toUp': this.selUp = d.id!; this.smithTab = 'up'; await this.show('smith'); break;

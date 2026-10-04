@@ -9,6 +9,7 @@ import { ViewSystem, View } from './entities';
 import { DropView, FX, RiftView } from './fx';
 import { IDLE, buildHuman, type Rig } from './models';
 import { Predictor } from './predict';
+import { genStones } from '@shared/world';
 import { GameScene, type Quality } from './scene';
 import { World3D } from './world';
 
@@ -91,7 +92,7 @@ export class Game {
     this.myBoy = this.me.boy; this.pos.x = this.snap!.you.x; this.pos.z = this.snap!.you.z; this.serverYou = { ...this.pos };
     this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level });
     this.selfView.self = true; this.vs.self = this.selfView; this.selfView.refreshName();
-    this.world.setInscriptions(this.me.inscr.unlocked);
+    this.world.setInscriptions(this.me.inscr.unlocked); this.world.setStonesSeen(new Set(this.me.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
     this.camYaw = Math.PI / 2 + 0.25; this.camPitch = 1.06; this.camDist = 17; this.rot = Math.PI; this.camTarget.set(this.pos.x, 1.7, this.pos.z);
     this.gs.engine.runRenderLoop(() => { this.frame(); this.gs.scene.render(); });
   }
@@ -108,6 +109,7 @@ export class Game {
       for (const it of m.items) if (!had.has(it.id)) { this.fx.popup(itemName(it), this.pos.x, 3.8, this.pos.z, 'item t' + it.tier); this.audio.sfx(it.tier >= 2 ? 'rare' : 'loot'); }
       if (m.spec !== prev.spec) this.respecView();
       if (m.inscr.unlocked !== prev.inscr.unlocked) this.world.setInscriptions(m.inscr.unlocked);
+      if (m.clues.length !== prev.clues.length) this.world.setStonesSeen(new Set(m.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
       if (m.level !== prev.level && this.selfView) { this.selfView.level = m.level; this.selfView.refreshName(); }
     }
     this.ui?.onMe(m, prev);
@@ -205,7 +207,7 @@ export class Game {
     const c = this.canvas;
     window.addEventListener('keydown', (e) => {
       this.audio.start();
-      if (this.typing) return;
+      if (this.typing || (e.target as HTMLElement)?.tagName === 'INPUT') return;
       const k = e.key.toLowerCase();
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { this.keys.add(k); this.moveTarget = null; this.clickAttack = false; e.preventDefault(); }
       if (e.code === 'Space') { e.preventDefault(); this.setAttack(true); }
@@ -252,8 +254,16 @@ export class Game {
   }
   interact(force?: string) {
     const key = force ?? this.nearby?.key; if (!key) return;
+    if (key.startsWith('stone:')) { void this.readStone(Number(key.slice(6))); return; }
     if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr');
     this.audio.sfx('ui');
+  }
+
+  async readStone(n: number) {
+    const r = await this.net.rpc('stone', { n });
+    if (!r.ok) { this.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.audio.sfx('err'); return; }
+    const isNew = (r.data as { isNew: boolean }).isNew; if (!isNew) { this.ui.toast(t('stone.seen'), ''); return; }
+    this.fx.burst('holy', this.pos.x, 2, this.pos.z, 40); this.audio.sfx('rare');
   }
 
   // ───────────── çerçeve ─────────────
@@ -326,7 +336,7 @@ export class Game {
     // kamera
     this.updateCamera(dt);
     // etkileşim ipucu
-    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele]];
+    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5])];
     for (const [k, x, z, r] of cand) { const d = Math.hypot(x - this.pos.x, z - this.pos.z); if (d < r && (!this.nearby || d < this.nearby.dist)) this.nearby = { key: k, dist: d }; }
     // ölüm bayrağı
     if (dead && !this.wasDead) this.deadSince = now; this.wasDead = dead;

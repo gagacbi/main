@@ -12,6 +12,7 @@ export interface PlayerData {
   rank: number; rankKills: number; tut: { step: number; prog: number };
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };
   x: number; z: number; lang: 'tr' | 'en';
+  clues: string[]; dreams: number; shards: number; pendingDream: number;
 }
 
 export interface Config {
@@ -31,5 +32,5 @@ export const newPlayerData = (now: number, spawn: { x: number; z: number }, lang
   bag: { ore: 6, hide: 0, wood: 0, book: 0, charm: 0, frag: 0 }, items: [], equip: {},
   claimAt: now, companions: [], expeditions: [], rested: 0, loggedOutAt: 0, outInHub: true, rank: 0, rankKills: 0,
   tut: { step: 0, prog: 0 }, counters: { kills: 0, deaths: 0, upgrades: 0, pvpKills: 0, destroyed: 0 },
-  x: spawn.x, z: spawn.z, lang,
+  x: spawn.x, z: spawn.z, lang, clues: [], dreams: 0, shards: 0, pendingDream: 0,
 });

@@ -6,7 +6,9 @@ import {
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { dist, dist2, genCamps, stepMove, type Camp } from '../shared/world';
+import { dist, dist2, genCamps, genStones, stepMove, type Camp } from '../shared/world';
+import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
+import { runGm } from './gm';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
 import { GameError, type Ctx, type PlayerData } from './types';
@@ -22,6 +24,7 @@ export class Player {
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
+  role: 'player' | 'admin' = 'player'; god = false;
   constructor(
     public id: number, public dbId: number, public name: string, public boy: Boy, public d: PlayerData, public oymakId: number, public points: number,
     public send: (type: string, payload: unknown) => void, public kick: (reason: string) => void,
@@ -33,7 +36,7 @@ export interface Mob {
   kind: 'mob'; id: number; type: MobType; lvl: number; x: number; z: number; rot: number; hp: number; maxHp: number; atk: number; def: number;
   hx: number; hz: number; campId: number; riftId: number; target: number; nextAtk: number; wanderAt: number; wx: number; wz: number;
   status: StatusMap; contrib: Map<number, number>; dead: boolean; respawnAt: number; leash: number; poisonAcc: number; tauntUntil: number; tauntBy: number;
-  lastSwing: number;
+  lastSwing: number; dummy?: boolean;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -50,7 +53,7 @@ export class World {
   events: { ev: GameEvent; x: number; z: number }[] = [];
   seq = 1; layer: number; tickCount = 0; startedAt: number;
   nextRiftAt = 0; lastSave = 0; tickMsSum = 0; tickMsMax = 0; tickMsN = 0;
-  roomId = '';
+  roomId = ''; dummyLog: { t: number; v: number }[] = [];
 
   constructor(public ctx: Ctx, layer: number) {
     this.layer = layer;
@@ -98,12 +101,16 @@ export class World {
   // ───────────── oyuncu giriş / çıkış ─────────────
   join(row: PlayerRow, send: Player['send'], kick: Player['kick']): Player {
     const d: PlayerData = JSON.parse(row.data);
+    d.clues ??= []; d.dreams ??= 0; d.shards ??= 0; d.pendingDream ??= 0; // eski kayıtlar için
     const p = new Player(this.nid(), row.id, row.name, row.boy, d, row.oymak_id, row.points, send, kick);
+    p.role = row.role ?? 'player';
     const now = this.now;
     // Çevrimdışı dinlenmiş deneyim
     if (d.loggedOutAt > 0) {
       const hours = Math.max(0, (now - d.loggedOutAt) / 3600000);
       d.rested = Math.min(restedCap(d.level), d.rested + restedGain(d.level, hours, d.outInHub));
+      // Kurdun rüyası: uzun süre sonra dönen oyuncu sıradaki rüyayı görür
+      if (hours >= DREAM_MIN_HOURS && d.dreams < THREAD_SIZE.dream && !d.pendingDream) { d.dreams++; d.pendingDream = d.dreams; }
     }
     p.stats = computeStats({ level: d.level, boy: p.boy, spec: d.spec, equip: d.equip, kut: d.kut });
     p.x = d.x; p.z = d.z;
@@ -169,6 +176,17 @@ export class World {
     p.meDirty = true;
     return xp;
   }
+  /** Yeni ipucu keşfeder; ödül akçe, unvan ve "Mühürün Dışı" kontrolü. Yeniyse true. */
+  discoverClue(p: Player, id: string, gold = CLUE_GOLD): boolean {
+    const d = p.d; if (d.clues.includes(id)) return false;
+    const before = titlesOf(d.clues).length;
+    d.clues.push(id); d.gold += gold; p.meDirty = true; this.ledger(p, 'clue', { id, gold });
+    this.sys(p, 'sys.clue', { id });
+    const fr = this.ctx.db.worldGet('frags', 0); const insc = INSCRIPTIONS.filter((t) => fr >= t).length;
+    if (!d.clues.includes('truth.1') && truthUnlocked(d.clues, insc)) { d.clues.push('truth.1'); this.sys(p, 'sys.truth'); this.ledger(p, 'clue', { id: 'truth.1', gold: 0 }); }
+    if (titlesOf(d.clues).length > before) this.sys(p, 'sys.title');
+    return true;
+  }
   tutorial(p: Player, kind: (typeof TUTORIAL_STEPS)[number], n = 1) {
     const t = p.d.tut;
     if (TUTORIAL_STEPS[t.step] !== kind) return;
@@ -198,6 +216,7 @@ export class World {
   /** Tek hasar giriş noktası. */
   damage(src: Player | Mob | null, tgt: Player | Mob, amount: number, o: { crit?: boolean; dot?: boolean } = {}) {
     if (tgt.kind === 'mob' ? tgt.dead : tgt.deadUntil > 0) return 0;
+    if (tgt.kind === 'player' && tgt.god) return 0;
     let dmg = Math.max(1, Math.round(amount));
     if (tgt.kind === 'player') {
       dmg = Math.max(1, Math.round(dmg * tgt.stats.dmgTaken));
@@ -213,6 +232,7 @@ export class World {
       this.emit({ k: 'dmg', id: tgt.id, v: dmg, crit: o.crit, src: src?.id, pl: true }, tgt.x, tgt.z);
       if (tgt.hp <= 0) this.killPlayer(tgt, src);
     } else {
+      if (tgt.dummy) { this.dummyLog.push({ t: this.now, v: dmg }); if (this.dummyLog.length > 4000) this.dummyLog.splice(0, 2000); tgt.hp = tgt.maxHp; this.emit({ k: 'dmg', id: tgt.id, v: dmg, crit: o.crit, src: src?.id }, tgt.x, tgt.z); return dmg; }
       tgt.hp -= dmg;
       if (src?.kind === 'player') {
         tgt.contrib.set(src.id, (tgt.contrib.get(src.id) ?? 0) + dmg);
@@ -524,6 +544,22 @@ export class World {
       }
       case 'inscription': return { frags: this.ctx.db.worldGet('frags', 0), thresholds: INSCRIPTIONS };
       case 'lang': d.lang = a.lang === 'en' ? 'en' : 'tr'; return null;
+      case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }
+      case 'stone': {
+        const n = Math.floor(a.n); const st = genStones().find((s) => s.n === n); if (!st) throw new GameError('bad_stone');
+        this.alive(p); this.near(p, st, 6);
+        if (n === 8 && d.clues.filter((c) => c.startsWith('stone.') && c !== 'stone.8').length < STONE_LAST_NEEDS) throw new GameError('stone_locked', { n: STONE_LAST_NEEDS });
+        const isNew = this.discoverClue(p, `stone.${n}`, STONE_REWARD_GOLD);
+        return { isNew };
+      }
+      case 'elder': {
+        this.alive(p); this.near(p, HUB.akSakal, HUB.interactAkSakal + 3);
+        const got: string[] = []; ELDER_LEVELS.forEach((lv, i) => { if (d.level >= lv && this.discoverClue(p, `elder.${i + 1}`)) got.push(`elder.${i + 1}`); });
+        return { got };
+      }
+      case 'dreamSeen': {
+        const n = d.pendingDream; if (!n) return null; d.pendingDream = 0; this.discoverClue(p, `dream.${n}`); return null;
+      }
       default: throw new GameError('bad_op');
     }
   }
@@ -687,6 +723,7 @@ export class World {
 
   updateMobs(dt: number, now: number) {
     for (const m of this.mobs.values()) {
+      if (m.dummy) continue;
       if (m.dead) { if (m.campId >= 0 && now >= m.respawnAt) this.respawnMob(m); continue; }
       const def = MOBS[m.type];
       this.tickStatus(m, dt, now);
@@ -796,6 +833,7 @@ export class World {
       if (rng() < 0.25) this.spawnDrop(p, 'charm', r.x, r.z);
       if (rng() < 0.35) this.spawnDrop(p, 'frag', r.x, r.z);
       this.addXp(p, mobXp(r.lvl) * 20, false);
+      p.d.shards++; SHARD_AT.forEach((at, i) => { if (p.d.shards >= at) this.discoverClue(p, `shard.${i + 1}`); });
       this.ledger(p, 'rift.reward', { rift: r.id, lvl: r.lvl, tier, gold });
       this.sys(p, 'sys.rift_closed', {});
     }
@@ -869,6 +907,7 @@ export class World {
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
+      role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,
     };
   }
   sendMe(p: Player) { p.send('me', this.buildMe(p)); p.meDirty = false; p.lastMeAt = this.now; }

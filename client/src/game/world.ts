@@ -3,7 +3,7 @@ import {
 } from '@babylonjs/core';
 import { BOYS, BOY_COLORS, HUB, HUB_R, WORLD_R, type Boy } from '@shared/game';
 import { mulberry32 } from '@shared/rng';
-import { worldObstacles } from '@shared/world';
+import { genStones, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
 import { FOG_COLOR, SKY, addOutline, toonMaterial } from './toon';
@@ -122,7 +122,7 @@ export class World3D {
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones();
   }
 
   private makeSky() {
@@ -222,6 +222,26 @@ export class World3D {
     }
     const f = build(sc, 'flowers', specs); f.material = this.mat; this.root.addChild(f);
   }
+
+  stones: { n: number; x: number; z: number; glow: Mesh; mat: ShaderMaterial; seen: boolean }[] = [];
+  /** Balbal taşları: gizemin bozkıra dağılmış ipuçları. Okunmamışlar mavi parlar, okunanlar solar. */
+  private makeStones() {
+    const sc = this.scene;
+    for (const st of genStones()) {
+      const body: PartSpec[] = [
+        { k: 'box', w: 2.2, h: 0.45, dp: 2.2, p: [0, 0.22, 0], c: '#8d8aa8', c2: '#b4b1cc' }, { k: 'cyl', db: 1.5, dt: 1.0, h: 2.8, p: [0, 1.85, 0], c: '#8e8bb0', c2: '#c9c6e4', seg: 8 },
+        { k: 'sphere', d: 1.25, s: [1, 1.05, 0.95], p: [0, 3.65, 0], c: '#b4b1cc', c2: '#d8d6ee' }, { k: 'torus', d: 1.25, th: 0.14, p: [0, 2.2, 0], c: '#6f6c90' },
+        { k: 'cyl', d: 0.34, h: 0.3, p: [0.2, 2.55, 0.74], c: '#6f6c90' }, { k: 'cyl', d: 0.4, h: 0.12, p: [0.2, 2.74, 0.74], c: '#cfc9a0', gloss: 0.5 },
+        { k: 'box', w: 0.22, h: 0.06, dp: 0.1, p: [-0.28, 3.68, 0.58], c: '#4a4766' }, { k: 'box', w: 0.22, h: 0.06, dp: 0.1, p: [0.28, 3.68, 0.58], c: '#4a4766' }, { k: 'box', w: 0.34, h: 0.05, dp: 0.1, p: [0, 3.4, 0.6], c: '#4a4766' },
+      ];
+      const m = build(sc, 'balbal' + st.n, body); m.material = this.mat; m.position.set(st.x, 0, st.z); m.rotation.y = Math.atan2(-st.x, -st.z); addOutline(m, sc).parent = m; this.root.addChild(m);
+      const gm = toonMaterial(sc, { vertexColors: true, emissive: new Color3(0.2, 0.7, 1), rim: 0 });
+      const glow = build(sc, 'balbalglow' + st.n, [{ k: 'box', w: 0.5, h: 0.07, dp: 0.06, p: [0, 1.9, 0.78], c: '#7fe0ff' }, { k: 'box', w: 0.07, h: 0.5, dp: 0.06, p: [0, 1.75, 0.78], c: '#7fe0ff' }, { k: 'box', w: 0.3, h: 0.06, dp: 0.06, p: [0, 1.5, 0.74], c: '#7fe0ff' },
+        { k: 'sphere', d: 0.12, p: [-0.28, 3.68, 0.64], c: '#9fefff' }, { k: 'sphere', d: 0.12, p: [0.28, 3.68, 0.64], c: '#9fefff' }]);
+      glow.material = gm; glow.parent = m; this.stones.push({ n: st.n, x: st.x, z: st.z, glow, mat: gm, seen: false });
+    }
+  }
+  setStonesSeen(seen: Set<number>) { for (const s of this.stones) { s.seen = seen.has(s.n); s.mat.setColor3('uEmissive', s.seen ? new Color3(0.05, 0.12, 0.16) : new Color3(0.2, 0.7, 1)); } }
 
   /** Ağaç, kaya ve yapıların altına yumuşak gölge yaması (tek birleşik mesh, alfa karışımlı). */
   private makePropShadows() {
@@ -324,6 +344,7 @@ export class World3D {
     for (const f of this.flames) { const ph = (f.metadata?.ph ?? 0) as number; f.scaling.y = 0.85 + Math.sin(t * 9 + ph * 3) * 0.2 + Math.sin(t * 17 + ph) * 0.08; f.scaling.x = f.scaling.z = 0.92 + Math.sin(t * 7 + ph) * 0.1; f.rotation.y = t * 0.8; }
     this.flagPivots.forEach((p, i) => { p.rotation.y = Math.sin(t * 1.6 + i) * 0.12; });
     this.steleMat.setColor3('uFlashColor', Color3.White());
+    for (const s of this.stones) if (!s.seen) { const k = 0.65 + 0.35 * Math.sin(t * 2.2 + s.n); s.mat.setColor3('uEmissive', new Color3(0.2 * k, 0.7 * k, 1 * k)); }
   }
 }
 

@@ -1,61 +1,6 @@
 {
- "at": "2026-10-04T07:54:45.211Z",
+ "at": "2026-10-04T21:48:23.101Z",
  "results": [
-  {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt692"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=49, kontur ağı=281, toplam ShaderMaterial=88"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 137 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 16 SVG ikon"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=4.07 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
-  },
   {
    "id": "F2.boy-kimlik",
    "ok": true,
@@ -217,9 +162,104 @@
    "detail": "Yurda dönüldü (güvenli bölge)"
   },
   {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt684"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=63, kontur ağı=329, toplam ShaderMaterial=102"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 143 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 16 SVG ikon"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=3.39 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
+  },
+  {
+   "id": "H1.yetkisiz-arayuz",
+   "ok": true,
+   "detail": "Rolü olmayan hesapta GM düğmesi yok, F2 yönetici panelini açmaz"
+  },
+  {
+   "id": "H1.rol",
+   "ok": true,
+   "detail": "Yönetici hesabı \"Yonetici793\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+  },
+  {
+   "id": "H1.panel",
+   "ok": true,
+   "detail": "F2 ile yönetici paneli açıldı (30+ hızlı komut)"
+  },
+  {
+   "id": "H1.komut",
+   "ok": true,
+   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=806"
+  },
+  {
+   "id": "H1.sohbet-gm",
+   "ok": true,
+   "detail": "Sohbetten /gm komutu çalıştı (altın=927, bağlantı: , kapalı=false)"
+  },
+  {
+   "id": "H2.tas-okuma",
+   "ok": true,
+   "detail": "Taşa yaklaşınca \"E\" ipucu: “EBalbal Taşı”; okununca kart: “nmış: «Gök dokuz kat. Sekizi kapalıdır.»”"
+  },
+  {
+   "id": "H3.ruya",
+   "ok": true,
+   "detail": "Rüya ekranı yazı yazı belirdi, \"Uyan\" ile ipucu kaydedildi"
+  },
+  {
+   "id": "H3.kodeks",
+   "ok": true,
+   "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=0.93 ms; aktif mesh=38/191; üçgen=602476; (yazılım rasterleştirmede FPS=4)"
+   "detail": "Kare başına JS/CPU maliyeti=448.9 ms; aktif mesh=276/766; üçgen=1041390; (yazılım rasterleştirmede FPS=2)"
   },
   {
    "id": "G.konsol",
@@ -228,15 +268,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 4.0712890625,
+  "audioPeak": 3.38671875,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 4,
-   "meshes": 191,
-   "active": 38,
+   "fps": 2,
+   "meshes": 766,
+   "active": 276,
    "draw": 0,
-   "tris": 602476,
-   "cpuMs": 0.93
+   "tris": 1041390,
+   "cpuMs": 448.9
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

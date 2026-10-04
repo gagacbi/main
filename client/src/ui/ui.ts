@@ -1,6 +1,6 @@
 import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
-import { worldObstacles } from '@shared/world';
+import { genStones, worldObstacles } from '@shared/world';
 import type { Game } from '../game/game';
 import { getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
@@ -32,16 +32,18 @@ export class UI {
       <div class="prompt leather" id="prompt"></div><div class="toasts" id="toasts"></div><div class="compass" id="compass"><i></i></div>
       <div class="death" id="death"><div class="box felt"><h2>${t('ui.dead')}</h2><p id="deadp"></p><button class="btn primary" id="respawn" disabled></button></div></div>
       <div class="duelbox leather" id="duelbox"><div id="duelt"></div><div class="row"><button class="btn green small" id="duelyes"></button><button class="btn small" id="duelno">${t('ui.cancel')}</button></div></div>
+      <div class="lorecard leather" id="lore"></div>
+      <div class="dream" id="dream"><div class="snow"></div><div class="box"><div class="eye"></div><h3></h3><p></p><button class="btn primary" id="wake"></button></div></div>
       <div class="fpsbox" id="fps"></div>
       <div class="conn" id="conn"><div class="felt" style="padding:28px 40px;text-align:center"><h2 style="margin:0 0 8px;font-family:var(--f-head)" id="connt"></h2><button class="btn primary" onclick="location.reload()">OK</button></div></div>`);
-    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
+    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes', 'lore', 'dream', 'wake']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
     this.minimap = r.querySelector('#mm') as HTMLCanvasElement;
     // yetenek çubuğu
     this.e.skillbar.innerHTML = `<div class="slot atk" data-skill="-1" title="Space"><span class="key">␣</span>${icon('swords')}</div>` + SKILLS.map((s, i) => `<div class="slot" data-i="${i}" data-skill="${i}"><span class="key">${i + 1}</span>${icon(s.id)}<span class="rk"></span><div class="cd"></div><span class="cdt"></span><div class="lk"></div></div>`).join('');
     this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
     this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
     // sağ üst düğmeler
-    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.inscr'], ['globe', 'settings', '', 'ui.settings']];
+    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['globe', 'settings', '', 'ui.settings']];
     this.e.btns.innerHTML = btns.map(([ic, p, k, tt]) => `<button class="btn icon" data-p="${p}" title="${t(tt)}">${icon(ic)}${k ? `<span class="k">${k}</span>` : ''}<i class="dot"></i></button>`).join('');
     this.e.btns.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('button[data-p]') as HTMLElement | null; if (b) this.open(b.dataset.p as PanelName); });
     // sohbet
@@ -61,7 +63,7 @@ export class UI {
   relocalize() {
     this.e.respawn.textContent = t('ui.respawn'); (this.e.duelyes as HTMLElement).textContent = t('ui.accept'); this.e.cin.setAttribute('placeholder', t('ui.chat.ph'));
     const h = this.root.querySelector('.death h2'); if (h) h.textContent = t('ui.dead'); const ch = this.root.querySelector('.chat .hint'); if (ch) ch.textContent = t('ui.chat.hint');
-    this.renderTabs(); this.e.btns.querySelectorAll('button[data-p]').forEach((b, i) => { const ks = ['ui.inventory', 'ui.character', 'ui.skills', 'ui.obaPanel', 'ui.inscr', 'ui.settings']; (b as HTMLElement).title = t(ks[i]); });
+    this.renderTabs(); this.e.btns.querySelectorAll('button[data-p]').forEach((b, i) => { const ks = ['ui.inventory', 'ui.character', 'ui.skills', 'ui.obaPanel', 'ui.codex', 'ui.settings']; (b as HTMLElement).title = t(ks[i]); });
     this.panels?.refresh(); this.hudAcc = 1; if (this.g.me) this.hud(0);
   }
   renderTabs() { const tabs: [ChatTab, string][] = [['all', getLang() === 'tr' ? 'Hepsi' : 'All'], ['near', t('ui.chat.near')], ['boy', t('ui.chat.boy')], ['oymak', t('ui.chat.oymak')]]; this.e.ctabs.innerHTML = tabs.map(([k, l]) => `<div class="tab ${this.chatTab === k ? 'on' : ''}" data-t="${k}">${l}</div>`).join(''); }
@@ -70,6 +72,7 @@ export class UI {
   // ───────── girdi ─────────
   key(k: string, e: KeyboardEvent) {
     if (k === 'enter') { e.preventDefault(); this.startTyping(); return; }
+    if (k === 'f2' && this.g.me?.role === 'admin') { e.preventDefault(); this.panels.toggle('gm'); return; }
     if (k === 'escape') { if (this.panels.isOpen()) this.panels.close(); return; }
     const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', h: 'help', b: 'inv' };
     if (map[k]) { e.preventDefault(); this.open(map[k], true); }
@@ -85,12 +88,14 @@ export class UI {
   endTyping() { this.g.typing = false; this.e.chat.classList.remove('typing'); (this.e.cin as HTMLInputElement).blur(); this.g.canvas.focus(); }
   sendChat(v: string) {
     let ch: string = this.chatTab === 'all' ? 'near' : this.chatTab; let text = v; let to: string | undefined;
+    if (v === '/gm' || v.startsWith('/gm ')) { void this.panels.runGm(v.slice(3).trim() || 'help').then(() => this.chat({ ch: 'sys', from: '', text: this.panels.gmOut[this.panels.gmOut.length - 1] ?? '' })); return; }
     if (v.startsWith('/duel ')) { void this.g.net.rpc('duel', { name: v.slice(6).trim() }).then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); }); return; }
     if (v.startsWith('/w ')) { const m = /^\/w\s+(\S+)\s+(.+)$/.exec(v); if (m) { ch = 'whisper'; to = m[1]; text = m[2]; } }
     else if (v.startsWith('/b ')) { ch = 'boy'; text = v.slice(3); } else if (v.startsWith('/o ')) { ch = 'oymak'; text = v.slice(3); } else if (v.startsWith('/n ')) { ch = 'near'; text = v.slice(3); }
     this.g.net.chat(ch, text, to);
   }
   chat(c: ChatMsg) {
+    if (c.key === 'sys.clue' && c.p?.id) this.lore(String(c.p.id));
     this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
     if (c.ch === 'sys' && c.key && hasKey(c.key)) {
       if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
@@ -112,14 +117,30 @@ export class UI {
     const d = document.createElement('div'); d.className = 'toast leather ' + kind; d.textContent = text; this.e.toasts.appendChild(d); setTimeout(() => d.remove(), 3300);
     while (this.e.toasts.children.length > 4) this.e.toasts.firstElementChild?.remove();
   }
+  private loreTimer = 0;
+  /** Yeni bulunan ipucunu ekranın altında kart olarak gösterir. */
+  lore(id: string) {
+    const th = id.split('.')[0]; const el = this.e.lore; el.innerHTML = `<small>${t('thread.' + th)}</small>${t(id)}`; el.style.display = 'block'; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    clearTimeout(this.loreTimer); this.loreTimer = window.setTimeout(() => (el.style.display = 'none'), 9000); this.sfx('rare');
+  }
+  dreaming = false;
+  /** Kurdun rüyası: tam ekran, yazı yazı belirir; "Uyan" ile kapanır ve ipucu kaydedilir. */
+  dream(n: number) {
+    if (this.dreaming) return; this.dreaming = true; const el = this.e.dream; const p = el.querySelector('p') as HTMLElement; (el.querySelector('h3') as HTMLElement).textContent = `${t('ui.dream')} ${n}/5`;
+    const btn = this.e.wake as HTMLButtonElement; btn.textContent = t('ui.wake'); btn.style.visibility = 'hidden'; el.classList.add('on'); p.textContent = '';
+    const text = t(`dream.${n}`); let i = 0; const iv = window.setInterval(() => { p.textContent = text.slice(0, ++i); if (i >= text.length) { clearInterval(iv); btn.style.visibility = 'visible'; } }, 38);
+    btn.onclick = async () => { clearInterval(iv); el.classList.remove('on'); this.dreaming = false; await this.g.net.rpc('dreamSeen'); };
+  }
   duelInvite(from: string) { this.e.duelt.textContent = t('sys.duel_invite', { name: from }); this.e.duelbox.style.display = 'block'; setTimeout(() => (this.e.duelbox.style.display = 'none'), 30000); }
   disconnected(code: number) { if (this.g.net.room && code !== 1000) { this.e.connt.textContent = code === 4001 ? t('err.duplicate') : t('err.disconnected'); this.e.conn.classList.add('on'); } }
 
   private meSig = '';
   onMe(m: Me, prev: Me | null) {
-    const sig = JSON.stringify([m.level, m.xp, m.gold, m.skillPts, m.spec, m.skillRanks, m.bag, m.items.map((i) => i.id + i.up), Object.values(m.equip).map((i) => i?.id + ':' + i?.up), m.tut, m.expeditions.map((e) => e.id), m.companions.map((c) => c.id + c.level), m.rank, m.inscr, m.points, m.oymakId]);
+    const sig = JSON.stringify([m.level, m.xp, m.gold, m.skillPts, m.spec, m.skillRanks, m.bag, m.items.map((i) => i.id + i.up), Object.values(m.equip).map((i) => i?.id + ':' + i?.up), m.tut, m.expeditions.map((e) => e.id), m.companions.map((c) => c.id + c.level), m.rank, m.inscr, m.points, m.oymakId, m.clues, m.role, m.shards]);
     if (sig !== this.meSig) { this.meSig = sig; this.panels.refresh(); }
     this.hudAcc = 1;
+    if (m.pendingDream && !this.dreaming) setTimeout(() => this.dream(m.pendingDream), 600);
+    if (m.role === 'admin' && !this.e.btns.querySelector('[data-p="gm"]')) this.e.btns.insertAdjacentHTML('beforeend', `<button class="btn icon" data-p="gm" title="${t('gm.title')} (F2)" style="font-size:13px;font-weight:700">GM</button>`);
     if (prev && m.tut.step > prev.tut.step) this.sfx('upok');
     const alert = m.skillPts > 0 || (m.level >= 10 && m.spec === 'none'); this.e.btns.querySelector('[data-p="skills"]')?.classList.toggle('alert', alert);
     this.e.btns.querySelector('[data-p="oba"]')?.classList.toggle('alert', m.expeditions.some((e) => this.g.net.now() >= e.endAt));
@@ -138,6 +159,7 @@ export class UI {
     this.e.xpbar.title = `${t('ui.xp')} ${num(m.xp)}/${num(m.xpNext)} · ${t('ui.rested')} ${num(m.rested)}/${num(m.restedCap)}`;
     const tags: string[] = [`<span class="tag">${icon('akce')}${num(m.gold)}</span>`];
     if (m.rested > 0) tags.push(`<span class="tag blue" title="${t('ui.rested')}">${icon('sound')}${t('ui.rested')} ${Math.round((m.rested / m.restedCap) * 100)}%</span>`);
+    if (m.role === 'admin') tags.push(`<span class="tag red">${t('ui.role.admin')}${m.god ? ' · GOD' : ''}</span>`);
     if (m.rank < 0) tags.push(`<span class="tag red">${icon('skull')}${t('ui.rank')} ${m.rank}</span>`);
     if (m.kut > 0) tags.push(`<span class="tag">${t('ui.kut')} ${m.kut}</span>`);
     if (m.skillPts > 0) tags.push(`<span class="tag">${icon('skills')}${m.skillPts}</span>`);
@@ -161,7 +183,7 @@ export class UI {
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
     q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '');
     // etkileşim ipucu
-    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + nb.key)}`; } else this.e.prompt.style.display = 'none';
+    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
     if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.textContent = left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : ''; }
@@ -201,6 +223,7 @@ export class UI {
     // NPC / bina
     const icon2 = (x: number, z: number, col: string, r = 5, sq = false) => { const [a, b] = P(x, z); ctx.fillStyle = col; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2; ctx.beginPath(); if (sq) ctx.rect(a - r, b - r, r * 2, r * 2); else ctx.arc(a, b, r, 0, 6.3); ctx.fill(); ctx.stroke(); };
     icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true); icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true);
+    for (const st of genStones()) { if (g.me.clues.includes('stone.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
     for (const r of g.riftSnap) { const [x, y] = P(r.x, r.z); const pulse = 6 + Math.sin(performance.now() / 200) * 2; ctx.fillStyle = '#d27aff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, pulse, 0, 6.3); ctx.fill(); ctx.stroke(); }
     for (const v of g.vs.views.values()) { if (v.self || v.dyingT >= 0) continue; const [x, y] = P(v.x, v.z); if (v.kind === 'mob') { ctx.fillStyle = v.boss ? '#ff2a6a' : '#e0453c'; ctx.beginPath(); ctx.arc(x, y, v.boss ? 6 : 2.8, 0, 6.3); ctx.fill(); } else { ctx.fillStyle = v.boy === g.myBoy ? '#4aa8ff' : '#ff9f43'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill(); ctx.stroke(); } }
     for (const d of g.drops.values()) { const [x, y] = P(d.root.position.x, d.root.position.z); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); }

@@ -7,7 +7,7 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang';
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen';
 
 // ───────── Sunucu → İstemci ─────────
 export interface Welcome {
@@ -29,6 +29,7 @@ export interface Me {
   rested: number; restedCap: number; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
+  role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
 }
 /** bit bayrakları */
 export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024 } as const;

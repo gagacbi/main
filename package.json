@@ -17,7 +17,9 @@
     "e2e": "tsx tests/e2e/run.ts",
     "test:json": "vitest run --reporter=json --outputFile=docs/evidence/vitest.json",
     "report": "tsx scripts/make-report.ts",
-    "verify": "npm run typecheck && npm run build && npm run test:json && npm run e2e && npm run report"
+    "verify": "npm run typecheck && npm run build && npm run test:json && npm run e2e && npm run report",
+    "admin": "tsx scripts/admin.ts",
+    "sim": "tsx tests/sim/balance.ts"
   },
   "dependencies": {
     "@babylonjs/core": "^9.29.0",
