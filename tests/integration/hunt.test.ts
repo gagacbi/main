@@ -156,11 +156,15 @@ describe('av 6: kalabalık ve zorbalık (nüfus simülasyonu bulgusu)', () => {
 });
 
 describe('av 7: sürü ve cezasız avcılık (nüfus simülasyonu bulgusu)', () => {
-  test('yaratıkla dövüşen oyuncuya saldırmak cezasızdı: kurban oyuncuya saldırmadıysa avcı derece kaybeder; çok aşağıdaki oyuncuyu avlamak çift ceza', () => {
+  test('PvP cezası ilk saldırana işler: yaratıkla dövüşen oyuncuya saldırmak ya da karşılık veren kurbanı öldürmek cezasız değil; çok aşağıdaki oyuncuyu avlamak çift ceza; kurban saldırgansa ceza yok', () => {
     const rig = makeRig(41, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const v = rig.add('yer'); const same = rig.add('ay');
-    a.d.level = 40; v.d.level = 25; same.d.level = 40; v.lastAggro = w.now; v.lastCombat = w.now; v.lastPvpAgg = 0;   // kurban az önce yaratıkla dövüşüyordu
-    a.x = 80; v.x = 82; same.x = 84; w.killPlayer(v, a); expect(a.d.rank).toBe(-2);                                 // seviye farkı 15 → çift ceza
-    a.d.rank = 0; same.lastPvpAgg = w.now; same.lastAggro = w.now; w.killPlayer(same, a); expect(a.d.rank).toBe(0); // kurban önce oyuncuya saldırmıştı: karşılıklı savaş, ceza yok
+    a.d.level = 40; v.d.level = 25; same.d.level = 40; a.x = 80; v.x = 82; same.x = 84;
+    // gerçek akış: avcı yaratıkla dövüşen kurbana vurur → saldırgan bayrağı; kurban karşılık verir → kurban saldırgan DEĞİL, avcı sorumlu
+    v.lastAggro = w.now; v.lastPvpAgg = 0; a.lastPvpAgg = 0; a.focus = v.id; w.playerHit(a, v, 1); expect(a.aggressorUntil).toBeGreaterThan(w.now);
+    v.focus = a.id; w.playerHit(v, a, 1); expect(v.aggressorUntil).toBe(0);                      // karşılık veren saldırgan sayılmaz
+    w.killPlayer(v, a); expect(a.d.rank).toBe(-2);                                               // seviye farkı 15 → çift ceza (karşılık vermesine rağmen)
+    // kurban önce saldırgansa (ya da karşılıklı savaş) ceza yok
+    a.d.rank = 0; same.aggressorUntil = w.now + 10000; w.killPlayer(same, a); expect(a.d.rank).toBe(0);
   });
   test('saha bossu, kendisine vuran her yeni oyuncuyla büyür (ilk kişi hariç) ve yeniden doğunca taban canına döner', () => {
     const rig = makeRig(42, { spawnCamps: false }); const w = rig.world; const boss = w.spawnBoss(genBosses()[2]); const base = boss.maxHp;

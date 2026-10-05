@@ -169,7 +169,7 @@ export class Agent {
     const res = this.rpc('market.list', { id: it.id, price }); if (res.ok) { this.tot.mktListed++; this.eng.market.onList(this, it, price, ref); return true; } return false;
   }
   private marketBuy() {
-    const d = this.d; const lst = this.eng.market.browseAll(); let bought = 0;
+    const d = this.d; const lst = this.eng.market.browseFor(this); let bought = 0;
     const budget = Math.floor(d.gold * 0.5);
     const cands = lst.filter((l) => l.sellerId !== this.p.dbId && l.price <= budget && l.item.lvlReq <= d.level && l.item.ilvl >= d.level - 10);
     for (const l of cands.slice(0, 40)) {

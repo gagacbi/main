@@ -27,7 +27,7 @@ export function marketRpc(w: World, p: Player, op: string, a: any): unknown {
   const db = w.ctx.db; const now = w.now;
   switch (op) {
     case 'market.browse': {
-      const rows = db.marketBrowse({ slot: typeof a.slot === 'string' ? a.slot : undefined, minTier: Number.isFinite(a.minTier) ? a.minTier : undefined, maxPrice: Number.isFinite(a.maxPrice) ? a.maxPrice : undefined, sort: a.sort === 'new' ? 'new' : 'price', limit: MARKET.pageSize, offset: Math.max(0, Math.floor(a.offset ?? 0)), now });
+      const rows = db.marketBrowse({ slot: typeof a.slot === 'string' ? a.slot : undefined, minTier: Number.isFinite(a.minTier) ? a.minTier : undefined, maxPrice: Number.isFinite(a.maxPrice) ? a.maxPrice : undefined, minIlvl: Number.isFinite(a.minIlvl) ? a.minIlvl : undefined, maxIlvl: Number.isFinite(a.maxIlvl) ? a.maxIlvl : undefined, minUp: Number.isFinite(a.minUp) ? a.minUp : undefined, sort: a.sort === 'new' ? 'new' : a.sort === 'deal' ? 'deal' : 'price', limit: MARKET.pageSize, offset: Math.max(0, Math.floor(a.offset ?? 0)), now });
       return { listings: rows.map(rowToListing), total: db.marketOpenCount() };
     }
     case 'market.mine': {
@@ -45,7 +45,7 @@ export function marketRpc(w: World, p: Player, op: string, a: any): unknown {
       if (price > b.max) throw new GameError('market_price_high', { max: b.max });
       const fee = Math.max(MARKET.listFeeMin, Math.round(price * MARKET.listFeePct)); if (p.d.gold < fee) throw new GameError('no_gold');
       let id = 0;
-      db.tx(() => { p.d.gold -= fee; p.d.items.splice(i, 1); id = db.marketInsert({ sellerId: p.dbId, seller: p.name, item: JSON.stringify(it), slot: it.slot, tier: it.tier, ilvl: it.ilvl, price, created: now, expires: now + MARKET.durationH * 3600000 }); w.save(p); });
+      db.tx(() => { p.d.gold -= fee; p.d.items.splice(i, 1); id = db.marketInsert({ sellerId: p.dbId, seller: p.name, item: JSON.stringify(it), slot: it.slot, tier: it.tier, ilvl: it.ilvl, up: it.up, ref: marketRef(it), price, created: now, expires: now + MARKET.durationH * 3600000 }); w.save(p); });
       w.ledger(p, 'market.list', { listing: id, item: it.id, price, fee, ref: marketRef(it), suspicious: price > marketRef(it) * 4 });
       p.meDirty = true; return { id, fee };
     }

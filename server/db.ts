@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Boy } from '../shared/game';
 
 export interface PlayerRow { id: number; name: string; salt: string; hash: string; boy: Boy; oymak_id: number; points: number; data: string; created: number; last_seen: number; role: 'player' | 'admin' }
-export interface MarketRow { id: number; seller_id: number; seller: string; item: string; slot: string; tier: number; ilvl: number; price: number; created: number; expires: number; status: string }
+export interface MarketRow { id: number; seller_id: number; seller: string; item: string; slot: string; tier: number; ilvl: number; up: number; ref: number; price: number; created: number; expires: number; status: string }
 export interface MailRow { id: number; player_id: number; kind: 'gold' | 'item'; gold: number; item: string | null; note: string; ts: number }
 export interface OymakRow { id: number; boy: Boy; name: string; npc: string; data: string }
 
@@ -28,7 +28,7 @@ export class Db {
       CREATE TABLE IF NOT EXISTS world(key TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS ledger(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, player_id INTEGER, kind TEXT NOT NULL, detail TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS idx_ledger_player ON ledger(player_id);
-      CREATE TABLE IF NOT EXISTS market(id INTEGER PRIMARY KEY AUTOINCREMENT, seller_id INTEGER NOT NULL, seller TEXT NOT NULL, item TEXT NOT NULL, slot TEXT NOT NULL, tier INTEGER NOT NULL, ilvl INTEGER NOT NULL, price INTEGER NOT NULL, created INTEGER NOT NULL, expires INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open');
+      CREATE TABLE IF NOT EXISTS market(id INTEGER PRIMARY KEY AUTOINCREMENT, seller_id INTEGER NOT NULL, seller TEXT NOT NULL, item TEXT NOT NULL, slot TEXT NOT NULL, tier INTEGER NOT NULL, ilvl INTEGER NOT NULL, up INTEGER NOT NULL DEFAULT 0, ref INTEGER NOT NULL DEFAULT 0, price INTEGER NOT NULL, created INTEGER NOT NULL, expires INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open');
       CREATE INDEX IF NOT EXISTS idx_market_open ON market(status, slot, price);
       CREATE INDEX IF NOT EXISTS idx_market_seller ON market(seller_id, status);
       CREATE TABLE IF NOT EXISTS mail(id INTEGER PRIMARY KEY AUTOINCREMENT, player_id INTEGER NOT NULL, kind TEXT NOT NULL, gold INTEGER NOT NULL DEFAULT 0, item TEXT, note TEXT NOT NULL, ts INTEGER NOT NULL);
@@ -40,6 +40,8 @@ export class Db {
   /** eski veritabanlarına rol sütunu ekler */
   private migrate() {
     const cols = this.db.prepare('PRAGMA table_info(players)').all() as unknown as { name: string }[];
+    const mc = this.db.prepare('PRAGMA table_info(market)').all() as unknown as { name: string }[];
+    if (mc.length && !mc.some((c) => c.name === 'up')) { this.db.exec('ALTER TABLE market ADD COLUMN up INTEGER NOT NULL DEFAULT 0'); this.db.exec('ALTER TABLE market ADD COLUMN ref INTEGER NOT NULL DEFAULT 0'); }
     if (!cols.some((c) => c.name === 'role')) this.db.exec("ALTER TABLE players ADD COLUMN role TEXT NOT NULL DEFAULT 'player'");
   }
   setRole(name: string, role: 'player' | 'admin'): boolean {
@@ -96,16 +98,17 @@ export class Db {
     this.db.prepare('INSERT INTO world(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, String(v));
   }
   // ── pazar ──
-  marketInsert(r: { sellerId: number; seller: string; item: string; slot: string; tier: number; ilvl: number; price: number; created: number; expires: number }): number {
-    return Number(this.db.prepare('INSERT INTO market(seller_id,seller,item,slot,tier,ilvl,price,created,expires) VALUES(?,?,?,?,?,?,?,?,?)').run(r.sellerId, r.seller, r.item, r.slot, r.tier, r.ilvl, r.price, r.created, r.expires).lastInsertRowid);
+  marketInsert(r: { sellerId: number; seller: string; item: string; slot: string; tier: number; ilvl: number; up: number; ref: number; price: number; created: number; expires: number }): number {
+    return Number(this.db.prepare('INSERT INTO market(seller_id,seller,item,slot,tier,ilvl,up,ref,price,created,expires) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(r.sellerId, r.seller, r.item, r.slot, r.tier, r.ilvl, r.up, r.ref, r.price, r.created, r.expires).lastInsertRowid);
   }
   marketGet(id: number) { return this.db.prepare("SELECT * FROM market WHERE id = ? AND status = 'open'").get(id) as unknown as MarketRow | undefined; }
   marketSetStatus(id: number, status: string) { this.db.prepare('UPDATE market SET status = ? WHERE id = ?').run(status, id); }
   marketSellerOpen(sellerId: number): MarketRow[] { return this.db.prepare("SELECT * FROM market WHERE seller_id = ? AND status = 'open' ORDER BY id").all(sellerId) as unknown as MarketRow[]; }
-  marketBrowse(o: { slot?: string; minTier?: number; maxPrice?: number; sort: 'price' | 'new'; limit: number; offset: number; now: number }): MarketRow[] {
+  marketBrowse(o: { slot?: string; minTier?: number; maxPrice?: number; minIlvl?: number; maxIlvl?: number; minUp?: number; sort: 'price' | 'new' | 'deal'; limit: number; offset: number; now: number }): MarketRow[] {
     const w = ["status = 'open'", 'expires > ?']; const a: (string | number)[] = [o.now];
     if (o.slot) { w.push('slot = ?'); a.push(o.slot); } if (o.minTier !== undefined) { w.push('tier >= ?'); a.push(o.minTier); } if (o.maxPrice !== undefined) { w.push('price <= ?'); a.push(o.maxPrice); }
-    return this.db.prepare(`SELECT * FROM market WHERE ${w.join(' AND ')} ORDER BY ${o.sort === 'price' ? 'price ASC, id ASC' : 'id DESC'} LIMIT ? OFFSET ?`).all(...a, o.limit, o.offset) as unknown as MarketRow[];
+    if (o.minIlvl !== undefined) { w.push('ilvl >= ?'); a.push(o.minIlvl); } if (o.maxIlvl !== undefined) { w.push('ilvl <= ?'); a.push(o.maxIlvl); } if (o.minUp !== undefined) { w.push('up >= ?'); a.push(o.minUp); }
+    return this.db.prepare(`SELECT * FROM market WHERE ${w.join(' AND ')} ORDER BY ${o.sort === 'price' ? 'price ASC, id ASC' : o.sort === 'deal' ? '(price * 1.0 / MAX(ref, 1)) ASC, id ASC' : 'id DESC'} LIMIT ? OFFSET ?`).all(...a, o.limit, o.offset) as unknown as MarketRow[];
   }
   marketOpenCount(): number { return (this.db.prepare("SELECT COUNT(*) AS n FROM market WHERE status = 'open'").get() as unknown as { n: number }).n; }
   /** süresi dolan ilanları kapatır, eşyayı satıcıya postalar */

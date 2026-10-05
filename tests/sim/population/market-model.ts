@@ -8,6 +8,11 @@ export class MarketModel {
   cache: MarketListing[] | null = null; flipHold: { agent: Agent; itemId: string; paid: number }[] = [];
   constructor(public eng: Engine) {}
   invalidate() { this.cache = null; }
+  /** ajanın gördüğü liste: seviyesine uygun, fırsat sırasına göre (arayüzün varsayılan görünümü) */
+  browseFor(a: Agent): MarketListing[] {
+    const w = this.eng.rig.world; const L = a.d.level;
+    return w.ctx.db.marketBrowse({ sort: 'deal', minIlvl: Math.max(1, L - 10), maxIlvl: L + 2, limit: 120, offset: 0, now: w.now }).map((r) => { const item = JSON.parse(r.item) as Item; return { id: r.id, sellerId: r.seller_id, seller: r.seller, item, price: r.price, expires: r.expires, ref: marketRef(item) }; });
+  }
   browseAll(): MarketListing[] {
     if (this.cache) return this.cache;
     const w = this.eng.rig.world; const rows = w.ctx.db.marketBrowse({ sort: 'price', limit: 400, offset: 0, now: w.now });

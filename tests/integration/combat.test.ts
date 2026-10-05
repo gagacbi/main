@@ -180,7 +180,7 @@ describe('C2/C3/C4 PvP, derece, muhafız, düello', () => {
   test('derece: kendi boyunu veya savaşmayan oyuncuyu öldüren derece kaybeder, adı kırmızı olur, muhafız vurur, yaratık avlayarak geri kazanır', async () => {
     const k = await fresh('gok', 'Zalim'); const v = await fresh('gok', 'Kurban'); const w = worldOf(s, k);
     const pk = playerOf(s, k), pv = playerOf(s, v); tp(s, v, FAR.x + 1, FAR.z);
-    pv.lastAggro = Date.now(); pv.lastPvpAgg = 0; w.killPlayer(pv, pk);   // yaratıkla dövüşüyordu ama oyuncuya saldırmadı → savaşmayan sayılır
+    pv.lastAggro = Date.now(); pv.lastPvpAgg = 0; pv.aggressorUntil = 0; pk.aggressorUntil = w.now + 10000; w.killPlayer(pv, pk);   // kurban yaratıkla dövüşüyordu, saldıran avcı
     expect(pk.d.rank).toBe(-1); await k.until(() => k.me.rank === -1);
     await waitSnap(v, 2); await waitSnap(anchor, 2);
     tp(s, k, 3, 3); await waitSnap(anchor, 3);

@@ -21,7 +21,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastDamager = 0; tauntUntil = 0;
+  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; aggressorUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -269,7 +269,9 @@ export class World {
     let dmg = hitDamage(p.stats.atk, mult * extra * lv * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
     if (extra !== 1) dmg = Math.round(dmg); // beceri çarpanı zaten ekte
     if (tgt.kind === 'player') {
-      p.lastPvpAgg = this.now;                     // oyuncuya saldıran 'savaşmayan' sayılmaz; mob dövüşü bunu değiştirmez
+      // ilk saldıran: karşı taraf son 15 sn'de kimseye saldırmamışsa ve düello değilse, 30 sn 'saldırgan' bayrağı alır (karşılık veren sorumlu sayılmaz)
+      if (this.now - tgt.lastPvpAgg > COMBAT_FLAG_SEC * 1000 && p.duelWith !== tgt.id) p.aggressorUntil = this.now + 30000;
+      p.lastPvpAgg = this.now;
       const df = applyDefense(tgt.stats, o.dk ?? p.stats.weaponKind, !!o.skill, p.stats.pierce, this.ctx.rng(), this.ctx.rng());
       if (tgt.deadUntil === 0 && !tgt.god && df.blocked) { tgt.lastCombat = this.now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
       // düşük seviye koruması: düello ya da hedefin az önce sana saldırmış olması (karşılık) dışında, çok aşağıdaki oyuncuya hasar azalır
@@ -393,8 +395,8 @@ export class World {
     p.meDirty = true;
     const killer = src?.kind === 'player' ? src : (p.lastDamager && this.now - p.lastCombat < 6000 ? this.players.get(p.lastDamager) : undefined);
     if (killer && killer !== p) {
-      // 'savaşmayan': kurban son 15 sn içinde başka bir OYUNCUYA saldırmadı (yaratıkla dövüşmek PvP'ye rıza değildir)
-      const nonCombat = this.now - p.lastPvpAgg > COMBAT_FLAG_SEC * 1000;
+      // ceza: kendi boyunu ya da SALDIRGAN OLMAYAN birini, ilk saldıran olarak öldüren derece kaybeder; karşılık veren kurban saldırganı aklamaz
+      const nonCombat = !(p.aggressorUntil > this.now) && killer.aggressorUntil > this.now;
       const sameBoy = killer.boy === p.boy;
       const victimRed = p.d.rank < 0;
       killer.d.counters.pvpKills++;

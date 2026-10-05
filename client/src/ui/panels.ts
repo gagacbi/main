@@ -39,7 +39,7 @@ export function itemTip(it: Item, cmp?: Item): string {
 
 export class Panels {
   open: PanelName | null = null; el: HTMLElement; tipEl: HTMLElement;
-  mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'price' | 'new' = 'price'; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
+  mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'deal' | 'price' | 'new' = 'deal'; mkMine2 = true; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
   selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
@@ -134,7 +134,7 @@ export class Panels {
 
   // ─── pazar ───
   async loadMarket() {
-    const [b, m] = await Promise.all([this.g.net.rpc('market.browse', { slot: this.mkSlot || undefined, sort: this.mkSort }), this.g.net.rpc('market.mine')]);
+    const [b, m] = await Promise.all([this.g.net.rpc('market.browse', { slot: this.mkSlot || undefined, sort: this.mkSort, ...(this.mkMine2 ? { minIlvl: Math.max(1, this.me.level - 10), maxIlvl: this.me.level + 2 } : {}) }), this.g.net.rpc('market.mine')]);
     if (b.ok) this.mkData = b.data as typeof this.mkData; if (m.ok) this.mkMine = m.data as typeof this.mkMine;
   }
   market() {
@@ -151,7 +151,7 @@ export class Panels {
     if (this.mkTab === 'browse') {
       const chips = ['', ...SLOTS].map((s) => `<div class="chip ${this.mkSlot === s ? 'on' : ''}" data-act="mkslot" data-v="${s}">${s ? t('slot.' + s) : t('mk.all')}</div>`).join('');
       const list = this.mkData.listings.length ? this.mkData.listings.map((l) => row(l, false)).join('') : `<div class="muted" style="padding:14px">${t('mk.empty')}</div>`;
-      return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${chips}<span class="grow"></span><div class="chip" data-act="mksort">${this.mkSort === 'price' ? t('mk.sortPrice') : t('mk.sortNew')}</div></div><div class="itemlist" style="max-height:380px;overflow:auto">${list}</div><div class="muted" style="margin-top:6px">${t('mk.note', { tax: Math.round(MARKET.taxPct * 100), fee: Math.round(MARKET.listFeePct * 100), h: MARKET.durationH })}</div></div>`);
+      return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${chips}<span class="grow"></span><div class="chip ${this.mkMine2 ? 'on' : ''}" data-act="mkfit" title="${t('mk.fitHint')}">${t('mk.fit')}</div><div class="chip" data-act="mksort">${this.mkSort === 'deal' ? t('mk.sortDeal') : this.mkSort === 'price' ? t('mk.sortPrice') : t('mk.sortNew')}</div></div><div class="itemlist" style="max-height:380px;overflow:auto">${list}</div><div class="muted" style="margin-top:6px">${t('mk.note', { tax: Math.round(MARKET.taxPct * 100), fee: Math.round(MARKET.listFeePct * 100), h: MARKET.durationH })}</div></div>`);
     }
     const mail = this.mkMine.mail.length ? `<div class="sub">${t('mk.mail')}</div>` + this.mkMine.mail.map((x) => `<div class="card">${x.kind === 'gold' ? `${icon('akce')} +${num(x.gold)}` : esc(itemName(x.item!))} <span class="muted">${x.note.startsWith('sold') ? t('mk.sold') : t('mk.expired')}</span></div>`).join('') + `<button class="btn primary small" data-act="mkclaim" style="margin-top:6px">${t('mk.claim')}</button>` : '';
     const bag = m.items.map((it) => `<div class="cell item ${this.mkSel === it.id ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-act="mkpick" data-id="${it.id}" title="${esc(itemName(it))}">${icon(it.slot)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`).join('');
@@ -326,7 +326,8 @@ export class Panels {
       case 'cx': this.codexTab = d.v as Thread; break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
       case 'mkslot': this.mkSlot = d.v ?? ''; await this.loadMarket(); break;
-      case 'mksort': this.mkSort = this.mkSort === 'price' ? 'new' : 'price'; await this.loadMarket(); break;
+      case 'mksort': this.mkSort = this.mkSort === 'deal' ? 'price' : this.mkSort === 'price' ? 'new' : 'deal'; await this.loadMarket(); break;
+      case 'mkfit': this.mkMine2 = !this.mkMine2; await this.loadMarket(); break;
       case 'mkbuy': { const r = await this.act('market.buy', { id: Number(d.id) }); if (r.ok) { this.g.audio.sfx('upok'); this.lastResult = null; } await this.loadMarket(); break; }
       case 'mkcancel': { await this.act('market.cancel', { id: Number(d.id) }); await this.loadMarket(); break; }
       case 'mkclaim': { await this.act('market.claim'); await this.loadMarket(); break; }
