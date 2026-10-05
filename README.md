@@ -45,6 +45,8 @@ yaratık çağırma, kukla ve DPS ölçümü, çatlak aç/kapat, zaman ileri sar
 
 * **Savunma (Metin2 tarzı):** 5 silah türü (kılıç, çift el, bıçak, yay, büyü çanı), tür savunmaları, vuruş/beceri bloğu, delme; her parçada temel efsun. Karakter paneli (`C`) hepsini gösterir.
 * **Saha bosları:** her 10 seviyelik grupta bir boss (alan darbesi, öfke, boss'un hasar türüne karşı savunma efsunlu garanti ganimet, 15 dk'da yeniden doğar); 10·20·30·40·50'de Kut Armağanı; seviye grubuna göre renkli aura.
+* **Pazar (`P`):** oyuncular arası ilan/satın alma; %5 vergi + %1 ilan ücreti (akçe sinki), yeni hesap 48 sa ilan veremez, fiyat tavanı; varsayılan görünüm "bana uygun" + "fırsat" sıralaması. **Efsun yenile** (Demirci): rastgele ucuz, istediğini seçmek 6×.
+* **Tasarım felsefesi (lamba etkisi):** [`docs/TASARIM_FELSEFESI.md`](docs/TASARIM_FELSEFESI.md), özellik şablonu [`docs/OZELLIK_SABLONU.md`](docs/OZELLIK_SABLONU.md); **150 oyunculu nüfus simülasyonu** ve karakter başına raporlar: [`docs/POPULASYON_RAPORU.md`](docs/POPULASYON_RAPORU.md) (`npx tsx tests/sim/population/run.ts`).
 * **Test felsefesi:** [`docs/TEST_FELSEFESI.md`](docs/TEST_FELSEFESI.md) (sokak lambası etkisi) ve PvP eşleşme matrisi: `npx tsx tests/sim/pvp.ts`.
 
 ## Gizem

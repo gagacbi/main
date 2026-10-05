@@ -34,7 +34,7 @@ const CRITERIA: Crit[] = [
   { id: 'B7', text: 'Ölüm cezası bölgeye göre işler', ev: E({ t: 'riskli bölgede yaratığa ölünce' }, { t: 'güvenli bölgede yaratık saldırmaz' }, { e: 'B7.olum-ekrani' }, { e: 'B7.yeniden-dogus' }, { s: '20-olum.png' }) },
   { id: 'B8', text: 'PvE ve PvP için ayrı katsayı', ev: E({ t: 'PvP ayrı katsayı kullanır' }, { t: 'lanet verilen hasarı azaltır' }) },
   { id: 'C1', text: '3 boy, seçim, pasif bonus, renk kimliği', ev: E({ t: 'Gök hız, Yer can+savunma' }, { e: 'C1.boy-secimi' }, { e: 'C1.boy-kaydi' }, { e: 'F2.boy-kimlik' }, { s: '02-karakter-olustur.png' }) },
-  { id: 'C2', text: 'Güvenli bölgede PvP yok (yalnızca düello); riskli bölgede açık', ev: E({ t: 'riskli bölgede farklı boyun oyuncusu' }, { t: 'güvenli bölgede yaratık saldırmaz' }, { t: 'düello: yalnızca güvenli bölgede' }) },
+  { id: 'C2', text: 'Güvenli bölgede PvP yok (yalnızca düello); riskli bölgede açık', ev: E({ t: 'PvP bilinçli başlar' }, { t: 'güvenli bölgede yaratık saldırmaz' }, { t: 'düello: yalnızca güvenli bölgede' }) },
   { id: 'C3', text: 'Derece sistemi: ceza, kırmızı ad, geri kazanma', ev: E({ t: 'derece: kendi boyunu' }, { t: 'kırmızı adlı oyuncu ölünce' }) },
   { id: 'C4', text: 'Şehir muhafızları kırmızı adlıya saldırır', ev: E({ t: 'derece: kendi boyunu' }) },
   { id: 'D1', text: '50 seviye, her 10 seviyede duvar, Kut puanı', ev: E({ t: '50 seviye; her 10 seviyede belirgin duvar' }, { t: 'seviye sınırından sonra deneyim Kut' }, { t: 'yaratık başına gereken sayı' }, { t: 'seviye atlama: deneyim eğrisine göre' }) },

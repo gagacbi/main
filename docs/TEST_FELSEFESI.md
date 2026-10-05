@@ -3,6 +3,8 @@
 > Geceleyin anahtarını kaybeden adam, anahtarı kaybettiği karanlık yerde değil, sokak lambasının altında arar: *"Burası aydınlık."*
 > Oyun testinde de aynı hata yapılır: **ölçmesi kolay yer ile cevabın olduğu yer aynı yer değildir.**
 
+> Bu belge **testte** lambayı anlatır. **Geliştirme/tasarımda** aynı ilke için: [`TASARIM_FELSEFESI.md`](TASARIM_FELSEFESI.md); 150 oyunculu simülasyonun bulguları: [`POPULASYON_RAPORU.md`](POPULASYON_RAPORU.md).
+
 ## 1. Bizim lambamız neydi?
 
 İlk denge turunda ölçtüğümüz şeyler şunlardı: ortalama DPS, öldürme süresi, seviye başına süre, artı basma beklenen maliyeti.
