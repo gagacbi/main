@@ -2,6 +2,7 @@ import {
   Color3, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ShaderMaterial, StandardMaterial, TransformNode, VertexBuffer, VertexData, type Scene,
 } from '@babylonjs/core';
 import { BOYS, BOY_COLORS, HUB, HUB_R, WORLD_R, type Boy } from '@shared/game';
+import { MAPS, REGIONS, regionAt, type MapId } from '@shared/maps';
 import { mulberry32 } from '@shared/rng';
 import { genStones, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
@@ -64,6 +65,39 @@ void main(){
   gl_FragColor = vec4(col, 1.0);
 }`;
 
+
+Effect.ShadersStore['rgroundVertexShader'] = `
+precision highp float;
+attribute vec3 position; uniform mat4 world; uniform mat4 worldViewProjection; varying vec3 vP;
+void main(){ vec4 wp = world * vec4(position, 1.0); vP = wp.xyz; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+Effect.ShadersStore['rgroundFragmentShader'] = `
+precision highp float;
+varying vec3 vP; uniform vec3 cameraPosition; uniform vec3 uFogColor; uniform vec2 uFog; uniform float uTime;
+uniform vec2 uC; uniform vec3 uA; uniform vec3 uB; uniform float uR; uniform float uSafe; uniform float uKind;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p){ vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }
+float fbm(vec2 p){ return vnoise(p) * 0.55 + vnoise(p * 2.1) * 0.3 + vnoise(p * 4.3) * 0.15; }
+void main(){
+  vec2 p = vP.xz - uC; float r = length(p);
+  float n1 = fbm(p * 0.06); float n3 = fbm(p * 0.9);
+  vec3 col = mix(uA, uB, step(0.5, floor(n1 * 4.0) / 4.0)); col *= 0.94 + 0.1 * step(0.6, n3);
+  if (uKind > 1.5) { float cr = abs(fbm(p * 0.085 + 3.0) - 0.5); float crack = 1.0 - smoothstep(0.0, 0.014, cr); float glow = 0.6 + 0.4 * sin(uTime * 2.0 + p.x * 0.1);
+    col = mix(col, vec3(1.0, 0.25, 0.45) * (0.8 + 0.4 * glow), crack * 0.85); }
+  else if (uKind > 0.5) { vec2 q = p / 4.0; vec2 f = abs(fract(q) - 0.5); float line = 1.0 - smoothstep(0.45, 0.5, max(f.x, f.y)); col = mix(col, col * 0.55, line); }
+  else { float flowers = step(0.86, fbm(p * 0.35 + 9.0)); col = mix(col, vec3(1.0, 0.9, 0.55), flowers * 0.35); }
+  if (uSafe > 0.0) {
+    float pl = 1.0 - smoothstep(uSafe - 0.6, uSafe, r); vec2 q = p / 2.2; vec2 fq = abs(fract(q) - 0.5); float diamond = step(fq.x + fq.y, 0.4);
+    vec3 stone = mix(vec3(0.86, 0.77, 0.60), vec3(0.78, 0.66, 0.48), diamond);
+    float ring = smoothstep(uSafe - 1.6, uSafe - 1.4, r) - smoothstep(uSafe - 0.7, uSafe - 0.5, r);
+    stone = mix(stone, vec3(0.30, 0.45, 0.80), ring); col = mix(col, stone, pl);
+  }
+  float edge = smoothstep(uR - 8.0, uR + 3.0, r); col = mix(col, vec3(0.10, 0.07, 0.18), edge);
+  float d = distance(cameraPosition, vP); float f = clamp((d - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
+  col = mix(col, uFogColor, f * f);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
 Effect.ShadersStore['propshadowVertexShader'] = `
 precision highp float;
 attribute vec3 position; attribute vec2 uv; uniform mat4 worldViewProjection; varying vec2 vUv;
@@ -116,19 +150,20 @@ export function emitTransformedCopies(scene: Scene, name: string, template: Mesh
 
 export class World3D {
   root = new TransformNode('world');
-  ground!: Mesh; sky!: Mesh; clouds = new TransformNode('clouds');
+  ground!: Mesh; grounds: Mesh[] = []; sky!: Mesh; skyTop = Color3.FromHexString(SKY.top); skyMid = Color3.FromHexString(SKY.mid); skyHor = Color3.FromHexString(SKY.horizon); atmo: MapId = 'bozkir'; skyMat!: ShaderMaterial; clouds = new TransformNode('clouds');
   mats: ShaderMaterial[] = []; flames: Mesh[] = []; flagPivots: TransformNode[] = []; runes: Mesh[] = []; steleMat!: ShaderMaterial;
   otagGlow = 0; time = 0;
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRegions();
   }
+  isGround(m: { name?: string } | null | undefined) { return !!m && (m === (this.ground as unknown) || this.grounds.includes(m as Mesh)); }
 
   private makeSky() {
     const m = MeshBuilder.CreateSphere('sky', { diameter: 800, segments: 24, sideOrientation: 1 }, this.scene);
     const mat = new ShaderMaterial('sky', this.scene, 'sky', { attributes: ['position'], uniforms: ['worldViewProjection', 'uTop', 'uMid', 'uHor', 'uTime'] });
-    mat.setColor3('uTop', Color3.FromHexString(SKY.top)); mat.setColor3('uMid', Color3.FromHexString(SKY.mid)); mat.setColor3('uHor', Color3.FromHexString(SKY.horizon));
+    mat.setColor3('uTop', this.skyTop); mat.setColor3('uMid', this.skyMid); mat.setColor3('uHor', this.skyHor); this.skyMat = mat;
     mat.setFloat('uTime', 0); mat.backFaceCulling = false; mat.disableDepthWrite = true;
     m.material = mat; m.infiniteDistance = true; m.isPickable = false; m.renderingGroupId = 0; m.applyFog = false;
     this.sky = m; this.mats.push(mat);
@@ -138,7 +173,7 @@ export class World3D {
     g.rotation.x = Math.PI / 2; g.bakeCurrentTransformIntoVertices();
     const mat = new ShaderMaterial('ground', this.scene, 'ground', { attributes: ['position'], uniforms: ['world', 'worldViewProjection', 'cameraPosition', 'uFogColor', 'uFog', 'uTime', 'uOtag'] });
     mat.setColor3('uFogColor', FOG_COLOR); mat.setVector2('uFog', { x: 110, y: 300 } as never); mat.setFloat('uTime', 0); mat.setFloat('uOtag', 1);
-    mat.backFaceCulling = false; g.material = mat; g.isPickable = true; g.name = 'ground'; this.ground = g; this.mats.push(mat);
+    mat.backFaceCulling = false; g.material = mat; g.isPickable = true; g.name = 'ground'; this.ground = g; this.grounds.push(g); this.mats.push(mat);
   }
   private makeMountains() {
     const specs: PartSpec[] = []; const r = mulberry32(5);
@@ -182,9 +217,11 @@ export class World3D {
     const groups: { x: number; z: number; s: number; ry: number; tint: [number, number, number] }[][] = [[], [], []];
     const r = mulberry32(21);
     for (const o of obs) {
+      const g = regionAt(o.x, o.z); const t = 0.9 + r() * 0.2;
+      if (g && g.map === 'otlak') { groups[o.v].push({ x: o.x, z: o.z, s: o.s, ry: r() * 6.28, tint: [t * 1.05, t * 1.12, t * 0.95] }); continue; }
+      if (g && g.map === 'erlik') { groups[1].push({ x: o.x, z: o.z, s: o.s * 1.1, ry: r() * 6.28, tint: [t * 1.25, t * 0.62, t * 1.35] }); continue; }
       const d = Math.hypot(o.x, o.z); const far = d > 110;
       const v = d < 60 ? (o.v === 2 ? 0 : o.v % 2) : far ? (o.v === 0 ? 1 : 1) : o.v;
-      const t = 0.9 + r() * 0.2;
       groups[v === 2 && d < 55 ? 0 : v].push({ x: o.x, z: o.z, s: o.s * 1.0, ry: r() * 6.28, tint: [t, t, far ? t * 1.1 : t] });
     }
     groups.forEach((g, i) => {
@@ -197,7 +234,9 @@ export class World3D {
     const tpl = build(sc, 'rock', [
       { k: 'icos', d: 2.4, s: [1, 0.72, 0.9], p: [0, 0.8, 0], c: '#8a8aa6', c2: '#b9b9d2', sub: 1 }, { k: 'icos', d: 1.5, s: [1, 0.8, 1], p: [0.9, 0.5, 0.5], c: '#7a7a98', c2: '#a4a4c0', sub: 1 },
     ]);
-    const xf = obs.map((o) => { const t = 0.88 + r() * 0.24; const far = Math.hypot(o.x, o.z) > 110; return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [far ? t * 1.05 : t, far ? t * 0.88 : t, far ? t * 1.15 : t] as [number, number, number] }; });
+    const xf = obs.map((o) => { const t = 0.88 + r() * 0.24; const g = regionAt(o.x, o.z);
+      if (g && g.id !== 'bozkir') { const pal = MAPS[g.map].palette.ground2; const c = [1, 3, 5].map((i) => Math.min(1.5, parseInt(pal.slice(i, i + 2), 16) / 255 * 2.3)); return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [c[0] * t, c[1] * t, c[2] * t] as [number, number, number] }; }
+      const far = Math.hypot(o.x, o.z) > 110; return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [far ? t * 1.05 : t, far ? t * 0.88 : t, far ? t * 1.15 : t] as [number, number, number] }; });
     const m = emitTransformedCopies(sc, 'rocks', tpl, xf); m.material = this.mat; addOutline(m, sc); tpl.dispose(); this.root.addChild(m);
   }
   private makeGrass() {
@@ -335,12 +374,63 @@ export class World3D {
     this.flagPivots.push(piv);
   }
 
+
+  /** Bozkır dışındaki alanlar: zemin, kapı taşı, kamp ateşi (hepsi aynı sahnede, uzak merkezlerde; sis uzaktakini gizler). */
+  private makeRegions() {
+    const sc = this.scene;
+    for (const g of REGIONS) {
+      if (g.id === 'bozkir') continue; const def = MAPS[g.map]; const dun = def.kind === 'dungeon';
+      const d = MeshBuilder.CreateDisc('rground' + g.id, { radius: g.r + 40, tessellation: 64 }, sc);
+      d.rotation.x = Math.PI / 2; d.bakeCurrentTransformIntoVertices(); d.position.set(g.cx, 0, g.cz);
+      const mat = new ShaderMaterial('rground' + g.id, sc, 'rground', { attributes: ['position'], uniforms: ['world', 'worldViewProjection', 'cameraPosition', 'uFogColor', 'uFog', 'uTime', 'uC', 'uA', 'uB', 'uR', 'uSafe', 'uKind'] });
+      mat.setColor3('uFogColor', FOG_COLOR); mat.setVector2('uFog', { x: dun ? 40 : 110, y: dun ? 140 : 300 } as never); mat.setFloat('uTime', 0);
+      mat.setVector2('uC', { x: g.cx, y: g.cz } as never); mat.setColor3('uA', Color3.FromHexString(def.palette.ground)); mat.setColor3('uB', Color3.FromHexString(def.palette.ground2));
+      mat.setFloat('uR', g.r); mat.setFloat('uSafe', g.safeR); mat.setFloat('uKind', dun ? 1 : g.map === 'erlik' ? 2 : 0);
+      mat.backFaceCulling = false; d.material = mat; d.isPickable = true; this.grounds.push(d); this.mats.push(mat);
+      if (g.safeR > 0) { this.makeGate(g.cx, g.cz - 4, def.palette.tree); this.makeCampFire(g.cx, g.cz); }
+    }
+    this.makeGate(HUB.gate.x, HUB.gate.z, '#7fe0ff');
+  }
+  /** Kapı taşı: iki sütun, lento ve parlayan halka */
+  private makeGate(x: number, z: number, glowHex: string) {
+    const sc = this.scene; const rot = Math.atan2(-x, -z);
+    const body = build(sc, 'gate', [
+      { k: 'box', w: 6.4, h: 0.5, dp: 3.4, p: [0, 0.25, 0], c: '#8d8aa8', c2: '#b4b1cc' },
+      { k: 'cyl', db: 1.1, dt: 0.9, h: 5.4, p: [-2.4, 3.1, 0], c: '#8e8bb0', c2: '#c9c6e4', seg: 8 }, { k: 'cyl', db: 1.1, dt: 0.9, h: 5.4, p: [2.4, 3.1, 0], c: '#8e8bb0', c2: '#c9c6e4', seg: 8 },
+      { k: 'box', w: 6.6, h: 0.9, dp: 1.3, p: [0, 6.2, 0], c: '#a09cc0', c2: '#cfcce8' }, { k: 'sphere', d: 1.0, p: [0, 7.1, 0], c: '#b4b1cc', c2: '#d8d6ee' },
+    ]);
+    body.material = this.mat; body.position.set(x, 0, z); body.rotation.y = rot; addOutline(body, sc).parent = body; this.root.addChild(body);
+    const gm = toonMaterial(sc, { vertexColors: true, emissive: Color3.FromHexString(glowHex), rim: 0 });
+    const ring = build(sc, 'gatering', [{ k: 'torus', d: 4.0, th: 0.28, p: [0, 3.3, 0], r: [Math.PI / 2, 0, 0], c: glowHex }, { k: 'sphere', d: 3.4, s: [1, 1, 0.08], p: [0, 3.3, 0], c: glowHex, c2: '#ffffff' }]);
+    ring.material = gm; ring.position.set(x, 0, z); ring.rotation.y = rot; ring.metadata = { gate: true, ph: x }; this.gates.push(ring);
+  }
+  gates: Mesh[] = [];
+  private makeCampFire(x: number, z: number) {
+    const fm = toonMaterial(this.scene, { vertexColors: true, emissive: new Color3(0.9, 0.5, 0.1), rim: 0 });
+    const base = build(this.scene, 'campbase', [{ k: 'cyl', db: 2.4, dt: 2.0, h: 0.5, p: [0, 0.25, 0], c: '#6a5a4a', c2: '#8a7a6a', seg: 10 }]); base.material = this.mat; base.position.set(x, 0, z); this.root.addChild(base);
+    for (const [h, c1, c2, s] of [[2.0, '#ff6a1a', '#ffd166', 0], [1.4, '#ff9f1a', '#fff0a0', 0.8]] as const) {
+      const f = build(this.scene, 'cflame', [{ k: 'cone', db: 0.9 - s * 0.1, dt: 0, h, p: [0, h / 2, 0], c: c1, c2, seg: 8 }]); f.material = fm; f.position.set(x + Math.cos(s * 3) * 0.3, 0.5, z + Math.sin(s * 3) * 0.3); f.metadata = { ph: s }; this.flames.push(f);
+    }
+  }
+  /** Bulunulan haritaya göre gökyüzü ve sis rengini yumuşakça değiştirir */
+  setAtmosphere(map: MapId) { this.atmo = map; }
+  private stepAtmosphere(dt: number) {
+    const pal = MAPS[this.atmo].palette; const k = Math.min(1, dt * 1.8);
+    const tgt = this.atmo === 'bozkir' ? { top: Color3.FromHexString(SKY.top), mid: Color3.FromHexString(SKY.mid), hor: Color3.FromHexString(SKY.horizon), fog: new Color3(0.93, 0.84, 0.64) }
+      : { top: Color3.FromHexString(pal.sky).scale(0.55), mid: Color3.FromHexString(pal.sky), hor: Color3.FromHexString(pal.fog), fog: Color3.FromHexString(pal.fog) };
+    const lerp = (a: Color3, b: Color3) => { a.r += (b.r - a.r) * k; a.g += (b.g - a.g) * k; a.b += (b.b - a.b) * k; };
+    lerp(this.skyTop, tgt.top); lerp(this.skyMid, tgt.mid); lerp(this.skyHor, tgt.hor); lerp(FOG_COLOR, tgt.fog);
+    this.skyMat.setColor3('uTop', this.skyTop); this.skyMat.setColor3('uMid', this.skyMid); this.skyMat.setColor3('uHor', this.skyHor);
+    this.scene.clearColor.r = FOG_COLOR.r; this.scene.clearColor.g = FOG_COLOR.g; this.scene.clearColor.b = FOG_COLOR.b;
+  }
+
   setInscriptions(n: number) { this.steleMat.setColor3('uEmissive', new Color3(0.1 + n * 0.05, 0.35 + n * 0.12, 0.7 + n * 0.1)); }
 
   update(dt: number) {
     this.time += dt; const t = this.time;
     for (const m of this.mats) { m.setFloat('uTime', t); }
-    this.clouds.rotation.y += dt * 0.004;
+    this.clouds.rotation.y += dt * 0.004; this.stepAtmosphere(dt);
+    for (const g of this.gates) { const k = 0.7 + 0.3 * Math.sin(t * 2.4 + (g.metadata.ph as number)); g.scaling.set(1, 1, 1); (g.material as ShaderMaterial).setColor3('uEmissive', new Color3(0.25 * k + 0.1, 0.8 * k, 1 * k)); }
     for (const f of this.flames) { const ph = (f.metadata?.ph ?? 0) as number; f.scaling.y = 0.85 + Math.sin(t * 9 + ph * 3) * 0.2 + Math.sin(t * 17 + ph) * 0.08; f.scaling.x = f.scaling.z = 0.92 + Math.sin(t * 7 + ph) * 0.1; f.rotation.y = t * 0.8; }
     this.flagPivots.forEach((p, i) => { p.rotation.y = Math.sin(t * 1.6 + i) * 0.12; });
     this.steleMat.setColor3('uFlashColor', Color3.White());

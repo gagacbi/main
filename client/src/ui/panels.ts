@@ -6,7 +6,8 @@ import type { MarketListing, MarketMail, ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
-import { INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
+import { MAPS, regionAt, type MapId } from '@shared/maps';
+import { GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -19,7 +20,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market';
+export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -92,7 +93,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -138,7 +139,7 @@ export class Panels {
     if (b.ok) this.mkData = b.data as typeof this.mkData; if (m.ok) this.mkMine = m.data as typeof this.mkMine;
   }
   market() {
-    const m = this.me; const inTown = Math.hypot(this.g.pos.x, this.g.pos.z) < HUB_R; const gold = `<span class="chip">${icon('akce')}${num(m.gold)}</span>`;
+    const m = this.me; const inTown = inHubTown(this.g.pos.x, this.g.pos.z); const gold = `<span class="chip">${icon('akce')}${num(m.gold)}</span>`;
     const tabs = `<div class="tabs2"><div class="tab2 ${this.mkTab === 'browse' ? 'on' : ''}" data-act="mktab" data-v="browse">${t('mk.browse')} <small>${this.mkData.total}</small></div><div class="tab2 ${this.mkTab === 'mine' ? 'on' : ''}" data-act="mktab" data-v="mine">${t('mk.mine')} <small>${this.mkMine.listings.length}/${this.mkMine.max}</small>${this.mkMine.mail.length ? ' <span class="badge">' + this.mkMine.mail.length + '</span>' : ''}</div></div>`;
     const warn = inTown ? '' : `<div class="card hint-card">${t('mk.town')}</div>`;
     const row = (l: MarketListing, own: boolean) => {
@@ -260,6 +261,19 @@ export class Panels {
       ${m.clues.some((c) => c.startsWith('elder.')) ? `<div class="sub">${t('thread.elder')}</div>${m.clues.filter((c) => c.startsWith('elder.')).sort().map((c) => `<div class="card" style="margin-bottom:6px;font-style:italic">${t(c)}</div>`).join('')}` : ''}</div></div>`);
   }
 
+  // ─── kapı taşı ───
+  gatePanel() {
+    const m = this.me; const reg = regionAt(this.g.pos.x, this.g.pos.z); const links = reg ? GATE_LINKS[reg.id] ?? [] : [];
+    const card = (id: MapId) => {
+      const d = MAPS[id]; const low = m.level < d.minLv; const high = m.level > d.maxLv;
+      const why = low ? t('err.level_low', { lvl: d.minLv }) : high ? t('err.level_high', { lvl: d.maxLv }) : '';
+      return `<div class="card gatecard" data-map="${id}"><div class="gt"><b>${t('map.' + id)}</b> <span class="muted">${t('map.lv', { a: d.lv[0], b: d.lv[1] })}</span></div><div class="muted">${t('map.' + id + '.d')}</div>
+        <div class="ln"><span>${t('map.pvp')}</span><b>${t('map.pvp.' + d.pvp)}</b></div><div class="ln"><span>${t('map.entry')}</span><b>${d.minLv}–${d.maxLv > 90 ? '∞' : d.maxLv}</b></div>
+        <button class="btn ${why ? '' : 'primary'}" data-act="travel" data-v="${id}" ${why ? 'disabled' : ''}>${why || t('map.go')}</button></div>`;
+    };
+    return this.shell(t('npc.gate'), 'stele', `<div class="muted" style="margin-bottom:8px">${t('map.gate.hint')}</div>${links.map((l) => card(l)).join('')}`);
+  }
+
   // ─── yazıtlar ───
   /** Kodeks: gizemin beş ipliği + "Mühürün Dışı". Yazıt kartlarının sınıfları (.stele-card/.locked) e2e testleriyle uyumludur. */
   inscr() {
@@ -323,6 +337,7 @@ export class Panels {
     const d = el.dataset;
     switch (act) {
       case 'close': this.close(); break;
+      case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
       case 'cx': this.codexTab = d.v as Thread; break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
       case 'mkslot': this.mkSlot = d.v ?? ''; await this.loadMarket(); break;

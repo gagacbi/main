@@ -11,6 +11,8 @@ import { DropView, FX, RiftView } from './fx';
 import { IDLE, buildHuman, type Rig } from './models';
 import { Predictor } from './predict';
 import { genStones } from '@shared/world';
+import { GATE_LINKS, gatePos } from '@shared/game';
+import { regionAt, regionById } from '@shared/maps';
 import { GameScene, type Quality } from './scene';
 import { World3D } from './world';
 
@@ -24,7 +26,7 @@ export class Game {
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
   focusId = 0; atkHeld = false; clickAttack = false; moveTarget: { x: number; z: number } | null = null; lastDir = { x: 0, z: 0 }; lastSend = 0;
   cdEnd = [0, 0, 0, 0, 0, 0]; cdTotal = SKILLS.map((s) => s.cd); castLock = 0; serverOffset = 0; time = 0; fps = 60; slowFrames = 0; typing = false;
-  nearby: { key: string; dist: number } | null = null; lastDeath: { by: string; kd?: string } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0;
+  regionId = 'bozkir'; nearby: { key: string; dist: number } | null = null; lastDeath: { by: string; kd?: string } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0;
   dustT = 0; autoQuality = new URLSearchParams(location.search).get('autoq') !== '0'; private dragging = false; private lastX = 0; private lastY = 0; private downAt = 0; private downPos = { x: 0, y: 0 };
 
   constructor(public canvas: HTMLCanvasElement, public uiRoot: HTMLElement, quality: Quality) {
@@ -246,7 +248,7 @@ export class Game {
     if (this.selfView) this.selfView.castT = 0;
   }
   private pickEntity(x: number, y: number) {
-    const r = this.gs.scene.pick(x * (1 / this.gs.engine.getHardwareScalingLevel()), y * (1 / this.gs.engine.getHardwareScalingLevel()), (m) => m.isPickable && (m === this.world.ground || !!m.metadata));
+    const r = this.gs.scene.pick(x * (1 / this.gs.engine.getHardwareScalingLevel()), y * (1 / this.gs.engine.getHardwareScalingLevel()), (m) => m.isPickable && (this.world.isGround(m) || !!m.metadata));
     return r?.hit ? r : null;
   }
   private click(x: number, y: number) {
@@ -254,12 +256,12 @@ export class Game {
     const md = r.pickedMesh?.metadata as { eid?: number; npc?: string } | undefined;
     if (md?.eid) { const v = this.vs.get(md.eid); if (v && !v.self) { this.focusId = v.id; this.clickAttack = true; this.moveTarget = null; this.net.attack(this.atkHeld, v.id); this.setAttack(true); this.audio.sfx('ui'); return; } }
     if (md?.npc) { const n = this.npcs.find((q) => q.key === md.npc && Math.hypot(q.x - this.pos.x, q.z - this.pos.z) < 12); if (n) this.interact(md.npc); else { this.moveTarget = { x: r.pickedPoint!.x, z: r.pickedPoint!.z }; this.audio.sfx('ui'); } return; }
-    if (r.pickedMesh === this.world.ground && r.pickedPoint) { this.moveTarget = { x: r.pickedPoint.x, z: r.pickedPoint.z }; this.clickAttack = false; this.focusId = 0; this.net.attack(this.atkHeld, 0); this.fx.ring(r.pickedPoint.x, r.pickedPoint.z, 1.2, '#ffffff', 0.5, { alpha: 0.7 }); }
+    if (this.world.isGround(r.pickedMesh) && r.pickedPoint) { this.moveTarget = { x: r.pickedPoint.x, z: r.pickedPoint.z }; this.clickAttack = false; this.focusId = 0; this.net.attack(this.atkHeld, 0); this.fx.ring(r.pickedPoint.x, r.pickedPoint.z, 1.2, '#ffffff', 0.5, { alpha: 0.7 }); }
   }
   interact(force?: string) {
     const key = force ?? this.nearby?.key; if (!key) return;
     if (key.startsWith('stone:')) { void this.readStone(Number(key.slice(6))); return; }
-    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr');
+    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate');
     this.audio.sfx('ui');
   }
 
@@ -337,10 +339,13 @@ export class Game {
     this.fx.update(dt, this.projector);
     for (const f of this.world.flames) void f;
     this.fx.emitRate('fire', 28, HUB.fire.x, 0.7, HUB.fire.z); this.fx.emitRate('smoke', 3, HUB.fire.x, 3.2, HUB.fire.z);
+    { const rg = regionAt(this.pos.x, this.pos.z); if (rg && rg.id !== 'bozkir' && rg.safeR > 0) { this.fx.emitRate('fire', 22, rg.cx, 0.8, rg.cz); this.fx.emitRate('smoke', 2, rg.cx, 3, rg.cz); } }
     // kamera
     this.updateCamera(dt);
     // etkileşim ipucu
     this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5])];
+    const reg = regionAt(this.pos.x, this.pos.z); if (reg && MAPS_GATES.has(reg.id)) { const gp = gatePos(reg.id); cand.push(['gate', gp.x, gp.z, HUB.interactGate]); }
+    if (reg && reg.id !== this.regionId) { this.regionId = reg.id; this.world.setAtmosphere(reg.map); this.ui.regionChanged(reg.id); }
     for (const [k, x, z, r] of cand) { const d = Math.hypot(x - this.pos.x, z - this.pos.z); if (d < r && (!this.nearby || d < this.nearby.dist)) this.nearby = { key: k, dist: d }; }
     // ölüm bayrağı
     if (dead && !this.wasDead) this.deadSince = now; this.wasDead = dead;
@@ -373,3 +378,5 @@ export class Game {
   respawn() { return this.net.rpc('respawn'); }
   dispose() { this.gs.engine.stopRenderLoop(); this.net.leave(); }
 }
+
+const MAPS_GATES = new Set(Object.keys(GATE_LINKS));

@@ -1,6 +1,7 @@
-import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
+import { BOY_COLORS, HUB, HUB_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
-import { genBosses, genCamps, genStones, worldObstacles } from '@shared/world';
+import { genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
+import { MAPS, regionAt } from '@shared/maps';
 import type { Game } from '../game/game';
 import { getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
@@ -11,7 +12,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
 
 export class UI {
-  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genCamps(); bossList = genBosses();
+  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
   slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
   constructor(public g: Game, root: HTMLElement) {
     this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root);
@@ -83,6 +84,12 @@ export class UI {
       // etkileşimli paneller NPC/binaya yakınlık ister; uzaktaysa yalnızca bilgi gösterilir
     }
     if (toggle) this.panels.toggle(p as PanelName); else void this.panels.show(p as PanelName);
+  }
+  /** Yeni bölgeye girince adını ve kurallarını göster (ışık: oyuncu PvP/seviye kuralını giriş anında okur) */
+  regionChanged(id: string) {
+    const r = regionAt(this.g.pos.x, this.g.pos.z); if (!r) return; const d = MAPS[r.map];
+    this.toast(`${t('map.' + r.map)} — ${t('map.pvp')}: ${t('map.pvp.' + d.pvp)}`, '');
+    void id;
   }
   startTyping() { this.g.typing = true; this.e.chat.classList.add('typing'); (this.e.cin as HTMLInputElement).value = ''; this.e.cin.focus(); }
   endTyping() { this.g.typing = false; this.e.chat.classList.remove('typing'); (this.e.cin as HTMLInputElement).blur(); this.g.canvas.focus(); }
@@ -165,8 +172,8 @@ export class UI {
     if (m.skillPts > 0) tags.push(`<span class="tag">${icon('skills')}${m.skillPts}</span>`);
     this.e.tags.innerHTML = tags.join('');
     // bölge
-    const risky = Math.hypot(g.pos.x, g.pos.z) >= HUB_R; this.e.zone.className = 'zonepill leather ' + (risky ? 'risky' : '');
-    this.e.zone.innerHTML = `${t(risky ? 'zone.risky' : 'zone.safe')} <span class="muted" style="color:#d8c49a;font-size:12px">· ${t('ui.layer')} ${g.net.welcome?.layer ?? 1} · ${g.snap?.pop ?? 1} ${t('ui.online').toLowerCase()}</span>`;
+    const reg = regionAt(g.pos.x, g.pos.z); const mapId = reg?.map ?? 'bozkir'; const risky = zoneAt(g.pos.x, g.pos.z) === 'risky'; this.e.zone.className = 'zonepill leather ' + (risky ? 'risky' : '');
+    this.e.zone.innerHTML = `${t(mapId === 'bozkir' ? (risky ? 'zone.risky' : 'zone.safe') : (risky ? 'zone.' + mapId + '.risky' : 'zone.' + mapId + '.safe'))} <span class="muted" style="color:#d8c49a;font-size:12px">· ${t('ui.layer')} ${g.net.welcome?.layer ?? 1} · ${g.snap?.pop ?? 1} ${t('ui.online').toLowerCase()}</span>`;
     // hedef
     const tg = g.focusId ? g.vs.get(g.focusId) : g.atkHeld ? g.currentTarget() : null;
     if (tg && tg.dyingT < 0) { const tf = this.e.target; tf.style.display = 'block'; (tf.querySelector('.nm span') as HTMLElement).textContent = tg.kind === 'mob' ? t('mob.' + tg.mobType) : tg.name; (tf.querySelectorAll('.nm span')[1] as HTMLElement).textContent = `${t('ui.level')} ${tg.level}`; (tf.querySelector('.bar i') as HTMLElement).style.width = `${(tg.hp / tg.H) * 100}%`; (tf.querySelector('.bar span') as HTMLElement).textContent = `${num(tg.hp)} / ${num(tg.H)}`; } else this.e.target.style.display = 'none';
@@ -222,20 +229,29 @@ export class UI {
     // dünya → harita (kamera yönü yukarı)
     const P = (x: number, z: number): [number, number] => { const dx = x - g.pos.x, dz = z - g.pos.z; return [cx + (dx * rx + dz * rz) * k, cx - (dx * fx + dz * fz) * k]; };
     const grd = ctx.createRadialGradient(cx, cx, 0, cx, cx, cx); grd.addColorStop(0, '#e8c765'); grd.addColorStop(1, '#c9a24a'); ctx.fillStyle = grd; ctx.fillRect(0, 0, S, S);
-    // Erlik bölgesi (mor halka) ve dünya sınırı
-    let [ox, oy] = P(0, 0); ctx.fillStyle = 'rgba(122,90,160,.55)'; ctx.beginPath(); ctx.arc(ox, oy, 150 * k, 0, 6.3); ctx.arc(ox, oy, 105 * k, 0, 6.3, true); ctx.fill();
-    ctx.fillStyle = '#4a2e6a'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, WORLD_R * k, 0, 6.3, true); ctx.fill();
-    ctx.fillStyle = '#5fbf6a'; ctx.beginPath(); ctx.arc(ox, oy, HUB_R * k, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff6df'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, 13 * k, 0, 6.3); ctx.fill();
+    const reg = regionAt(g.pos.x, g.pos.z) ?? regionAt(0, 0)!; const hub = reg.id === 'bozkir'; let [ox, oy] = P(reg.cx, reg.cz);
+    if (hub) {
+      // Erlik bölgesi (mor halka) ve dünya sınırı
+      ctx.fillStyle = 'rgba(122,90,160,.55)'; ctx.beginPath(); ctx.arc(ox, oy, 150 * k, 0, 6.3); ctx.arc(ox, oy, 105 * k, 0, 6.3, true); ctx.fill();
+      ctx.fillStyle = '#4a2e6a'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, WORLD_R * k, 0, 6.3, true); ctx.fill();
+      ctx.fillStyle = '#5fbf6a'; ctx.beginPath(); ctx.arc(ox, oy, HUB_R * k, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff6df'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, 13 * k, 0, 6.3); ctx.fill();
+    } else {
+      const pal = MAPS[reg.map].palette; ctx.fillStyle = pal.ground; ctx.fillRect(0, 0, S, S);
+      ctx.fillStyle = '#2a1a44'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, reg.r * k, 0, 6.3, true); ctx.fill();
+      if (reg.safeR > 0) { ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, reg.safeR * k, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff6df'; ctx.lineWidth = 3; ctx.stroke(); }
+    }
     ctx.fillStyle = 'rgba(30,120,60,.8)'; for (const o of worldObstacles()) if (o.kind === 'tree') { const [x, y] = P(o.x, o.z); if ((x - cx) ** 2 + (y - cx) ** 2 < cx * cx) { ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 6.3); ctx.fill(); } }
     // NPC / bina
     const icon2 = (x: number, z: number, col: string, r = 5, sq = false) => { const [a, b] = P(x, z); ctx.fillStyle = col; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2; ctx.beginPath(); if (sq) ctx.rect(a - r, b - r, r * 2, r * 2); else ctx.arc(a, b, r, 0, 6.3); ctx.fill(); ctx.stroke(); };
-    icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true); icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true);
+    { const gp = gatePos(reg.id); if (reg.safeR > 0) icon2(gp.x, gp.z, '#7fe0ff', 6, true); }
+    if (hub) icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true)
+    if (hub) { icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true); }
     // kamp halkaları: oyuncunun seviyesine göre tehlike rengi (lamba: yeni oyuncu nereye gideceğini haritada okur) + saha bosları
     for (const c of this.campList) { const [x, y] = P(c.x, c.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; const d = c.level - g.me.level; const col = d <= -4 ? '#7ad07a' : d <= 0 ? '#e6f06a' : d <= 3 ? '#ffb23a' : '#ff4a3a';
       ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, 8 * k, 0, 6.3); ctx.stroke(); ctx.fillStyle = col; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(c.level), x, y + 3.5); const n = g.campOcc[c.id] ?? 0; if (n > 0) { ctx.fillStyle = n >= 8 ? '#ff5a4a' : '#ffffff'; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 3; ctx.font = 'bold 9px sans-serif'; ctx.strokeText('👥' + n, x, y - 8 * k - 3); ctx.fillText('👥' + n, x, y - 8 * k - 3); } }
     for (const b of this.bossList) { const [x, y] = P(b.x, b.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; ctx.strokeStyle = '#ff2a6a'; ctx.lineWidth = 3; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(x, y, 9 * k, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ff9ab8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('☠' + b.level, x, y + 4); }
-    for (const st of genStones()) { if (g.me.clues.includes('stone.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
+    for (const st of hub ? genStones() : []) { if (g.me.clues.includes('stone.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
     for (const r of g.riftSnap) { const [x, y] = P(r.x, r.z); const pulse = 6 + Math.sin(performance.now() / 200) * 2; ctx.fillStyle = '#d27aff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, pulse, 0, 6.3); ctx.fill(); ctx.stroke(); }
     for (const v of g.vs.views.values()) { if (v.self || v.dyingT >= 0) continue; const [x, y] = P(v.x, v.z); if (v.kind === 'mob') { ctx.fillStyle = v.boss ? '#ff2a6a' : '#e0453c'; ctx.beginPath(); ctx.arc(x, y, v.boss ? 6 : 2.8, 0, 6.3); ctx.fill(); } else { ctx.fillStyle = v.boy === g.myBoy ? '#4aa8ff' : '#ff9f43'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill(); ctx.stroke(); } }
     for (const d of g.drops.values()) { const [x, y] = P(d.root.position.x, d.root.position.z); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); }
