@@ -1,6 +1,6 @@
 import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
-import { genStones, worldObstacles } from '@shared/world';
+import { genBosses, genCamps, genStones, worldObstacles } from '@shared/world';
 import type { Game } from '../game/game';
 import { getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
@@ -11,7 +11,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
 
 export class UI {
-  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement;
+  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genCamps(); bossList = genBosses();
   slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
   constructor(public g: Game, root: HTMLElement) {
     this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root);
@@ -231,6 +231,10 @@ export class UI {
     // NPC / bina
     const icon2 = (x: number, z: number, col: string, r = 5, sq = false) => { const [a, b] = P(x, z); ctx.fillStyle = col; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2; ctx.beginPath(); if (sq) ctx.rect(a - r, b - r, r * 2, r * 2); else ctx.arc(a, b, r, 0, 6.3); ctx.fill(); ctx.stroke(); };
     icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true); icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true);
+    // kamp halkaları: oyuncunun seviyesine göre tehlike rengi (lamba: yeni oyuncu nereye gideceğini haritada okur) + saha bosları
+    for (const c of this.campList) { const [x, y] = P(c.x, c.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; const d = c.level - g.me.level; const col = d <= -4 ? '#7ad07a' : d <= 0 ? '#e6f06a' : d <= 3 ? '#ffb23a' : '#ff4a3a';
+      ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, 8 * k, 0, 6.3); ctx.stroke(); ctx.fillStyle = col; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(c.level), x, y + 3.5); }
+    for (const b of this.bossList) { const [x, y] = P(b.x, b.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; ctx.strokeStyle = '#ff2a6a'; ctx.lineWidth = 3; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(x, y, 9 * k, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ff9ab8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('☠' + b.level, x, y + 4); }
     for (const st of genStones()) { if (g.me.clues.includes('stone.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
     for (const r of g.riftSnap) { const [x, y] = P(r.x, r.z); const pulse = 6 + Math.sin(performance.now() / 200) * 2; ctx.fillStyle = '#d27aff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, pulse, 0, 6.3); ctx.fill(); ctx.stroke(); }
     for (const v of g.vs.views.values()) { if (v.self || v.dyingT >= 0) continue; const [x, y] = P(v.x, v.z); if (v.kind === 'mob') { ctx.fillStyle = v.boss ? '#ff2a6a' : '#e0453c'; ctx.beginPath(); ctx.arc(x, y, v.boss ? 6 : 2.8, 0, 6.3); ctx.fill(); } else { ctx.fillStyle = v.boy === g.myBoy ? '#4aa8ff' : '#ff9f43'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill(); ctx.stroke(); } }

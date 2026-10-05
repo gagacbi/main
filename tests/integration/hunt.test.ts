@@ -5,8 +5,9 @@
  */
 import { describe, expect, test } from 'vitest';
 import { makeRig } from '../sim/rig';
-import { BAG_SIZE, CRAFT, campRespawnMult, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
+import { BAG_SIZE, CRAFT, DEATH_XP_LOSS, FIELD_BOSS, campRespawnMult, deathXpLoss, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
 import { newPlayerData } from '../../server/types';
+import { genBosses } from '../../shared/world';
 import { mulberry32 } from '../../shared/rng';
 import { startTestServer, Bot, type TestServer } from './helpers';
 
@@ -149,7 +150,28 @@ describe('av 6: kalabalık ve zorbalık (nüfus simülasyonu bulgusu)', () => {
     a.duelWith = v.id; v.duelWith = a.id; const duel = mean(); expect(duel).toBeGreaterThan(0); a.duelWith = v.duelWith = 0;
     v.lastDamager = 0; a.lastDamager = v.id; a.lastCombat = w.now; expect(mean()).toBeGreaterThan(0);   // hedef sana saldırdı: karşılık serbest
   });
-  test('kalabalık kamp: yakındaki oyuncu sayısı arttıkça yaratıkların yeniden doğuşu hızlanır (taban %25); tek oyuncuda değişmez', () => {
-    expect(campRespawnMult(1)).toBe(1); expect(campRespawnMult(5)).toBeLessThan(0.5); expect(campRespawnMult(40)).toBe(0.25);
+  test('kalabalık kamp: yakındaki oyuncu sayısı arttıkça yaratıkların yeniden doğuşu hızlanır (taban %40); tek oyuncuda değişmez', () => {
+    expect(campRespawnMult(1)).toBe(1); expect(campRespawnMult(5)).toBeLessThan(0.75); expect(campRespawnMult(5)).toBeGreaterThan(0.5); expect(campRespawnMult(40)).toBe(0.4);
+  });
+});
+
+describe('av 7: sürü ve cezasız avcılık (nüfus simülasyonu bulgusu)', () => {
+  test('yaratıkla dövüşen oyuncuya saldırmak cezasızdı: kurban oyuncuya saldırmadıysa avcı derece kaybeder; çok aşağıdaki oyuncuyu avlamak çift ceza', () => {
+    const rig = makeRig(41, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const v = rig.add('yer'); const same = rig.add('ay');
+    a.d.level = 40; v.d.level = 25; same.d.level = 40; v.lastAggro = w.now; v.lastCombat = w.now; v.lastPvpAgg = 0;   // kurban az önce yaratıkla dövüşüyordu
+    a.x = 80; v.x = 82; same.x = 84; w.killPlayer(v, a); expect(a.d.rank).toBe(-2);                                 // seviye farkı 15 → çift ceza
+    a.d.rank = 0; same.lastPvpAgg = w.now; same.lastAggro = w.now; w.killPlayer(same, a); expect(a.d.rank).toBe(0); // kurban önce oyuncuya saldırmıştı: karşılıklı savaş, ceza yok
+  });
+  test('saha bossu, kendisine vuran her yeni oyuncuyla büyür (ilk kişi hariç) ve yeniden doğunca taban canına döner', () => {
+    const rig = makeRig(42, { spawnCamps: false }); const w = rig.world; const boss = w.spawnBoss(genBosses()[2]); const base = boss.maxHp;
+    const ps = [0, 1, 2, 3].map(() => { const p = rig.add('gok'); p.d.level = 30; return p; });
+    w.damage(ps[0], boss, 10); expect(boss.maxHp).toBe(base);
+    w.damage(ps[1], boss, 10); expect(boss.maxHp).toBe(Math.round(base * (1 + FIELD_BOSS.hpPerExtra)));
+    w.damage(ps[2], boss, 10); w.damage(ps[3], boss, 10); expect(boss.maxHp).toBe(Math.round(base * (1 + 3 * FIELD_BOSS.hpPerExtra)));
+    const before = boss.maxHp; w.damage(ps[1], boss, 10); expect(boss.maxHp).toBe(before);                              // aynı oyuncu tekrar vurunca değişmez
+    boss.hp = 1; w.damage(ps[0], boss, 5); rig.clock.advance(FIELD_BOSS.respawnSec * 1000 + 1000); rig.tick(); expect(boss.maxHp).toBe(base);
+  });
+  test('yeni oyuncu koruması: Sv10 altında ölüm deneyim kaybettirmez, Sv20 altında yarısı', () => {
+    expect(deathXpLoss(5)).toBe(0); expect(deathXpLoss(15)).toBe(DEATH_XP_LOSS * 0.5); expect(deathXpLoss(30)).toBe(DEATH_XP_LOSS);
   });
 });

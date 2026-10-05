@@ -1,5 +1,5 @@
 import {
-  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
+  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
   CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
@@ -21,7 +21,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  lastCombat = 0; lastAggro = 0; lastDamager = 0; tauntUntil = 0;
+  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -39,7 +39,7 @@ export interface Mob {
   status: StatusMap; contrib: Map<number, number>; dead: boolean; respawnAt: number; leash: number; poisonAcc: number; tauntUntil: number; tauntBy: number;
   lastSwing: number; dummy?: boolean;
   /** saha bossu kimliği (1–5); 0 = değil */
-  bossId: number; slamAt: number; slamHitAt: number;
+  bossId: number; slamAt: number; slamHitAt: number; baseHp?: number;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -240,6 +240,10 @@ export class World {
       if (tgt.dummy) { this.dummyLog.push({ t: this.now, v: dmg }); if (this.dummyLog.length > 4000) this.dummyLog.splice(0, 2000); tgt.hp = tgt.maxHp; this.emit({ k: 'dmg', id: tgt.id, v: dmg, crit: o.crit, src: src?.id }, tgt.x, tgt.z); return dmg; }
       tgt.hp -= dmg;
       if (src?.kind === 'player') {
+        if (tgt.bossId && !tgt.contrib.has(src.id) && tgt.baseHp) {   // boss, kendisine vuran oyuncu sayısıyla büyür: kalabalık boss'u etkisizleştirmesin
+          const extra = Math.min(FIELD_BOSS.maxScale, tgt.contrib.size); const nm = Math.round(tgt.baseHp * (1 + FIELD_BOSS.hpPerExtra * extra));
+          if (nm > tgt.maxHp) { tgt.hp += nm - tgt.maxHp; tgt.maxHp = nm; }
+        }
         tgt.contrib.set(src.id, (tgt.contrib.get(src.id) ?? 0) + dmg);
         if (!o.dot) { src.lastCombat = this.now; src.lastAggro = this.now; }
         if (!tgt.target) tgt.target = src.id;
@@ -265,6 +269,7 @@ export class World {
     let dmg = hitDamage(p.stats.atk, mult * extra * lv * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
     if (extra !== 1) dmg = Math.round(dmg); // beceri çarpanı zaten ekte
     if (tgt.kind === 'player') {
+      p.lastPvpAgg = this.now;                     // oyuncuya saldıran 'savaşmayan' sayılmaz; mob dövüşü bunu değiştirmez
       const df = applyDefense(tgt.stats, o.dk ?? p.stats.weaponKind, !!o.skill, p.stats.pierce, this.ctx.rng(), this.ctx.rng());
       if (tgt.deadUntil === 0 && !tgt.god && df.blocked) { tgt.lastCombat = this.now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
       // düşük seviye koruması: düello ya da hedefin az önce sana saldırmış olması (karşılık) dışında, çok aşağıdaki oyuncuya hasar azalır
@@ -291,11 +296,11 @@ export class World {
   // ───────────── saha bosları ─────────────
   spawnBoss(b: BossDef) {
     const m = this.makeMob('bekci', b.level, b.x, b.z, -1, -1, FIELD_BOSS.hpMult);
-    m.bossId = b.id; m.hx = b.x; m.hz = b.z; m.leash = 45; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000;
+    m.bossId = b.id; m.baseHp = m.maxHp; m.hx = b.x; m.hz = b.z; m.leash = 45; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000;
     return m;
   }
   respawnBoss(m: Mob) {
-    m.x = m.hx; m.z = m.hz; m.hp = m.maxHp; m.dead = false; m.target = 0; m.status = {}; m.contrib.clear(); m.nextAtk = 0; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000; m.slamHitAt = 0;
+    if (m.baseHp) m.maxHp = m.baseHp; m.x = m.hx; m.z = m.hz; m.hp = m.maxHp; m.dead = false; m.target = 0; m.status = {}; m.contrib.clear(); m.nextAtk = 0; m.slamAt = this.now + FIELD_BOSS.slamEverySec * 1000; m.slamHitAt = 0;
     this.emit({ k: 'spawn', id: m.id }, m.x, m.z);
     this.ctx.broadcastSys('sys.boss_up.' + m.bossId);
   }
@@ -388,12 +393,13 @@ export class World {
     p.meDirty = true;
     const killer = src?.kind === 'player' ? src : (p.lastDamager && this.now - p.lastCombat < 6000 ? this.players.get(p.lastDamager) : undefined);
     if (killer && killer !== p) {
-      const nonCombat = this.now - p.lastAggro > COMBAT_FLAG_SEC * 1000;
+      // 'savaşmayan': kurban son 15 sn içinde başka bir OYUNCUYA saldırmadı (yaratıkla dövüşmek PvP'ye rıza değildir)
+      const nonCombat = this.now - p.lastPvpAgg > COMBAT_FLAG_SEC * 1000;
       const sameBoy = killer.boy === p.boy;
       const victimRed = p.d.rank < 0;
       killer.d.counters.pvpKills++;
       if (!victimRed && (sameBoy || nonCombat)) {
-        killer.d.rank--; killer.d.rankKills = 0;
+        killer.d.rank -= killer.d.level - p.d.level >= 8 ? 2 : 1; killer.d.rankKills = 0;       // çok aşağıdaki oyuncuyu avlamak çift ceza
         this.sys(killer, 'sys.rank_down', { rank: killer.d.rank }); killer.meDirty = true;
       }
       if (victimRed && p.d.items.length && this.ctx.rng() < 0.3) {
@@ -402,7 +408,7 @@ export class World {
         this.sys(p, 'sys.item_lost'); this.ledger(p, 'pvp.item_drop', { item: it.id, to: killer.dbId });
       }
     } else if (zoneAt(p.x, p.z) === 'risky') {
-      const loss = Math.min(p.d.xp, Math.round(xpToNext(p.d.level) * DEATH_XP_LOSS));
+      const loss = Math.min(p.d.xp, Math.round(xpToNext(p.d.level) * deathXpLoss(p.d.level)));
       p.d.xp -= loss; if (loss > 0) this.sys(p, 'sys.xp_lost', { xp: loss });
     }
     p.lastDamager = 0;

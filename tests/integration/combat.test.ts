@@ -1,4 +1,4 @@
-import { SHIELD_ABSORB } from '../../shared/game';
+import { SHIELD_ABSORB, deathXpLoss } from '../../shared/game';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { HUB, SKILLS, computeStats, makeItem, mobXp, xpToNext, HUB_R } from '../../shared/game';
 import { F } from '../../shared/protocol';
@@ -145,11 +145,11 @@ describe('B5 durum etkileri', () => {
 
 describe('B7 ölüm cezası ve bölge kuralları', () => {
   test('riskli bölgede yaratığa ölünce az deneyim kaybı; yurda doğar', async () => {
-    const b = await fresh(); const p = playerOf(s, b); p.d.level = 8; p.d.xp = 500; const w = worldOf(s, b); w.recalc(p);
-    const m = mobAt(s, b, 'tepegoz', 40, 1.5, 0, 1); m.target = b.id;
+    const b = await fresh(); const p = playerOf(s, b); p.d.level = 25; p.d.xp = 100000; const w = worldOf(s, b); w.recalc(p);
+    const m = mobAt(s, b, 'tepegoz', 60, 1.5, 0, 1); m.target = b.id;
     await b.until(() => p.deadUntil > 0, 8000);
-    const loss = Math.round(xpToNext(8) * 0.06);
-    expect(p.d.xp).toBe(500 - Math.min(500, loss)); expect(p.d.level).toBe(8);
+    const loss = Math.round(xpToNext(25) * deathXpLoss(25));
+    expect(p.d.xp).toBe(100000 - Math.min(100000, loss)); expect(p.d.level).toBe(25);
     await b.sleep(3100); expect((await b.rpc('respawn')).ok).toBe(true);
     expect(Math.hypot(p.x, p.z)).toBeLessThan(HUB_R); expect(p.hp).toBe(p.stats.maxHp);
     await b.leave();
@@ -180,7 +180,7 @@ describe('C2/C3/C4 PvP, derece, muhafız, düello', () => {
   test('derece: kendi boyunu veya savaşmayan oyuncuyu öldüren derece kaybeder, adı kırmızı olur, muhafız vurur, yaratık avlayarak geri kazanır', async () => {
     const k = await fresh('gok', 'Zalim'); const v = await fresh('gok', 'Kurban'); const w = worldOf(s, k);
     const pk = playerOf(s, k), pv = playerOf(s, v); tp(s, v, FAR.x + 1, FAR.z);
-    pv.lastAggro = 0; w.killPlayer(pv, pk);
+    pv.lastAggro = Date.now(); pv.lastPvpAgg = 0; w.killPlayer(pv, pk);   // yaratıkla dövüşüyordu ama oyuncuya saldırmadı → savaşmayan sayılır
     expect(pk.d.rank).toBe(-1); await k.until(() => k.me.rank === -1);
     await waitSnap(v, 2); await waitSnap(anchor, 2);
     tp(s, k, 3, 3); await waitSnap(anchor, 3);

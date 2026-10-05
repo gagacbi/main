@@ -134,15 +134,33 @@ export class Agent {
       if (res.ok) { this.eng.stats.crafted++; this.eng.stats.craftGold += gold0 - d.gold; }
     }
   }
-  private sellJunk() {
-    const d = this.d; const r = this.eng.rng; const keep = new Set<string>();
-    for (const slot of SLOTS) { const b = this.d.equip[slot]; if (b) keep.add(b.id); }
-    const want = (it: Item) => { for (const s of SLOTS) if (it.slot === s) { const cur = this.d.equip[s]; if (!cur) return true; const sc = this.par.defAware ? this.objective({ ...this.d.equip, [s]: it }, true) : 0; if (sc > this.objective(this.d.equip, true)) return true; } return false; };
+  /** parça kendi yapısına katkı yapar mı (bilinçli oyuncu: hedefe göre; bilinçsiz: yalnızca boş slot) */
+  private wantIt(it: Item): boolean {
+    const cur = this.d.equip[it.slot]; if (!cur) return it.lvlReq <= this.d.level;
+    if (!this.par.defAware || it.lvlReq > this.d.level) return false;
+    return this.objective({ ...this.d.equip, [it.slot]: it }, true) > this.objective(this.d.equip, true) * 1.01;
+  }
+  /** tüccarın gerçek iş modeli: elindeki uygun parçayı güvenli artıya kadar basıp (+5'e tılsımla) pazarda ref değerinden satmak */
+  private upgradeForSale() {
+    const d = this.d; let n = 0;
     for (const it of [...d.items]) {
-      if (want(it) && d.items.length < BAG_SIZE - 6) continue;
-      const lvlOk = it.ilvl >= d.level - 14; const worth = marketRef(it) > vendorPrice(it) * 3;
+      if (n >= 2) break; if (it.tier < 1 || it.up > 0 || it.ilvl < d.level - 6 || this.wantIt(it)) continue;
+      for (let g = 0; g < 8; g++) {
+        const target = it.up + 1; if (target > 5) break; const cost = upgradeCost(target, it.ilvl); if (d.gold < cost.gold + 1500 || d.bag.ore < cost.ore) break;
+        const useCharm = target >= 5 && d.bag.charm > 0; if (target >= 5 && !useCharm) break;
+        const res = this.rpc('upgrade', { id: it.id, book: d.bag.book > 0 && target >= 3, charm: useCharm }); if (!res.ok) break; if (!res.data.success && res.data.destroyed) { this.tot.destroyed++; break; }
+      }
+      n++;
+    }
+  }
+  private sellJunk() {
+    const d = this.d; const r = this.eng.rng;
+    if (this.arch.market.flip) this.upgradeForSale();
+    for (const it of [...d.items]) {
+      if (this.wantIt(it) && d.items.length < BAG_SIZE - 6) continue;
+      const lvlOk = it.ilvl >= d.level - 14 || it.up >= 2; const worth = marketRef(it) > vendorPrice(it) * 3;   // artılı eski donanım kıdemsizlere gider
       if (this.arch.market.sell > r() && lvlOk && worth && this.eng.market.canList(this)) { if (this.listOnMarket(it)) continue; }
-      if (d.items.length > 18 || vendorPrice(it) > 0 && !want(it)) this.rpc('sell', { id: it.id });
+      if (d.items.length > 18 || !this.wantIt(it)) this.rpc('sell', { id: it.id });
     }
   }
   private listOnMarket(it: Item): boolean {

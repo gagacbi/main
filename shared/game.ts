@@ -270,7 +270,7 @@ export const PVE_COEF = 1.0;
 /** Düşük seviye koruması: saldırgandan bu kadar seviye aşağıdaki hedef (ve çatışmayı başlatmamışsa) PvP'de hasar azaltması alır; 20+ farkta dokunulmazdır. */
 export const pvpGapMult = (attLevel: number, tgtLevel: number) => { const gap = attLevel - tgtLevel; return gap >= 20 ? 0 : gap >= 10 ? 0.25 : gap >= 6 ? 0.6 : 1; };
 /** Kalabalık kampta yeniden doğuş süresi çarpanı: oyuncu sayısı arttıkça kısalır (taban 0,25) */
-export const campRespawnMult = (playersNear: number) => Math.max(0.25, 1 / (1 + 0.3 * Math.max(0, playersNear - 1)));
+export const campRespawnMult = (playersNear: number) => Math.max(0.4, 1 / (1 + 0.12 * Math.max(0, playersNear - 1)));
 export const PVP_COEF = 0.35;
 export const CURSE_DMG_MULT = 0.75;
 export const defReduction = (def: number) => 100 / (100 + def);
@@ -301,7 +301,7 @@ export const mobAtk = (lvl: number) => 4 + 2.4 * lvl + 0.045 * lvl * lvl;
 export const mobDef = (lvl: number) => 1 + 1.4 * lvl;
 /** Altın girişi dengesi: nüfus simülasyonu günlük girişin sink'in 11 katı olduğunu gösterdi (BALANS_RAPORU/POPULASYON_RAPORU) */
 export const GOLD_MULT = 0.45;
-export const mobGold = (lvl: number) => Math.max(1, Math.round((3 + 2 * lvl) * GOLD_MULT * 10) / 10);
+export const mobGold = (lvl: number) => Math.max(1, Math.round((3 + 2 * (lvl <= 30 ? lvl : 30 + (lvl - 30) * 0.5)) * GOLD_MULT * 10) / 10);
 export const MOB_RESPAWN: [number, number] = [10, 18];
 export const MAX_CAMP_LEVEL = 48;
 export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + (dist - 40) / 2.5)));
@@ -323,7 +323,7 @@ export const CRAFT = { book: { ore: 4, gold: 60 }, charm: { ore: 24, hide: 12, g
 // ───────────────────────── Saha bosları ve kilometre taşları ─────────────────────────
 /** Her 10 seviyelik grubun bir saha bossu vardır; yaratık gibi savunma türüne sahiptir ve o türe karşı savunma efsunlu ganimet düşürür. */
 export const FIELD_BOSS = {
-  respawnSec: 900, aggro: 13, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
+  respawnSec: 900, aggro: 13, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, hpPerExtra: 0.3, maxScale: 8, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
   /** [seviye, hasar türü, ad anahtarı] */
   list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5']] as [number, DmgKind, string][],
 };
@@ -367,7 +367,9 @@ export const TUTORIAL_REWARD = { kill: { gold: 80 }, donate: { gold: 120 }, buil
 // Sohbet / sınırlar
 export const RATE = { msgPerSec: 60, rpcPerSec: 12, chatPerSec: 1.5 };
 export const BAD_WORDS = ['amk', 'aq', 'orospu', 'piç', 'siktir', 'fuck', 'shit', 'bitch'];
-export const DEATH_XP_LOSS = 0.1; // riskli bölgede ölünce mevcut seviye deneyiminin bu oranı gider (seviye düşmez)
+export const DEATH_XP_LOSS = 0.1;
+/** yeni oyuncuyu korur: Sv10 altında ölünce deneyim kaybı yok, Sv20 altında yarısı (nüfus simülasyonu: yeni başlayanın ayrılma riski en yüksek) */
+export const deathXpLoss = (level: number) => (level < 10 ? 0 : level < 20 ? DEATH_XP_LOSS * 0.5 : DEATH_XP_LOSS); // riskli bölgede ölünce mevcut seviye deneyiminin bu oranı gider (seviye düşmez)
 export const RESPAWN_SEC = 3;
 export const COMBAT_FLAG_SEC = 15;
 export const RANK_RECOVER_KILLS = 20;
