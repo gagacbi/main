@@ -377,7 +377,7 @@ if (want('harita')) {
   const gp = await pg3.textContent('.panel');
   check('H12.kapi-paneli', /Kapı Taşı/.test(prompt ?? '') && /Kutlu Otlak/.test(gp ?? '') && /Erlik Diyarı/.test(gp ?? '') && /İsteğe bağlı/.test(gp ?? ''), 'Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür');
   await pg3.click('.gatecard[data-map="otlak"] button[data-act="travel"]'); await sleep(2500);
-  const zone1 = await pg3.textContent('#zone', { timeout: 8000 }).catch(async () => { console.log('ZONE-YOK', (await pg3.evaluate(() => document.body.innerText)).slice(0, 200)); return ''; }); await sh3('36-kutlu-otlak');
+  await pg3.waitForSelector('#zone', { timeout: 90000 }).catch(() => undefined); await sleep(1500); const zone1 = await pg3.textContent('#zone', { timeout: 20000 }).catch(() => ''); await sh3('36-kutlu-otlak');
   check('H12.otlak', (await reg()) === 'otlak' && /Otlak Kampı/.test(zone1 ?? ''), `Kapıdan geçince Kutlu Otlak'ta (bölge=${await reg()}); bölge etiketi: ${(zone1 ?? '').replace(/\s+/g, ' ').slice(0, 40)}`);
   // kuralı giriş anında oku: PvP düğmesi Otlak'ta kapalı/pasif
   const pvpOtlak = await pg3.textContent('#pvpbtn');
@@ -388,8 +388,9 @@ if (want('harita')) {
   check('H13.bayrak', me3.d.pvp === true && /Açık/.test(pvpOn ?? ''), `HUD düğmesiyle PvP bayrağı açıldı: sunucu=${me3.d.pvp}, düğme="${(pvpOn ?? '').trim()}"`);
   me3.lastPvp = 0; await pg3.click('#pvpbtn'); await sleep(900);
   check('H13.bayrak-kapat', me3.d.pvp === false, 'PvP yoksa bayrak hemen kapanır');
-  // Erlik Diyarı + zindan
-  await gm3('level 46'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(2500); await pg3.keyboard.press('e'); await sleep(1200); await sh3('38-erlik-kapi-zindan');
+  // Erlik Diyarı + zindan (taze sayfa)
+  await pg3.reload(); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
+  await gm3('level 46'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(3000); for (let i = 0; i < 4 && !/Demir Madeni/.test((await pg3.textContent('.panel', { timeout: 3000 }).catch(() => '')) ?? ''); i++) { await pg3.keyboard.press('e'); await sleep(1500); } await sh3('38-erlik-kapi-zindan');
   const dp = await pg3.textContent('.panel');
   check('H14.zindan-paneli', /Demir Madeni/.test(dp ?? '') && /Gölge Mağarası/.test(dp ?? '') && /Giriş ücreti/.test(dp ?? '') && /Bugün kalan hak/.test(dp ?? '') && /Tek başına gir/.test(dp ?? ''), 'Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)');
   const g0 = me3.d.gold; await pg3.click('.gatecard[data-dun="demir"] button[data-solo="1"]'); await sleep(2500);
@@ -398,7 +399,8 @@ if (want('harita')) {
   check('H14.zindan-giris', (await reg())?.startsWith('demir#') === true && me3.d.gold <= g0 - 900 && /Dalga|Hazırlan/.test(bar ?? ''), `Zindan başladı: bölge=${await reg()}, ücret düştü (${g0 - me3.d.gold} akçe), HUD: "${(bar ?? '').replace(/\s+/g, ' ').trim().slice(0, 50)}"`);
   await pg3.click('#dunbar [data-dunleave]'); await sleep(2500);
   check('H14.zindan-cikis', (await reg()) === 'erlik', 'Zindandan çıkış düğmesi Erlik kampına döndürür');
-  // Dokuma Tezgâhı + kostüm
+  // Dokuma Tezgâhı + kostüm (taze sayfa)
+  await pg3.reload(); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
   await gm3('tp hub'); await sleep(1500); await gm3('gold 3000000'); await gm3('cos mats'); await gm3('cos give 3 1'); await gm3('cos give 2 5'); await gm3('cos loom');
   const LP = (await import('../../shared/costume')).LOOM_POS; await gm3(`tp ${LP.x - 3} ${LP.z}`); await sleep(2200); await pg3.keyboard.press('e'); await sleep(1500); await sh3('40-dokuma-tezgahi');
   const lp = await pg3.textContent('.panel');
