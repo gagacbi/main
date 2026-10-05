@@ -59,6 +59,15 @@ describe('saha bosları: yoldan geçeni çekmesin', () => {
   });
 });
 
+describe('ölüm nedeni (ölüm ekranı ipucu için)', () => {
+  test('oyuncuyu boss öldürünce ölüm olayı boss kimliğini ve hasar türünü taşır; yaratık ve oyuncu için de', () => {
+    const rig = makeRig(9, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); const q = rig.add('yer'); const boss = w.spawnBoss(genBosses()[2]); const mob = w.makeMob('albasti', 5, 0, 0, -1);
+    const seen: { by?: string; kd?: string }[] = []; const e0 = w.emit.bind(w); w.emit = (ev, x, z) => { if (ev.k === 'die' && ev.by) seen.push(ev); e0(ev, x, z); };
+    w.killPlayer(p, boss); p.deadUntil = 0; w.killPlayer(p, mob); p.deadUntil = 0; q.d.level = 20; w.recalc(q); w.killPlayer(p, q); p.deadUntil = 0; w.killPlayer(p, null);
+    expect(seen.map((x) => `${x.by}:${x.kd ?? '-'}`)).toEqual(['boss.3:bicak', 'albasti:buyu', 'pl:' + q.stats.weaponKind, 'dot:-']);
+  });
+});
+
 describe('kilometre taşı armağanı', () => {
   test('seviye 10·20·30·40·50’de bir kez; akçe, kitap, tılsım, yazıt parçası ve destansı+ parça; ledger’a yazılır', () => {
     const rig = makeRig(6, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok');

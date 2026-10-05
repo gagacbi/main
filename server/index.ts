@@ -55,7 +55,7 @@ export async function startGameServer(opts: StartOptions = {}): Promise<GameServ
     }
   }
   const http = createServer(app);
-  const colyseus = new Server({ transport: new WebSocketTransport({ server: http, pingInterval: 5000, pingMaxRetries: 6 }), gracefullyShutdown: false });
+  const colyseus = new Server({ transport: new WebSocketTransport({ server: http, pingInterval: 5000, pingMaxRetries: Number(process.env.KUT_PING_RETRIES ?? 6) }), gracefullyShutdown: false });
   colyseus.define('world', WorldRoom, { ctx });
   await new Promise<void>((resolve) => http.listen(opts.port ?? Number(process.env.PORT ?? 2567), resolve));
   const addr = http.address(); const port = typeof addr === 'object' && addr ? addr.port : 0;

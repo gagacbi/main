@@ -107,5 +107,7 @@ S.CHURN = `Düşük ${risk.low} · orta ${risk.mid} · **yüksek ${risk.high}** 
 S.PERF = `Ortalama tick+ajan maliyeti ${f1(avg(SL.map((s) => s.tickMs)))} ms (dilimler: ${SL.length}); en yoğun dilim ${f1(Math.max(...SL.map((s) => s.tickMs)))} ms/tick, çevrimiçi ${Math.max(...SL.map((s) => s.online))} oyuncu.`;
 S.META = `${D.meta.N} oyuncu · ${D.meta.DAYS} gün · dilim ${D.meta.W} dk (günde 4 dilim) · tohum ${D.meta.SEED} · gerçek süre ${Math.round(D.meta.wallSec / 60)} dk`;
 S.MKT2 = (() => { const t = agents.filter((a) => a.arch === 'tuccar'); const prof = t.map((a) => sum(a.days.map((d: any) => d.marketNet))); return `Tüccar/zanaatkâr pazar neti: ortalama ${n(avg(prof))} akçe (en iyi ${n(Math.max(...prof, 0))}); üretilen ${D.stats.crafted} parça, üretim maliyeti ${n(D.stats.craftGold)} akçe; çanta doluluğundan kaybolan ganimet ${n(D.stats.lostBagFull)}.`; })();
+const tpl = readFileSync('docs/POPULASYON_RAPORU.sablon.md', 'utf8');
+if (!process.env.POP_OUT) writeFileSync('docs/POPULASYON_RAPORU.md', tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => String(S[k] ?? `{{${k}?}}`)));
 writeFileSync(`${OUT}/ozet.json`, JSON.stringify({ S, ins, risk }, null, 1));
 console.log(`raporlar yazıldı: ${agents.length} karakter; risk düşük/orta/yüksek = ${risk.low}/${risk.mid}/${risk.high}`);

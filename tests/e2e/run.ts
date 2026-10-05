@@ -14,6 +14,7 @@ const OUT = 'docs/evidence'; mkdirSync(OUT, { recursive: true });
 const results: { id: string; ok: boolean; detail: string }[] = [];
 const metrics: Record<string, unknown> = {};
 const check = (id: string, ok: boolean, detail: string) => { results.push({ id, ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'} ${id} — ${detail}`); };
+process.env.KUT_PING_RETRIES = '30';   // yazılım render'ında sayfa yüklenirken ana iş parçacığı uzun süre kilitlenir; canlılık kontrolü gevşetilir (yalnızca test)
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
 const want = (s: string) => !only || only.has(s);
 
@@ -315,7 +316,8 @@ if (want('icerik')) {
   const sh = async (name: string) => { await pg2.screenshot({ path: `${OUT}/${name}.png` }); };
   const g2 = <T>(expr: string): Promise<T> => pg2.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gmr = (line: string) => pg2.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
-  const me2 = [...world().players.values()].find((x) => x.name === AN2)!; const W = world();
+  await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(1500);
+  const me2 = [...world().players.values()].find((x) => x.name === AN2)!; const W = world(); if (!me2) console.log('OYUNCULAR', [...W.players.values()].map((x) => x.name), AN2, await pg2.evaluate(() => (window as any).__game.me?.name));
   // kilometre taşı: seviye 9 → 10 (gerçek addXp yolu)
   me2.d.level = 9; me2.d.xp = 0; W.recalc(me2); const gold0 = me2.d.gold, book0 = me2.d.bag.book;
   W.addXp(me2, (await import('../../shared/game')).xpToNext(9), false); await sleep(1200); await sh('26-kilometre-tasi');
@@ -339,6 +341,22 @@ if (want('icerik')) {
   check('H5.saha-bossu', plate.some((x) => /Demir Dişli Börü/.test(x ?? '')), `Saha bossu adıyla görünüyor: ${plate.join(' | ')}; sv${boss.lvl}, can ${boss.maxHp}`);
   boss.slamAt = W.now; await sleep(1700); await sh('28-boss-alan-darbesi');
   await sleep(600); await sh('29-seviye-aurasi');
+  // yoğun boss sahnesinden sonra taze sayfa (yazılım render'ında uzun süren ağır sahne bağlantıyı zamanlayabilir); paneller yurtta denetlenir
+  await pg2.reload(); await pg2.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500); await gmr('tp hub'); await sleep(1500);
+  // ölüm ekranı: seni neyin öldürdüğü ve o türe karşı savunman (lamba: oyuncu burada bakar)
+  // (yoğun yazılım render'ında anlık görüntü gecikebildiğinden ölüm olayının sunucu tarafı birim testiyle kilitlidir; burada ekranın doğru çizildiği denetlenir)
+  const hint = await pg2.evaluate(() => { const g = (window as any).__game; g.lastDeath = { by: 'boss.3', kd: 'bicak' }; const h = g.ui.deathHint(); const st = document.createElement('style'); st.id = 'forcedeath'; st.textContent = '#death{display:grid !important}'; document.head.appendChild(st); document.getElementById('deadp')!.innerHTML = h; return h; });
+  await sleep(500); await sh('34-olum-ipucu'); await pg2.evaluate(() => { document.getElementById('forcedeath')?.remove(); });
+  check('H5.olum-ipucu', /Demir Dişli Börü/.test(hint) && /Bıçak/.test(hint) && /savunma/i.test(hint), `Ölüm ekranı ipucu: “${hint.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 130)}”`);
+  // pazar paneli ve efsun yenileme sekmesi (yurtta)
+  await pg2.keyboard.press('p'); await sleep(1500); await sh('32-pazar');
+  const mk = await pg2.textContent('.panel');
+  check('H5.pazar-paneli', /Pazar/.test(mk ?? '') && /İlanlar/.test(mk ?? '') && /İlanlarım/.test(mk ?? '') && /Bana uygun/.test(mk ?? ''), 'Pazar paneli (P): ilanlar, ilanlarım, "bana uygun" süzgeci ve sıralama');
+  await pg2.keyboard.press('Escape'); await sleep(400);
+  await pg2.evaluate(() => { const pn = (window as any).__game.ui.panels; pn.smithTab = 'reroll'; void pn.show('smith'); }); await sleep(1500); await sh('33-efsun-yenile');
+  const rr = await pg2.textContent('.panel');
+  check('H5.efsun-yenile', /Efsun yenile/.test(rr ?? '') && /Rastgele/.test(rr ?? '') && /Seç/.test(rr ?? ''), 'Demirci paneli "Efsun yenile" sekmesi: rastgele ve seçerek yenileme düğmeleri');
+  await pg2.keyboard.press('Escape'); await sleep(300);
   await pg2.close();
 }
 
