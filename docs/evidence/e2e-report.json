@@ -1,61 +1,6 @@
 {
- "at": "2026-10-05T02:53:32.477Z",
+ "at": "2026-10-05T05:33:22.944Z",
  "results": [
-  {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt292"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=71, kontur ağı=380, toplam ShaderMaterial=110"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 135 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=2.80 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
-  },
   {
    "id": "F2.boy-kimlik",
    "ok": true,
@@ -292,9 +237,114 @@
    "detail": "Demirci paneli \"Efsun yenile\" sekmesi: rastgele ve seçerek yenileme düğmeleri"
   },
   {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt428"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=79, kontur ağı=400, toplam ShaderMaterial=132"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 141 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=5.86 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+  },
+  {
+   "id": "H12.kapi-paneli",
+   "ok": true,
+   "detail": "Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür"
+  },
+  {
+   "id": "H12.otlak",
+   "ok": true,
+   "detail": "Kapıdan geçince Kutlu Otlak'ta (bölge=otlak); bölge etiketi: Otlak Kampı (güvenli) · Katman 1 · 2 çev"
+  },
+  {
+   "id": "H13.otlak-pvp-yok",
+   "ok": true,
+   "detail": "Otlak'ta PvP düğmesi pasif: \"PvP: Kapalı\""
+  },
+  {
+   "id": "H13.bayrak",
+   "ok": true,
+   "detail": "HUD düğmesiyle PvP bayrağı açıldı: sunucu=true, düğme=\"PvP: Açık\""
+  },
+  {
+   "id": "H13.bayrak-kapat",
+   "ok": true,
+   "detail": "PvP yoksa bayrak hemen kapanır"
+  },
+  {
+   "id": "H14.zindan-paneli",
+   "ok": true,
+   "detail": "Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)"
+  },
+  {
+   "id": "H14.zindan-giris",
+   "ok": true,
+   "detail": "Zindan başladı: bölge=demir#0, ücret düştü (900 akçe), HUD: \"Demir Madeni (zindan)19:46Dalga 1/3×\""
+  },
+  {
+   "id": "H14.zindan-cikis",
+   "ok": true,
+   "detail": "Zindandan çıkış düğmesi Erlik kampına döndürür"
+  },
+  {
+   "id": "H15.tezgah-paneli",
+   "ok": true,
+   "detail": "Tezgâh paneli: günlük/haftalık üretim, şansa bağlı üretim, kostüm kartları (efsun ekle/değiştir/uzat)"
+  },
+  {
+   "id": "H15.kostum-giy",
+   "ok": true,
+   "detail": "Kostüm giyildi: sunucu basamak=3, istemci avatarı yeniden kuruldu (kod=8)"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=605.82 ms; aktif mesh=61/234; üçgen=670238; (yazılım rasterleştirmede FPS=3)"
+   "detail": "Kare başına JS/CPU maliyeti=426.22 ms; aktif mesh=321/925; üçgen=1329028; (yazılım rasterleştirmede FPS=5)"
   },
   {
    "id": "G.konsol",
@@ -303,15 +353,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 2.7978515625,
+  "audioPeak": 5.857421875,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 3,
-   "meshes": 234,
-   "active": 61,
+   "fps": 5,
+   "meshes": 925,
+   "active": 321,
    "draw": 0,
-   "tris": 670238,
-   "cpuMs": 605.82
+   "tris": 1329028,
+   "cpuMs": 426.22
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

@@ -66,6 +66,26 @@ Ham veri: `docs/balans/populasyon/ham.json` · **Her karakterin kendi raporu: [`
 
 **Performans:** {{PERF}}
 
+## 2b. Yeni içerik (harita, PvP bayrağı, zindan, kostüm)
+
+**Harita kullanımı:**
+
+{{MAPUSE}}
+
+**Kutlu Otlak A/B** (aynı tohum; yeni oyuncu Otlak'a gitmezse):
+
+{{OTLAKAB}}
+
+**İsteğe bağlı PvP bayrağı:** {{FLAG}}
+
+**Zindanlar:**
+
+{{DUN}}
+
+**Kostüm (akçe sink'i):**
+
+{{COS}}
+
 ## 3. Lamba analizi: ışık nerede, cevap nerede?
 
 Her satır bir tur simülasyonun gösterdiği, **tablolarda aydınlık görünen** ama **gerçekte başka yerde olan** bir bulgudur.
@@ -82,14 +102,17 @@ Her satır bir tur simülasyonun gösterdiği, **tablolarda aydınlık görünen
 | 8 | "Muhafız kırmızı adlıyı korkutur" | Kırmızı ad yurtta doğunca muhafız onu anında öldürüyordu: **ölüm döngüsü, PvP avcısı saatte 105 ölüm** | 8 sn yeniden doğuş koruması (saldırınca biter) |
 | 9 | "42 kamp yeter" | Seviye 41–50'de 96 oyuncu, birkaç kamp; en kalabalık iki kamp tüm farm zamanının %43'ü | 64 kamp (41+ seviyede 15); mini haritada kamp seviyesi rengi ve **oyuncu sayısı** (kalabalık bilgisi oyuncunun baktığı yerde): HHI 0,105 → 0,057, haritayı okuyanlarda ölüm −%22 |
 | 10 | "Yeni oyuncu aynı kuralla oynar" | Yeni başlayanın ayrılma riski en yüksek (%67–87 yüksek risk); ölümde XP kaybı, PvP ve eşya kaybı üst üste | Sv10 altı ölümde XP kaybı yok, Sv20 altı yarısı; düşük seviye PvP koruması; kamp tehlike renkleri |
+| 12 | "Zindan ödülü güzel, zor mu zor" | İlk sürümde 429 koşunun %100'ü kazanıldı, ortalama 2,4–2,8 dk; parti 4 sınırını aşıyordu (ortalama ~8: lobi dolunca aynı tikte katılım sürüyordu) | Parti sınırı; yaratık can ×2,2–2,6, saldırı ×1,6–1,9, boss can ×4–5 → 6,7 dk, koşu başına ~1 ölüm |
+| 13 | "Kostüm sink'i %65, hedef tutturuldu" | Toplamın %53'ü **efsun yenileme kovalaması** (631 yenileme); uzatma yalnızca 13 kez, çünkü 14 günlük simülasyonda kostümlerin çoğu henüz dolmadı ve %97'si Sade basamak | Dürüst not: sürekli akış beklenenden çok *kumar* sink'i; uzatma yoğunluğu ancak 3+ haftalık koşuda ölçülür (aşağıda §4) |
+| 14 | "Otlak yeni oyuncuyu korur" | Otlak A/B'de ölüm/sa ve seviye kazancı **aynı** (0,9; ~32,8); hayal kırıklığı Otlak'lı grupta biraz yüksek. PvP zaten bayrakla kapandığından Otlak'ın tek başına ölçülür faydası yok | Otlak tutuldu (maliyetsiz, PvP'siz giriş + ilk boss); değeri gerçek oyuncuyla sınanmalı |
 | 11 | Raporun kendi sayıları | **Bizim ölçüm hatalarımız**: ölüm oranı yalnızca "canlı farm süresine" bölündüğü için şişiyordu; boss'a yaklaşma hatası; ilan listesi yalnızca en ucuz 400'ü görüyordu | Ölçüm düzeltildi (toplam süreye bölünür); `TEST_FELSEFESI` §3: *raporları da lambanın altında okumayız* |
 
-## 4. Açık kararlar (oyun tasarımı — geliştirici/ürün sahibi vermeli)
+## 4. Açık kararlar (önceki turun maddeleri ve durumu)
 
-1. **Tekrarlayan altın sink'i yok.** Zirve oyuncular günde yüz binlerce akçe kazanıp harcayacak yer bulamıyor (sink/kaynak ≈ %23). Artı basma ve efsun yenileme **bir kereliktir**. Seçenekler (her biri tasarım kararıdır): (a) **şifa içeceği** (kımız) — savaşta tekrarlayan harcama, boss/çatlak/PvP dengesini etkiler; (b) **teçhizat bakımı** (ölüm/kullanımla aşınma); (c) **binek** ve **kostüm/aura** (güç vermeyen, tek seferlik ama pahalı); (d) **pazar vergisi** oranı artırıp ticareti teşvik. Öneri: önce (c)+(d), sonra (a).
-2. **PvP zorbalığı** azaldı (korumalar + ceza) ama sürüyor (gank payı ≈ %74; en az 5 kez öldürülüp hiç öldürmeyen 35–68 oyuncu). Seçenekler: ödül avı (bounty), PvP bayrağı (isteğe bağlı açma), yeni oyuncu bölgesi.
-3. **Zirve seviye içeriği:** 64 kamp kalabalığı azalttı ama Sv41–50 oyuncuların çoğu tek bölgede. İkinci bölge/zindan (PRD Aşama 3–4) gerekli.
-4. **Pazar** yalnızca ekipman taşıyor. Malzeme/kitap/tılsım ticareti gelecekte talep yaratabilir (artıya bağlı eşya ham ekipmanı değersizleştiriyor).
+1. **Tekrarlayan altın sink'i** → *Kostüm sistemi eklendi* (§2b): sink/kaynak %23 → ≈ %50. Kalan karar: sink'in büyük kısmı efsun kovalaması; **uzatma** (asıl tekrarlayan akış) 14 günlük koşuda görünmüyor — kostüm süresini 14'ten 10 güne indirmek ya da ilk uzatmayı hatırlatmak düşünülebilir. 3+ haftalık simülasyonla yeniden ölç.
+2. **PvP zorbalığı** → *İsteğe bağlı bayrak + Otlak eklendi.* Bayraksızlar PvP'de hiç ölmüyor; bayraklı çiftçiler çok ölüyor (bayrak %10 bonus için pahalı görünüyor). Karar: bonusu artırmak mı (gerçek oyuncu bayrağı daha çok açar), yoksa PvP'yi avcılara bırakmak mı?
+3. **Zirve içeriği** → *Erlik Diyarı + 2 zindan eklendi.* Zindan parti ölçeği ve güçlük gerçek oyuncularla ayarlanmalı (botlar zindanı fazla kolay buluyor).
+4. **Pazar** yalnızca ekipman taşıyor; kostüm malzemeleri ve şans eşyaları bilinçli olarak takas edilemez (ikincil piyasa istemedik). Gelecekte malzeme pazarı açılabilir.
 
 ## 5. Çalıştırma
 
@@ -97,4 +120,6 @@ Her satır bir tur simülasyonun gösterdiği, **tablolarda aydınlık görünen
 POP_N=150 POP_DAYS=14 POP_W=10 POP_SEED=7 npx tsx tests/sim/population/run.ts   # ≈ 8 dk
 npx tsx tests/sim/population/report.ts                                          # karakter raporları + docs/POPULASYON_RAPORU.md
 POP_NOMAP=1 ...                                                                 # haritayı kimse okumasın (A/B kontrolü)
+POP_NOOTLAK=1 POP_OUT=docs/balans/populasyon-ab ...                             # yeni oyuncular Otlak'a gitmesin (A/B)
+POP_NOCOS=1 / POP_NOERLIK=1 ...                                                 # kostüm / Erlik olmadan kontrol
 ```
