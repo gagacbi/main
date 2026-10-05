@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { regionAt, regionById, type MapId } from './maps';
 
 // ───────────────────────── Temel tipler ─────────────────────────
 export type Boy = 'gok' | 'yer' | 'ay';
@@ -48,6 +49,8 @@ export const HUB = {
   spawn: { gok: { x: -7, z: 16 }, yer: { x: 0, z: 18 }, ay: { x: 7, z: 16 } },
   banners: { gok: { x: -9, z: 6 }, yer: { x: 0, z: 9 }, ay: { x: 9, z: 6 } },
   guards: [0, 1, 2, 3, 4, 5].map((i) => ({ x: Math.cos(i * 1.0472 + 0.5) * 30, z: Math.sin(i * 1.0472 + 0.5) * 30 })),
+  gate: { x: 15, z: 22 },
+  interactGate: 8,
   interactOtag: 14,
   interactDemirci: 9,
   interactAkSakal: 9,
@@ -55,8 +58,18 @@ export const HUB = {
 };
 
 export function zoneAt(x: number, z: number): 'safe' | 'risky' {
-  return x * x + z * z < HUB_R * HUB_R ? 'safe' : 'risky';
+  const r = regionAt(x, z); if (!r || r.safeR <= 0) return 'risky';
+  const dx = x - r.cx, dz = z - r.cz; return dx * dx + dz * dz < r.safeR * r.safeR ? 'safe' : 'risky';
 }
+/** Kapı taşı konumu: Bozkır'da yurdun kenarı, diğer alanlarda güvenli kampın içi */
+export function gatePos(regionId: string): { x: number; z: number } {
+  if (regionId === 'bozkir') return HUB.gate;
+  const g = regionById(regionId); return { x: g.cx, z: g.cz - 4 };
+}
+/** Kapı taşından gidilebilecek hedefler (zindanlar ayrı RPC ile). */
+export const GATE_LINKS: Record<string, MapId[]> = { bozkir: ['otlak', 'erlik'], otlak: ['bozkir'], erlik: ['bozkir'] };
+/** Pazar, demirci, oba vb. yalnızca Bozkır yurdunda (merkez yerleşim) */
+export const inHubTown = (x: number, z: number) => x * x + z * z < HUB_R * HUB_R;
 
 // ───────────────────────── Boylar ─────────────────────────
 export const BOY_BONUS: Record<Boy, { mspd: number; aspd: number; hp: number; def: number; spell: number; heal: number }> = {
@@ -325,7 +338,10 @@ export const CRAFT = { book: { ore: 4, gold: 60 }, charm: { ore: 24, hide: 12, g
 export const FIELD_BOSS = {
   respawnSec: 900, aggro: 13, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, hpPerExtra: 0.3, maxScale: 8, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
   /** [seviye, hasar türü, ad anahtarı] */
-  list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5']] as [number, DmgKind, string][],
+  list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5'],
+    [7, 'bicak', 'boss.6'], [44, 'bicak', 'boss.7'], [50, 'buyu', 'boss.8'], [53, 'cift', 'boss.9']] as [number, DmgKind, string][],
+  /** list ile paralel: bossun yaşadığı harita (ilk 5 Bozkır) */
+  maps: ['bozkir', 'bozkir', 'bozkir', 'bozkir', 'bozkir', 'otlak', 'erlik', 'erlik', 'erlik'] as MapId[],
 };
 export const MILESTONE_LEVELS = [10, 20, 30, 40, 50];
 /** Kilometre taşı armağanı (Kut Armağanı): seviye 10·20·30·40·50 */

@@ -1,4 +1,4 @@
-import { BAG_SIZE, MARKET, marketPriceBounds, marketRef, vendorPrice, zoneAt, type Item } from '../shared/game';
+import { BAG_SIZE, MARKET, marketPriceBounds, marketRef, vendorPrice, inHubTown, type Item } from '../shared/game';
 import type { MarketListing, MarketMail } from '../shared/protocol';
 import type { MarketRow } from './db';
 import { GameError } from './types';
@@ -10,7 +10,7 @@ import type { Player, World } from './world';
  */
 const rowToListing = (r: MarketRow): MarketListing => { const item = JSON.parse(r.item) as Item; return { id: r.id, sellerId: r.seller_id, seller: r.seller, item, price: r.price, expires: r.expires, ref: marketRef(item) }; };
 
-function needTown(p: Player) { if (zoneAt(p.x, p.z) !== 'safe') throw new GameError('market_town'); }
+function needTown(p: Player) { if (!inHubTown(p.x, p.z)) throw new GameError('market_town'); }
 
 /** Satıcının/ alıcının bekleyen postasını (akçe, eşya) çantaya alır. Çanta doluysa eşya postada kalır. */
 export function claimMail(w: World, p: Player): { gold: number; items: number; left: number } {

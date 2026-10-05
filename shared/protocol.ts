@@ -7,7 +7,7 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen'
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel'
   | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────

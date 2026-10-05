@@ -6,7 +6,9 @@ import {
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { dist, dist2, genBosses, genCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
+import { GATE_LINKS, gatePos } from '../shared/game';
+import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
+import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
 import { runGm } from './gm';
 import { claimMail, marketRpc } from './market';
@@ -40,6 +42,8 @@ export interface Mob {
   lastSwing: number; dummy?: boolean;
   /** saha bossu kimliği (1–5); 0 = değil */
   bossId: number; slamAt: number; slamHitAt: number; baseHp?: number;
+  /** bulunduğu bölge kimliği (boş bölgelerde yaratık güncellenmez) */
+  reg: string;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -52,7 +56,7 @@ export class World {
   mobs = new Map<number, Mob>();
   rifts = new Map<number, Rift>();
   drops = new Map<number, Drop>();
-  camps: Camp[] = genCamps();
+  camps: Camp[] = genAllCamps();
   events: { ev: GameEvent; x: number; z: number }[] = [];
   seq = 1; layer: number; tickCount = 0; startedAt: number;
   nextRiftAt = 0; lastSave = 0; tickMsSum = 0; tickMsMax = 0; tickMsN = 0;
@@ -82,7 +86,7 @@ export class World {
     const m: Mob = {
       kind: 'mob', id: this.nid(), type, lvl, x, z, rot: this.ctx.rng() * 6.28, hp, maxHp: hp, atk: mobAtk(lvl) * def.atk, def: mobDef(lvl) * def.def,
       hx: x, hz: z, campId, riftId, target: 0, nextAtk: 0, wanderAt: 0, wx: x, wz: z, status: {}, contrib: new Map(), dead: false, respawnAt: 0,
-      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0, bossId: 0, slamAt: 0, slamHitAt: 0,
+      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0, bossId: 0, slamAt: 0, slamHitAt: 0, reg: regionAt(x, z)?.id ?? 'bozkir',
     };
     this.mobs.set(m.id, m);
     return m;
@@ -119,7 +123,7 @@ export class World {
     p.x = d.x; p.z = d.z;
     p.hp = d.hp > 0 ? Math.min(d.hp, p.stats.maxHp) : p.stats.maxHp;
     p.lastCombat = 0;
-    if (!Number.isFinite(p.x) || Math.hypot(p.x, p.z) > 158) { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; }
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.z) || !regionAt(p.x, p.z) || isDungeonRegion(regionAt(p.x, p.z))) { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; }
     const o = oba.loadOymak(this.ctx, p.oymakId);
     oba.ensureCompanions(this.ctx, p, o.lv.otag);
     this.players.set(p.id, p);
@@ -417,11 +421,26 @@ export class World {
     p.lastDamager = 0;
   }
 
+  /** Oyuncuyu bir haritanın kapı taşına ışınlar (hedefler, dövüşü ve yaratık hedeflemesini sıfırlar). */
+  teleport(p: Player, to: string) {
+    const g = gatePos(to); const reg = regionById(to);
+    p.x = g.x + (to === 'bozkir' ? -2.5 : 0); p.z = g.z + (to === 'bozkir' ? 0 : 3.5); p.focus = 0; p.atk = false; p.dirx = 0; p.dirz = 0;
+    for (const m of this.mobs.values()) if (m.target === p.id) m.target = 0;
+    p.protectUntil = this.now + 3000; p.meDirty = true;
+    this.ledger(p, 'travel', { to: reg.id });
+  }
+
   respawn(p: Player) {
     if (!p.deadUntil) return;
     if (this.now < p.deadUntil) throw new GameError('too_soon');
     p.deadUntil = 0; p.status = {}; this.recalc(p); p.hp = p.stats.maxHp; p.protectUntil = this.now + RESPAWN_PROTECT_MS;
-    const s = HUB.spawn[p.boy]; p.x = s.x; p.z = s.z; p.meDirty = true;
+    const s = this.respawnPoint(p); p.x = s.x; p.z = s.z; p.meDirty = true;
+  }
+  /** Yeni oyuncu bölgesinde ve Erlik Diyarı'nda kendi güvenli kampında doğar; zindanda yurda döner */
+  respawnPoint(p: Player): { x: number; z: number } {
+    const g = regionAt(p.x, p.z);
+    if (g && g.id !== 'bozkir' && !isDungeonRegion(g)) return { x: g.cx + (this.ctx.rng() - 0.5) * 4, z: g.cz + 3 + this.ctx.rng() * 2 };
+    return HUB.spawn[p.boy];
   }
 
   // ───────────── ganimet ─────────────
@@ -591,6 +610,18 @@ export class World {
         return null;
       }
       case 'respawn': this.respawn(p); return null;
+      case 'travel': {
+        this.alive(p); const to = String(a.to) as MapId; const from = regionAt(p.x, p.z);
+        if (!from || !(GATE_LINKS[from.id] ?? []).includes(to)) throw new GameError('bad_travel');
+        this.near(p, gatePos(from.id), HUB.interactGate);
+        const def = MAPS[to]; const adm = p.role === 'admin';
+        if (!adm && d.level < def.minLv) throw new GameError('level_low', { lvl: def.minLv });
+        if (!adm && d.level > def.maxLv) throw new GameError('level_high', { lvl: def.maxLv });
+        if (!adm && to === 'otlak' && d.rank < 0) throw new GameError('travel_red');
+        if (this.now - p.lastCombat < 8000 && !adm) throw new GameError('in_combat');
+        this.teleport(p, to);
+        return null;
+      }
       case 'duel': {
         this.alive(p);
         const q = [...this.players.values()].find((x) => x.name.toLowerCase() === String(a.name).toLowerCase());
@@ -852,9 +883,14 @@ export class World {
   }
 
   updateMobs(dt: number, now: number) {
+    const active = new Set<string>(); for (const p of this.players.values()) { const g = regionAt(p.x, p.z); if (g) active.add(g.id); }
     for (const m of this.mobs.values()) {
       if (m.dummy) continue;
       if (m.dead) { if (m.campId >= 0 && now >= m.respawnAt) this.respawnMob(m); else if (m.bossId && now >= m.respawnAt) this.respawnBoss(m); continue; }
+      if (!active.has(m.reg)) { // boş bölge: yaratıklar bekler, yaralılar eve döner ve iyileşir
+        if (m.target || m.hp < m.maxHp || m.x !== m.hx || m.z !== m.hz) { m.target = 0; m.hp = m.maxHp; m.x = m.hx; m.z = m.hz; m.status = {}; m.contrib.clear(); }
+        continue;
+      }
       const def = MOBS[m.type];
       this.tickStatus(m, dt, now);
       if (m.dead) continue;
@@ -915,15 +951,18 @@ export class World {
     return out;
   }
   openRift() {
+    // çatlak, içinde oyuncu olan çatlaklı bölgelerden birinde açılır (Bozkır/Erlik Diyarı)
+    const regs = new Set<string>(); for (const p of this.players.values()) { const g = regionAt(p.x, p.z); if (g && MAPS[g.map].rifts) regs.add(g.id); }
+    const pool = regs.size ? [...regs] : ['bozkir']; const g = regionById(pool[Math.floor(this.ctx.rng() * pool.length)]);
     for (let i = 0; i < 40; i++) {
-      const a = this.ctx.rng() * 6.283; const d = range(this.ctx.rng, RIFT.minDist, RIFT.maxDist);
-      const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      const a = this.ctx.rng() * 6.283; const d = g.id === 'bozkir' ? range(this.ctx.rng, RIFT.minDist, RIFT.maxDist) : range(this.ctx.rng, g.safeR + 30, g.r - 20);
+      const x = g.cx + Math.cos(a) * d, z = g.cz + Math.sin(a) * d;
       let ok = true; for (const r of this.rifts.values()) if (dist(r, { x, z }) < 50) ok = false;
       if (!ok) continue;
       const r: Rift = { id: this.nid(), x, z, state: 0, wave: 0, mobs: new Set(), openedAt: this.now, lvl: 1, contrib: new Map(), totalHp: 1, scale: 1, closedAt: 0, gapUntil: 0 };
       this.rifts.set(r.id, r);
       this.emit({ k: 'rift', st: 'open', x, z }, x, z);
-      for (const p of this.players.values()) this.sys(p, 'sys.rift_open', { d: Math.round(Math.hypot(x, z)) });
+      for (const p of this.players.values()) if (regionAt(p.x, p.z)?.id === g.id) this.sys(p, 'sys.rift_open', { d: Math.round(d) });
       return r;
     }
     return null;

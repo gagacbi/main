@@ -61,6 +61,7 @@ export function runGm(w: World, p: Player, line: string): { ok: boolean; msg: st
     case 'tp': {
       const t = (a[1] ?? '').toLowerCase();
       if (t === 'hub') { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; return ok('Yurt'); }
+      if (t === 'otlak' || t === 'erlik') { w.teleport(p, t); return ok(t); }
       if (t === 'rift') { const r = [...w.rifts.values()][0]; if (!r) return bad('Açık çatlak yok (rift komutu)'); p.x = r.x - 16; p.z = r.z; return ok('Çatlağa ışınlandın'); }
       if (t === 'stone') { const st = genStones().find((q) => q.n === Math.floor(n(2))); if (!st) return bad('tp stone <1-8>'); p.x = st.x - 3; p.z = st.z; return ok(`Balbal taşı ${st.n}`); }
       if (t === 'boss') { const m = [...w.mobs.values()].find((q) => q.bossId === Math.floor(n(2))); if (!m) return bad('tp boss <1-5>'); p.x = m.hx - 14; p.z = m.hz; return ok(`Saha bossu ${m.bossId} (sv ${m.lvl})`); }

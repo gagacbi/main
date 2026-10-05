@@ -5,9 +5,9 @@ import { genBosses } from '../../shared/world';
 
 describe('saha bosları', () => {
   test('5 boss deterministik konumda; seviye grubuna uygun uzaklıkta; dünya açılınca doğar', () => {
-    const b = genBosses(); expect(b.length).toBe(5); expect(genBosses()).toEqual(b);
+    const all = genBosses(); expect(all.length).toBe(9); const b = all.filter((x) => x.map === 'bozkir'); expect(b.length).toBe(5); expect(genBosses()).toEqual(all);
     for (let i = 1; i < b.length; i++) expect(Math.hypot(b[i].x, b[i].z)).toBeGreaterThan(Math.hypot(b[i - 1].x, b[i - 1].z));
-    const rig = makeRig(1); const bosses = [...rig.world.mobs.values()].filter((m) => m.bossId > 0); expect(bosses.map((m) => m.bossId).sort()).toEqual([1, 2, 3, 4, 5]);
+    const rig = makeRig(1); const bosses = [...rig.world.mobs.values()].filter((m) => m.bossId > 0); expect(bosses.map((m) => m.bossId).sort()).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
   test('öldürülünce katılımcıya garanti destansı+ parça (boss’un hasar türüne karşı efsunlu), kitap, parça; duyuru; 15 dk sonra yeniden doğar', () => {
     const rig = makeRig(2, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok', 'admin'); rig.gm(p, 'level 30'); rig.gm(p, 'god');
@@ -80,5 +80,5 @@ describe('kilometre taşı armağanı', () => {
     const rows = rig.db.db.prepare("SELECT COUNT(*) c FROM ledger WHERE kind='milestone' AND player_id=?").get(p.dbId) as { c: number }; expect(rows.c).toBe(5);
     p.d.level = 11; p.d.xp = 0; const g1 = p.d.gold; w.addXp(p, 5, false); expect(p.d.gold).toBe(g1); // 10 dışında armağan yok
   });
-  test('boss alanı seviye grubu: boss seviyesi 9/19/29/39/48', () => { expect(FIELD_BOSS.list.map((b) => b[0])).toEqual([9, 19, 29, 39, 48]); expect(SKILLS.length).toBe(6); });
+  test('boss alanı seviye grubu: boss seviyesi 9/19/29/39/48', () => { expect(FIELD_BOSS.list.slice(0, 5).map((b) => b[0])).toEqual([9, 19, 29, 39, 48]); expect(SKILLS.length).toBe(6); });
 });
