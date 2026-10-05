@@ -7,6 +7,7 @@ import { MAPS, regionAt, type MapId } from '../../../shared/maps';
 import { DUNGEONS } from '../../../shared/dungeon';
 import { COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
 import { gatePos } from '../../../shared/game';
+import { GOOD_KEYS, goodBounds, goodGet, goodRef, type GoodKey } from '../../../shared/goods';
 import type { Mob, Player } from '../../../server/world';
 import type { Arch } from './archetypes';
 import type { Engine } from './engine';
@@ -100,7 +101,7 @@ export class Agent {
     this.sellJunk();
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
-    this.applyFlag(); this.costumeRoutine();
+    this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
   }
   /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
@@ -175,14 +176,14 @@ export class Agent {
     const res = this.rpc('market.list', { id: it.id, price }); if (res.ok) { this.tot.mktListed++; this.eng.market.onList(this, it, price, ref); return true; } return false;
   }
   private marketBuy() {
-    const d = this.d; const lst = this.eng.market.browseFor(this); let bought = 0;
+    const d = this.d; const lst = this.eng.market.browseFor(this).filter((l) => l.item); let bought = 0;
     const budget = Math.floor(d.gold * 0.5);
-    const cands = lst.filter((l) => l.sellerId !== this.p.dbId && l.price <= budget && l.item.lvlReq <= d.level && l.item.ilvl >= d.level - 10);
+    const cands = lst.filter((l) => l.sellerId !== this.p.dbId && l.price <= budget && l.item!.lvlReq <= d.level && l.item!.ilvl >= d.level - 10);
     for (const l of cands.slice(0, 40)) {
       if (bought >= 2 || d.items.length >= BAG_SIZE - 2) break;
-      const cur = d.equip[l.item.slot]; const base = this.objective(d.equip, this.par.defAware); const sc = this.objective({ ...d.equip, [l.item.slot]: l.item }, this.par.defAware);
+      const li = l.item!; const cur = d.equip[li.slot]; const base = this.objective(d.equip, this.par.defAware); const sc = this.objective({ ...d.equip, [li.slot]: li }, this.par.defAware);
       const gain = sc / base - 1; const flip = this.arch.market.flip && l.price < l.ref * 0.6;
-      if ((gain > 0.06 && l.price <= budget) || flip) { const res = this.rpc('market.buy', { id: l.id }); if (res.ok) { bought++; this.tot.mktBought++; this.eng.market.onBuy(this, l, gain); if (flip) this.eng.market.flipHold.push({ agent: this, itemId: l.item.id, paid: l.price }); void cur; } }
+      if ((gain > 0.06 && l.price <= budget) || flip) { const res = this.rpc('market.buy', { id: l.id }); if (res.ok) { bought++; this.tot.mktBought++; this.eng.market.onBuy(this, l, gain); if (flip) this.eng.market.flipHold.push({ agent: this, itemId: li.id, paid: l.price }); void cur; } }
     }
   }
   private obaTrip() {
@@ -272,6 +273,33 @@ export class Agent {
     // sırada bekle; lobi dağıldıysa (ör. kapıdan ayrıldı) farm'a dön
     this.stop(); w.onAttack(p, { on: false }); if (![...w.lobbies.values()].some((l) => l.ids.includes(p.id))) { this.activity = 'farm'; this.dunPhase = 0; }
   }
+
+  /** yığın mal pazarı: fazlasını satar, ihtiyacı olanı ucuzdan alır (gerçek market.list/buy RPC'leri) */
+  private goodsTrade() {
+    if (process.env.POP_NOGOODS) return; const d = this.d; const r = this.eng.rng; const mk = this.eng.market; const w = this.w;
+    const keep = (k: GoodKey): number => {
+      const cos = this.par.cos; const bookish = this.par.book; const charmish = this.par.charm;
+      switch (k) { case 'ore': return 90; case 'hide': return 20; case 'wood': return 20; case 'book': return bookish ? 4 : 0; case 'charm': return charmish ? 3 : 0; case 'frag': return 30;
+        case 'lif': case 'boya': case 'ipek': case 'nakis': return cos ? 999 : 0; case 'boncuk': case 'dugum': case 'nazar': return cos ? 3 : 0; case 'kagit': return cos && (this.par.cosChase ?? 0) > 0.05 ? 6 : 0; }
+    };
+    const minBatch = (k: GoodKey) => (k === 'ore' || k === 'hide' || k === 'wood' ? 40 : k === 'lif' ? 20 : 1);
+    for (const k of GOOD_KEYS) {
+      const surplus = goodGet(d, k) - keep(k); if (surplus < minBatch(k) || !(this.arch.market.sell > r()) || !mk.canList(this)) continue;
+      const qty = surplus; const unit = mk.goodUnit(k); const b = goodBounds(k, qty);
+      const price = Math.max(b.min, Math.min(b.max, Math.round(unit * qty * (0.9 + r() * 0.2))));
+      if (this.rpc('market.list', { good: k, qty, price }).ok) { this.tot.mktListed++; this.ext.goodListed = (this.ext.goodListed ?? 0) + 1; mk.invalidate(); }
+    }
+    // alım: kostümcü ham madde/şans eşyası, yükselticiler kitap-tılsım; bütçe kasanın %12'si
+    const want: GoodKey[] = [];
+    if (this.par.cos) want.push('boncuk', 'kagit', 'ipek', 'nakis', 'boya', 'lif'); if (this.par.book) want.push('book'); if (this.par.charm) want.push('charm');
+    let budget = Math.floor(d.gold * 0.12);
+    for (const k of want) {
+      if (budget < 50) break; const have = goodGet(d, k); if (have >= (k === 'lif' ? 60 : k === 'book' || k === 'charm' || k === 'boncuk' ? 3 : 8)) continue;
+      const l = mk.goodsFor(k).find((x) => x.sellerId !== this.p.dbId && x.price <= budget && x.unit <= goodRef(k, 1) * 2.2); if (!l) continue;
+      if (this.rpc('market.buy', { id: l.id }).ok) { budget -= l.price; this.tot.mktBought++; this.ext.goodBought = (this.ext.goodBought ?? 0) + 1; mk.invalidate(); }
+    }
+    void w;
+  }
   /** günlük kostüm rutini: tezgâh, üretim, giyme, efsunlama, uzatma. Harcama oyuncunun kasasıyla sınırlıdır. */
   costumeRoutine() {
     if (!this.par.cos || process.env.POP_NOCOS) return; const d = this.d; const w = this.w; const L = d.level; const u = costUnit(L); const now = w.now; const r = this.eng.rng;
@@ -295,7 +323,7 @@ export class Agent {
     // efsunlama: satırları doldurur; takipçi (chase) oyuncu birkaç kez daha değiştirir
     if (c.ench.length < COSTUME.maxLines && d.gold > reserve + 3 * addLineCost(c, L)) cos({ op: 'ench.add', id: c.id, nazar: s.luck.nazar > 0 });
     const chase = (this.par.cosChase ?? 0) > r() ? 1 + Math.floor(r() * 3) : 0;
-    for (let i = 0; i < chase && c.ench.length && d.gold > reserve + 4 * rerollAllCost(c, L); i++) { cos({ op: 'ench.reroll', id: c.id, nazar: s.luck.nazar > 0 }); this.ext.rerolls = (this.ext.rerolls ?? 0) + 1; }
+    for (let i = 0; i < chase && c.ench.length && d.gold > reserve + 4 * rerollAllCost(c, L); i++) { if (s.luck.kagit < 1) { if (!cos({ op: 'buy', item: 'kagit', n: 1 }).ok) break; this.ext.luckBought = (this.ext.luckBought ?? 0) + 1; } cos({ op: 'ench.reroll', id: c.id, nazar: s.luck.nazar > 0 }); this.ext.rerolls = (this.ext.rerolls ?? 0) + 1; }
     // uzatma: 3 günden az kaldıysa ve yatırımı varsa (efsunlu ya da Şahane+)
     for (const q of [c, ...s.bag]) {
       const left = q.expiresAt - now; const invest = q.ench.length >= 1 || q.tier >= 2; if (!invest) continue;

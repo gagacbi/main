@@ -106,7 +106,7 @@ export class Db {
   marketSellerOpen(sellerId: number): MarketRow[] { return this.db.prepare("SELECT * FROM market WHERE seller_id = ? AND status = 'open' ORDER BY id").all(sellerId) as unknown as MarketRow[]; }
   marketBrowse(o: { slot?: string; minTier?: number; maxPrice?: number; minIlvl?: number; maxIlvl?: number; minUp?: number; sort: 'price' | 'new' | 'deal'; limit: number; offset: number; now: number }): MarketRow[] {
     const w = ["status = 'open'", 'expires > ?']; const a: (string | number)[] = [o.now];
-    if (o.slot) { w.push('slot = ?'); a.push(o.slot); } if (o.minTier !== undefined) { w.push('tier >= ?'); a.push(o.minTier); } if (o.maxPrice !== undefined) { w.push('price <= ?'); a.push(o.maxPrice); }
+    if (o.slot === 'good') w.push("slot LIKE 'good:%'"); else if (o.slot) { w.push('slot = ?'); a.push(o.slot); } if (o.minTier !== undefined) { w.push('tier >= ?'); a.push(o.minTier); } if (o.maxPrice !== undefined) { w.push('price <= ?'); a.push(o.maxPrice); }
     if (o.minIlvl !== undefined) { w.push('ilvl >= ?'); a.push(o.minIlvl); } if (o.maxIlvl !== undefined) { w.push('ilvl <= ?'); a.push(o.maxIlvl); } if (o.minUp !== undefined) { w.push('up >= ?'); a.push(o.minUp); }
     return this.db.prepare(`SELECT * FROM market WHERE ${w.join(' AND ')} ORDER BY ${o.sort === 'price' ? 'price ASC, id ASC' : o.sort === 'deal' ? '(price * 1.0 / MAX(ref, 1)) ASC, id ASC' : 'id DESC'} LIMIT ? OFFSET ?`).all(...a, o.limit, o.offset) as unknown as MarketRow[];
   }

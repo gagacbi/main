@@ -59,7 +59,8 @@ export interface Snapshot {
   t: number; ack: number; you: { x: number; z: number; r: number; hp: number; f: number };
   players: SnapPlayer[]; mobs: SnapMob[]; rifts: SnapRift[]; drops: SnapDrop[]; ev: GameEvent[]; pop: number;
 }
-export interface MarketListing { id: number; sellerId: number; seller: string; item: Item; price: number; expires: number; ref: number }
-export interface MarketMail { id: number; kind: 'gold' | 'item'; gold: number; item?: Item; note: string }
+/** ilan: ya bir eşya ya da bir yığın mal (malzeme, kitap, tılsım, kostüm malzemesi, şans eşyası) */
+export interface MarketListing { id: number; sellerId: number; seller: string; item?: Item; good?: { k: string; qty: number }; price: number; expires: number; ref: number }
+export interface MarketMail { id: number; kind: 'gold' | 'item'; gold: number; item?: Item; good?: { k: string; qty: number }; note: string }
 export interface ChatMsg { ch: 'near' | 'boy' | 'oymak' | 'sys' | 'whisper'; from: string; boy?: Boy; text: string; key?: string; p?: Record<string, string | number> }
 export interface RpcRes { id: number; ok: boolean; err?: string; data?: unknown; p?: Record<string, string | number> }

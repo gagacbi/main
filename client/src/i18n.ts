@@ -273,6 +273,7 @@ const D: Record<string, [string, string]> = {
   "sys.dun_cancel": ["Parti başlarken kapıda değildin; ücret iade edildi.", "You were not at the gate when the party started; fee refunded."], "sys.dun_full": ["Tüm zindan odaları dolu; ücret iade edildi.", "All dungeon rooms are busy; fee refunded."],
   "err.dun_party_full": ["Parti dolu; bir sonraki turu bekle.", "The party is full; wait for the next one."],
   "err.dun_daily": ["Bugünkü zindan hakkın bitti.", "No dungeon runs left today."], "err.dun_in_lobby": ["Zaten bir parti sırasındasın.", "You are already queued."], "err.dun_lobby_open": ["Açık bir parti var; ona katıl.", "A party is open; join it."],
+  "mk.goods": ["Mallar", "Goods"], "mk.unit": ["adet", "unit"], "mk.qty": ["Adet", "Qty"], "mk.myGoods": ["Mallarım (malzeme, kitap, tılsım, kostüm malzemesi, şans eşyası)", "My goods (materials, books, charms, costume materials, luck items)"],
   "npc.loom": ["Dokuma Tezgâhı", "Weaving Loom"],
   "cos.look.kurt": ["Bozkurt Kaftanı", "Steppe-Wolf Kaftan"],
   "cos.look.ates": ["Ateş Kaftanı", "Fire Kaftan"],
