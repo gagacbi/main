@@ -13,6 +13,8 @@ export interface PlayerData {
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };
   x: number; z: number; lang: 'tr' | 'en';
   clues: string[]; dreams: number; shards: number; pendingDream: number;
+  /** isteğe bağlı PvP bayrağı (eski kayıtlarda yok = kapalı) */
+  pvp?: boolean;
 }
 
 export interface Config {

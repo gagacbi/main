@@ -6,7 +6,7 @@ const ench = (slot: 'armor' | 'helmet' | 'weapon', ...e: Item['ench']): Item => 
 function duelRig() {
   const rig = makeRig(9, { spawnCamps: false });
   const a = rig.add('gok'); const b = rig.add('yer');
-  for (const p of [a, b]) { p.d.level = 20; p.x = 80; p.z = 0; }
+  for (const p of [a, b]) { p.d.level = 20; p.x = 80; p.z = 0; p.d.pvp = true; }
   b.x = 82; rig.world.recalc(a); rig.world.recalc(b); a.hp = a.stats.maxHp; b.hp = b.stats.maxHp;
   return { rig, a, b, w: rig.world };
 }
@@ -17,7 +17,7 @@ const meanDmg = (w: ReturnType<typeof duelRig>['w'], a: Parameters<typeof w.play
 };
 
 describe('savunma sistemi: sunucuda PvP', () => {
-  test('açık bölgede farklı boylar birbirine vurabilir (çatlak dahil açık PvP)', () => {
+  test('açık bölgede iki taraf da bayraklıysa farklı boylar birbirine vurabilir', () => {
     const { w, a, b } = duelRig(); expect(w.canHitPlayer(a, b, false)).toBe(true);
   });
   test('vuruş bloğu: ~%30 vuruş tamamen engellenir ve blok olayı gönderilir', () => {

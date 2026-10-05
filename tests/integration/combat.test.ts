@@ -169,6 +169,7 @@ describe('C2/C3/C4 PvP, derece, muhafız, düello', () => {
   test('PvP bilinçli başlar: alan becerisi, hedef seçilmemiş/çatışmaya girmemiş oyuncuya zarar vermez; hedef seçilince farklı boy vurulur, aynı boy vurulmaz', async () => {
     const a = await fresh('gok', 'PA'); const e = await fresh('yer', 'PE'); const f = await fresh('gok', 'PF');
     for (const b of [e, f]) tp(s, b, FAR.x + 2, FAR.z);
+    for (const b of [a, e, f]) playerOf(s, b).d.pvp = true;   // isteğe bağlı PvP: üçü de bayraklı
     const hpE = playerOf(s, e).hp, hpF = playerOf(s, f).hp;
     a.send('sk', 0); await a.sleep(500);                               // yan hasar: kimse hedef değil
     expect(playerOf(s, e).hp).toBe(hpE); expect(playerOf(s, f).hp).toBe(hpF);

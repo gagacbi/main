@@ -343,6 +343,8 @@ export const FIELD_BOSS = {
   /** list ile paralel: bossun yaşadığı harita (ilk 5 Bozkır) */
   maps: ['bozkir', 'bozkir', 'bozkir', 'bozkir', 'bozkir', 'otlak', 'erlik', 'erlik', 'erlik'] as MapId[],
 };
+/** İsteğe bağlı PvP: yalnızca iki taraf da bayraklıysa vurulabilir; bayraklı alp yaratıklardan biraz fazla kazanır, kapatmak için PvP'den bu kadar süre uzak durulur */
+export const PVP_FLAG = { bonus: 0.1, offAfterSec: 30 };
 export const MILESTONE_LEVELS = [10, 20, 30, 40, 50];
 /** Kilometre taşı armağanı (Kut Armağanı): seviye 10·20·30·40·50 */
 export const milestoneGift = (level: number) => ({ gold: 400 * level, books: Math.round(level / 10), charms: Math.round(level / 10), itemTier: (level >= 40 ? 3 : 2) as Tier, frags: level / 10 * 5 });

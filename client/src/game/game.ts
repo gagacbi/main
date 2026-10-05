@@ -138,7 +138,7 @@ export class Game {
       if (v && v.spec !== spec) { this.vs.remove(v); v = undefined; }
       v = v ?? this.vs.ensure({ kind: 'player', id: p.i, boy: BOYS[p.b], spec, name: p.n, level: p.l });
       const first = v.buf.length === 0; v.push(p.x, p.z, p.r, now); if (first) { v.x = p.x; v.z = p.z; v.r = p.r; }
-      v.hp = p.h; v.H = p.H; const nf = p.f; if ((nf & F.RED) !== (v.flags & F.RED) || v.level !== p.l) { v.flags = nf; v.level = p.l; v.refreshName(BOYS[p.b] === this.myBoy); } v.flags = nf;
+      v.hp = p.h; v.H = p.H; const nf = p.f; if ((nf & (F.RED | F.PVP)) !== (v.flags & (F.RED | F.PVP)) || v.level !== p.l) { v.flags = nf; v.level = p.l; v.refreshName(BOYS[p.b] === this.myBoy); } v.flags = nf;
     }
     for (const m of s.mobs) {
       seen.add(m.i); const v = this.vs.ensure({ kind: 'mob', id: m.i, mob: m.t as MobType, name: '', level: m.l, bossId: m.b });

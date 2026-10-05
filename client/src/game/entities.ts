@@ -33,7 +33,7 @@ export class View {
     const red = (this.flags & F.RED) !== 0;
     const kd = this.kind === 'mob' ? (this.bossId ? FIELD_BOSS.list[this.bossId - 1][1] : MOBS[this.mobType].kind) : '';
     this.nameEl.innerHTML = `<b class="lv">${this.level}</b>${esc(nm)}${kd ? `<span class="dk" title="${t('ui.dmgKind')}">${t('dk.' + kd)}</span>` : ''}`;
-    this.plate.classList.toggle('red', red); this.plate.classList.toggle('foe', this.kind === 'player' && !friendly && !this.self); this.plate.classList.toggle('self', this.self);
+    this.plate.classList.toggle('red', red); this.plate.classList.toggle('pvp', (this.flags & F.PVP) !== 0); this.plate.classList.toggle('foe', this.kind === 'player' && !friendly && !this.self); this.plate.classList.toggle('self', this.self);
   }
   /** snapshot örneği ekle */
   push(x: number, z: number, r: number, now: number) {
@@ -129,6 +129,6 @@ export class ViewSystem {
 function statusPips(f: number) {
   let s = '';
   if (f & F.STUN) s += '<i class="pip stun" title="stun"></i>'; if (f & F.SLOW) s += '<i class="pip slow"></i>'; if (f & F.POISON) s += '<i class="pip poison"></i>';
-  if (f & F.CURSE) s += '<i class="pip curse"></i>'; if (f & F.SHIELD) s += '<i class="pip shield"></i>'; if (f & F.DUEL) s += '<i class="pip duel"></i>';
+  if (f & F.CURSE) s += '<i class="pip curse"></i>'; if (f & F.SHIELD) s += '<i class="pip shield"></i>'; if (f & F.DUEL) s += '<i class="pip duel"></i>'; if (f & F.PVP) s += '<i class="pip pvp" title="PvP"></i>';
   return s;
 }

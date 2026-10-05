@@ -24,7 +24,7 @@ export class UI {
     r.insertAdjacentHTML('beforeend', `
       <div class="hud-tl leather" id="hudtl"><div class="portrait" id="portrait"></div><div class="lvl" id="lvl"></div><div class="nm"><span id="nm"></span><small id="spec"></small></div>
         <div class="bar hp" id="hpbar"><i></i><span></span></div><div class="bar xp" id="xpbar"><i class="rest"></i><i class="base"></i></div><div class="statusrow" id="tags"></div></div>
-      <div class="hud-top"><div class="zonepill leather" id="zone"></div><div class="targetf leather" id="target"><div class="nm"><span></span><span></span></div><div class="bar hp"><i></i><span></span></div></div>
+      <div class="hud-top"><div class="zonepill leather" id="zone"></div><button class="pvpbtn leather" id="pvpbtn" type="button"></button><div class="targetf leather" id="target"><div class="nm"><span></span><span></span></div><div class="bar hp"><i></i><span></span></div></div>
         <div class="riftbar leather" id="riftbar"><div class="t"><span></span><span></span></div><div class="bar"><i></i></div></div></div>
       <div class="hud-tr"><div class="minimap"><canvas id="mm" width="340" height="340"></canvas><div class="n">N</div></div>
         <div class="btnrow" id="btns"></div><div class="quest leather" id="quest"></div><div class="info" id="info"></div></div>
@@ -37,7 +37,7 @@ export class UI {
       <div class="dream" id="dream"><div class="snow"></div><div class="box"><div class="eye"></div><h3></h3><p></p><button class="btn primary" id="wake"></button></div></div>
       <div class="fpsbox" id="fps"></div>
       <div class="conn" id="conn"><div class="felt" style="padding:28px 40px;text-align:center"><h2 style="margin:0 0 8px;font-family:var(--f-head)" id="connt"></h2><button class="btn primary" onclick="location.reload()">OK</button></div></div>`);
-    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes', 'lore', 'dream', 'wake']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
+    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes', 'lore', 'dream', 'wake', 'pvpbtn']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
     this.minimap = r.querySelector('#mm') as HTMLCanvasElement;
     // yetenek çubuğu
     this.e.skillbar.innerHTML = `<div class="slot atk" data-skill="-1" title="Space"><span class="key">␣</span>${icon('swords')}</div>` + SKILLS.map((s, i) => `<div class="slot" data-i="${i}" data-skill="${i}"><span class="key">${i + 1}</span>${icon(s.id)}<span class="rk"></span><div class="cd"></div><span class="cdt"></span><div class="lk"></div></div>`).join('');
@@ -59,6 +59,7 @@ export class UI {
     this.e.respawn.addEventListener('click', () => { void this.g.respawn(); });
     this.e.duelyes.addEventListener('click', async () => { await this.g.net.rpc('duelAccept'); this.e.duelbox.style.display = 'none'; });
     (this.e.duelbox.querySelector('#duelno') as HTMLElement).addEventListener('click', () => (this.e.duelbox.style.display = 'none'));
+    this.e.pvpbtn.addEventListener('click', () => void this.togglePvp());
     this.relocalize();
   }
   relocalize() {
@@ -91,12 +92,18 @@ export class UI {
     this.toast(`${t('map.' + r.map)} — ${t('map.pvp')}: ${t('map.pvp.' + d.pvp)}`, '');
     void id;
   }
+  /** PvP bayrağını değiştir (HUD düğmesi ve /pvp komutu) */
+  async togglePvp() {
+    const r = await this.g.net.rpc('pvp', { on: !this.g.me.pvp });
+    if (!r.ok) { this.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.sfx('err'); }
+  }
   startTyping() { this.g.typing = true; this.e.chat.classList.add('typing'); (this.e.cin as HTMLInputElement).value = ''; this.e.cin.focus(); }
   endTyping() { this.g.typing = false; this.e.chat.classList.remove('typing'); (this.e.cin as HTMLInputElement).blur(); this.g.canvas.focus(); }
   sendChat(v: string) {
     let ch: string = this.chatTab === 'all' ? 'near' : this.chatTab; let text = v; let to: string | undefined;
     if (v === '/gm' || v.startsWith('/gm ')) { void this.panels.runGm(v.slice(3).trim() || 'help').then(() => this.chat({ ch: 'sys', from: '', text: this.panels.gmOut[this.panels.gmOut.length - 1] ?? '' })); return; }
     if (v.startsWith('/duel ')) { void this.g.net.rpc('duel', { name: v.slice(6).trim() }).then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); }); return; }
+    if (v === '/pvp') { void this.togglePvp(); return; }
     if (v.startsWith('/w ')) { const m = /^\/w\s+(\S+)\s+(.+)$/.exec(v); if (m) { ch = 'whisper'; to = m[1]; text = m[2]; } }
     else if (v.startsWith('/b ')) { ch = 'boy'; text = v.slice(3); } else if (v.startsWith('/o ')) { ch = 'oymak'; text = v.slice(3); } else if (v.startsWith('/n ')) { ch = 'near'; text = v.slice(3); }
     this.g.net.chat(ch, text, to);
@@ -106,7 +113,7 @@ export class UI {
     this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
     if (c.ch === 'sys' && c.key && hasKey(c.key)) {
       if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
-      else if (['sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
+      else if (['sys.pvp_on', 'sys.pvp_off', 'sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
     }
   }
   renderChat() {
@@ -173,6 +180,7 @@ export class UI {
     this.e.tags.innerHTML = tags.join('');
     // bölge
     const reg = regionAt(g.pos.x, g.pos.z); const mapId = reg?.map ?? 'bozkir'; const risky = zoneAt(g.pos.x, g.pos.z) === 'risky'; this.e.zone.className = 'zonepill leather ' + (risky ? 'risky' : '');
+    { const pol = MAPS[mapId].pvp; const on = !!g.me.pvp && pol === 'optional'; const b = this.e.pvpbtn as HTMLButtonElement; b.className = 'pvpbtn leather ' + (pol === 'off' ? 'na' : on ? 'on' : ''); b.innerHTML = pol === 'off' ? `${t('ui.pvp')}: ${t('map.pvp.off')}` : `${t('ui.pvp')}: ${on ? t('ui.on') : t('ui.off')}`; b.title = t('ui.pvp.tip'); }
     this.e.zone.innerHTML = `${t(mapId === 'bozkir' ? (risky ? 'zone.risky' : 'zone.safe') : (risky ? 'zone.' + mapId + '.risky' : 'zone.' + mapId + '.safe'))} <span class="muted" style="color:#d8c49a;font-size:12px">· ${t('ui.layer')} ${g.net.welcome?.layer ?? 1} · ${g.snap?.pop ?? 1} ${t('ui.online').toLowerCase()}</span>`;
     // hedef
     const tg = g.focusId ? g.vs.get(g.focusId) : g.atkHeld ? g.currentTarget() : null;

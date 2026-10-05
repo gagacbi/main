@@ -6,7 +6,7 @@ import {
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { GATE_LINKS, gatePos } from '../shared/game';
+import { GATE_LINKS, PVP_FLAG, gatePos } from '../shared/game';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
@@ -23,7 +23,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
+  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -108,7 +108,7 @@ export class World {
   // ───────────── oyuncu giriş / çıkış ─────────────
   join(row: PlayerRow, send: Player['send'], kick: Player['kick']): Player {
     const d: PlayerData = JSON.parse(row.data);
-    d.clues ??= []; d.dreams ??= 0; d.shards ??= 0; d.pendingDream ??= 0; // eski kayıtlar için
+    d.pvp ??= false; d.clues ??= []; d.dreams ??= 0; d.shards ??= 0; d.pendingDream ??= 0; // eski kayıtlar için
     const p = new Player(this.nid(), row.id, row.name, row.boy, d, row.oymak_id, row.points, send, kick);
     p.role = row.role ?? 'player';
     const now = this.now;
@@ -276,7 +276,7 @@ export class World {
     if (tgt.kind === 'player') {
       // ilk saldıran: karşı taraf son 15 sn'de kimseye saldırmamışsa ve düello değilse, 30 sn 'saldırgan' bayrağı alır (karşılık veren sorumlu sayılmaz)
       if (this.now - tgt.lastPvpAgg > COMBAT_FLAG_SEC * 1000 && p.duelWith !== tgt.id) p.aggressorUntil = this.now + 30000;
-      p.lastPvpAgg = this.now;
+      p.lastPvpAgg = this.now; p.lastPvp = this.now; tgt.lastPvp = this.now;
       const df = applyDefense(tgt.stats, o.dk ?? p.stats.weaponKind, !!o.skill, p.stats.pierce, this.ctx.rng(), this.ctx.rng());
       if (tgt.deadUntil === 0 && !tgt.god && df.blocked) { tgt.lastCombat = this.now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
       // düşük seviye koruması: düello ya da hedefin az önce sana saldırmış olması (karşılık) dışında, çok aşağıdaki oyuncuya hasar azalır
@@ -292,10 +292,13 @@ export class World {
     if (att.duelWith === q.id || att.focus === q.id) return true;
     const now = this.now; return (q.lastDamager === att.id && now - q.lastCombat < 10000) || (att.lastDamager === q.id && now - att.lastCombat < 10000);
   }
+  /** Bayrak açık ve bulunulan harita PvP'ye izin veriyor mu */
+  pvpActive(p: Player) { const g = regionAt(p.x, p.z); return !!p.d.pvp && !!g && MAPS[g.map].pvp === 'optional'; }
   canHitPlayer(att: Player, tgt: Player, explicit: boolean) {
     if (tgt === att || tgt.deadUntil > 0) return false;
     if (att.duelWith === tgt.id) return true;
     if (zoneAt(att.x, att.z) === 'safe' || zoneAt(tgt.x, tgt.z) === 'safe') return false;
+    if (!this.pvpActive(att) || !this.pvpActive(tgt)) return false;   // isteğe bağlı PvP: iki taraf da bayraklı olmalı
     return explicit || tgt.boy !== att.boy;
   }
 
@@ -374,7 +377,7 @@ export class World {
       const diff = p.d.level - m.lvl;
       const f = diff > 3 ? Math.max(0.1, 1 - 0.12 * (diff - 3)) : Math.min(1.25, 1 + 0.05 * -diff);
       if (!boss) {
-        this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1), true);
+        this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
         this.tutorial(p, 'kill');
@@ -405,7 +408,7 @@ export class World {
       const sameBoy = killer.boy === p.boy;
       const victimRed = p.d.rank < 0;
       killer.d.counters.pvpKills++;
-      if (!victimRed && (sameBoy || nonCombat)) {
+      if (!victimRed && (sameBoy || (nonCombat && killer.d.level - p.d.level >= 6))) {   // bayraklı alp rızaen savaşır; cezası yalnızca aynı boydan ya da çok aşağıdan öldürene
         killer.d.rank -= killer.d.level - p.d.level >= 8 ? 2 : 1; killer.d.rankKills = 0;       // çok aşağıdaki oyuncuyu avlamak çift ceza
         this.sys(killer, 'sys.rank_down', { rank: killer.d.rank }); killer.meDirty = true;
       }
@@ -451,7 +454,7 @@ export class World {
   }
   rollDrops(p: Player, m: Mob, share: number) {
     const r = this.ctx.rng;
-    const gold = Math.round(mobGold(m.lvl) * (0.7 + r() * 0.6) * (1 + (share - 0.15) * 0.0));
+    const gold = Math.round(mobGold(m.lvl) * (0.7 + r() * 0.6) * (1 + (share - 0.15) * 0.0) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1));
     this.spawnDrop(p, 'gold', m.x, m.z, { amount: gold });
     if (r() < 0.12) this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * 0.6) });
     if (r() < 0.45) { const k = (['ore', 'hide', 'wood'] as MatKey[])[Math.floor(r() * 3)]; this.spawnDrop(p, 'mat', m.x, m.z, { m: k, amount: irange(r, 1, 3) }); }
@@ -610,6 +613,13 @@ export class World {
         return null;
       }
       case 'respawn': this.respawn(p); return null;
+      case 'pvp': {
+        this.alive(p); const on = !!a.on; if (on === !!d.pvp) return null;
+        const g = regionAt(p.x, p.z);
+        if (on) { if (!g || MAPS[g.map].pvp !== 'optional') throw new GameError('pvp_off_zone'); d.pvp = true; this.sys(p, 'sys.pvp_on'); }
+        else { if (this.now - p.lastPvp < PVP_FLAG.offAfterSec * 1000) throw new GameError('pvp_busy', { s: Math.ceil((PVP_FLAG.offAfterSec * 1000 - (this.now - p.lastPvp)) / 1000) }); d.pvp = false; this.sys(p, 'sys.pvp_off'); }
+        p.meDirty = true; return null;
+      }
       case 'travel': {
         this.alive(p); const to = String(a.to) as MapId; const from = regionAt(p.x, p.z);
         if (!from || !(GATE_LINKS[from.id] ?? []).includes(to)) throw new GameError('bad_travel');
@@ -1083,7 +1093,7 @@ export class World {
     return {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
-      rested: Math.round(d.rested), restedCap: restedCap(d.level), rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
+      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
@@ -1099,7 +1109,7 @@ export class World {
       const players: Snapshot['players'] = [];
       for (const q of this.players.values()) {
         if (q === p || dist2(p, q) > AOI_R * AOI_R) continue;
-        let f = this.flags(q); if (q.deadUntil > 0) f |= F.DEAD; if (q.atk) f |= F.ATK; if (q.d.rank < 0) f |= F.RED; if (q.duelWith) f |= F.DUEL;
+        let f = this.flags(q); if (q.deadUntil > 0) f |= F.DEAD; if (q.atk) f |= F.ATK; if (q.d.rank < 0) f |= F.RED; if (q.duelWith) f |= F.DUEL; if (this.pvpActive(q)) f |= F.PVP;
         players.push({ i: q.id, n: q.name, b: BOY_ID[q.boy], l: q.d.level, x: r2(q.x), z: r2(q.z), r: r2(q.rot), h: Math.round(q.hp), H: q.stats.maxHp, f, sp: q.d.spec === 'kalkan' ? 1 : q.d.spec === 'kilic' ? 2 : 0, oy: '' });
       }
       const mobs: Snapshot['mobs'] = [];
