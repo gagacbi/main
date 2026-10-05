@@ -5,7 +5,7 @@ import {
 import { dist2, type Camp } from '../../../shared/world';
 import { MAPS, regionAt, type MapId } from '../../../shared/maps';
 import { DUNGEONS } from '../../../shared/dungeon';
-import { COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
+import { costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
 import { gatePos } from '../../../shared/game';
 import { GOOD_KEYS, goodBounds, goodGet, goodRef, type GoodKey } from '../../../shared/goods';
 import type { Mob, Player } from '../../../server/world';
@@ -297,6 +297,15 @@ export class Agent {
       if (budget < 50) break; const have = goodGet(d, k); if (have >= (k === 'lif' ? 60 : k === 'ore' ? 120 : k === 'book' || k === 'charm' || k === 'boncuk' ? 3 : 8)) continue;
       const l = mk.goodsFor(k).find((x) => x.sellerId !== this.p.dbId && x.price <= budget && x.unit <= goodRef(k, 1) * 2.2); if (!l) continue;
       if (this.rpc('market.buy', { id: l.id }).ok) { budget -= l.price; this.tot.mktBought++; this.ext.goodBought = (this.ext.goodBought ?? 0) + 1; mk.invalidate(); }
+    }
+    // kostüm takası: yedek kostümünü satar; daha yüksek basamak ilanını bütçesi yetiyorsa alır (kalan süre aynen geçer)
+    if (this.par.cos && d.cos) {
+      const now = w.now; const cs = d.cos; const best = [...(cs.worn ? [cs.worn] : []), ...cs.bag].filter((c) => c.expiresAt > now).sort((a, b) => b.tier - a.tier)[0];
+      for (const c of [...cs.bag]) if (c !== best && c.expiresAt - now > 2 * DAY && mk.canList(this) && r() < 0.8) { const ref = costumeRef(c, now); const b = costumeBounds(c, now); const price = Math.max(b.min, Math.min(b.max, Math.round(ref * (0.9 + r() * 0.25)))); if (this.rpc('market.list', { costume: c.id, price }).ok) { this.ext.cosListed = (this.ext.cosListed ?? 0) + 1; mk.invalidate(); } }
+      const budget = Math.floor(d.gold * 0.15); const have = best ? best.tier : -1;
+      const rows = w.ctx.db.marketBrowse({ slot: 'costume', sort: 'price', limit: 40, offset: 0, now }).map((x) => ({ id: x.id, seller: x.seller_id, price: x.price, c: (JSON.parse(x.item) as { costume: import('../../../shared/costume').Costume }).costume }));
+      const pick = rows.find((x) => x.seller !== this.p.dbId && x.price <= budget && x.c.tier > have && x.c.expiresAt - now > 3 * DAY && d.level >= COSTUME.tierLevel[x.c.tier] && cs.bag.length < COSTUME.bagMax);
+      if (pick && this.rpc('market.buy', { id: pick.id }).ok) { this.tot.mktBought++; this.ext.cosBought = (this.ext.cosBought ?? 0) + 1; mk.invalidate(); }
     }
     void w;
   }

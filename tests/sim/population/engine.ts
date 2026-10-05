@@ -63,7 +63,7 @@ export class Engine {
     const kill0 = w.killPlayer.bind(w); w.killPlayer = (p, src) => {
       const a = self.byPid.get(p.id);
       if (a) {
-        a.tot.deaths++; if (a.activity === 'farm') a.sliceFarmDeaths++;
+        a.tot.deaths++; if (a.activity === 'farm' && src?.kind !== 'player') a.sliceFarmDeaths++;   // oyuncu öldürmeleri ölçeklenmez (dilimde tüm nüfus aynı anda çevrimiçi: gerçek günlük yoğunluktan çok yoğun)
         const by = src?.kind === 'mob' ? (src.bossId ? 'boss.' + src.bossId : src.type) : src?.kind === 'player' ? 'pl' : 'dot'; a.deathBy[by] = (a.deathBy[by] ?? 0) + 1;
         if (src?.kind === 'player') { a.tot.pvpDeaths++; const k = self.byPid.get(src.id); if (k) { k.tot.pvpKills++; self.pvpLog.push({ day: self.day, k: k.dbId, v: a.dbId, dl: src.d.level - p.d.level }); } }
         if (src?.kind === 'mob' && src.bossId) self.bossDeaths.set(src.bossId, (self.bossDeaths.get(src.bossId) ?? 0) + 1);

@@ -1,5 +1,5 @@
 import {
-  COSTUME, COS_MATS, DAY, LOOM_POS, LOOKS, LUCK_KEYS, addLineCost, costumeLines, craftChance, extendCost, gold, inGrace, isExpired, loomRoll, newCostume, newCostumeState, rerollAllCost, rerollLineCost, rollLine,
+  COSTUME, COS_MATS, DAY, LOOM_POS, LOOKS, LUCK_KEYS, addLineCost, costLevel, costumeLines, craftChance, extendCost, gold, inGrace, isExpired, loomRoll, newCostume, newCostumeState, rerollAllCost, rerollLineCost, rollLine,
   type CosMat, type Costume, type CostumeState, type CostumeTier, type LoomKind, type LuckKey,
 } from '../shared/costume';
 import { inHubTown } from '../shared/game';
@@ -28,7 +28,7 @@ export function costumeRpc(w: World, p: Player, a: Record<string, unknown>): unk
   switch (op) {
     case 'wear': {
       if (a.id == null) { if (s.worn) { s.bag.push(s.worn); s.worn = null; } }
-      else { const i = s.bag.findIndex((c) => c.id === a.id); if (i < 0) throw new GameError('no_costume'); const c = s.bag[i]; if (isExpired(c, now)) throw new GameError('cos_expired'); s.bag.splice(i, 1); if (s.worn) s.bag.push(s.worn); s.worn = c; }
+      else { const i = s.bag.findIndex((c) => c.id === a.id); if (i < 0) throw new GameError('no_costume'); const c = s.bag[i]; if (isExpired(c, now)) throw new GameError('cos_expired'); if (L < COSTUME.tierLevel[c.tier]) throw new GameError('level_low', { lvl: COSTUME.tierLevel[c.tier] }); s.bag.splice(i, 1); if (s.worn) s.bag.push(s.worn); s.worn = c; }
       w.recalc(p); p.meDirty = true; return null;
     }
     case 'discard': { const i = s.bag.findIndex((c) => c.id === a.id); if (i < 0) throw new GameError('no_costume'); s.bag.splice(i, 1); p.meDirty = true; return null; }
@@ -59,7 +59,7 @@ export function costumeRpc(w: World, p: Player, a: Record<string, unknown>): unk
       pay(w, p, gold(L, COSTUME.craftGold[tier]), 'cos.craft', { tier, boncuk, dugum });
       for (const m of COS_MATS) s.mats[m] -= need[m]; s.luck.boncuk -= boncuk; s.luck.dugum -= dugum;
       const chance = craftChance(tier, s.pity, boncuk); const ok = rng() < chance;
-      if (ok) { const c = newCostume(rng, look, tier, now); s.bag.push(c); s.pity = 0; s.crafted++; p.meDirty = true; w.ledger(p, 'cos.made', { tier, look, chance }); return { ok: true, id: c.id, chance }; }
+      if (ok) { const c = newCostume(rng, look, tier, now, L); s.bag.push(c); s.pity = 0; s.crafted++; p.meDirty = true; w.ledger(p, 'cos.made', { tier, look, chance }); return { ok: true, id: c.id, chance }; }
       s.pity++; let back: Partial<Record<CosMat, number>> | undefined;
       if (dugum) { back = {}; for (const m of COS_MATS) { const r = Math.floor(need[m] * COSTUME.dugumReturn); s.mats[m] += r; back[m] = r; } }
       p.meDirty = true; w.ledger(p, 'cos.fail', { tier, chance, pity: s.pity }); return { ok: false, chance, back };
@@ -67,14 +67,14 @@ export function costumeRpc(w: World, p: Player, a: Record<string, unknown>): unk
     case 'ench.add': {
       needLoom(p); const c = costume(); if (isExpired(c, now)) throw new GameError('cos_expired'); if (c.ench.length >= COSTUME.maxLines) throw new GameError('cos_lines_full');
       const nazar = a.nazar ? 1 : 0; if (nazar && s.luck.nazar < 1) throw new GameError('cos_luck');
-      pay(w, p, addLineCost(c, L), 'cos.ench', { op: 'add', tier: c.tier }); s.luck.nazar -= nazar;
+      pay(w, p, addLineCost(c, costLevel(c, L)), 'cos.ench', { op: 'add', tier: c.tier }); s.luck.nazar -= nazar;
       c.ench.push(rollLine(rng, c.tier, [LOOKS[c.look].base, ...c.ench.map((e) => e.k)], !!nazar)); p.meDirty = true; w.recalc(p); return null;
     }
     case 'ench.reroll': {
       needLoom(p); const c = costume(); if (isExpired(c, now)) throw new GameError('cos_expired'); if (!c.ench.length) throw new GameError('cos_no_lines');
       const nazar = a.nazar ? 1 : 0; if (nazar && s.luck.nazar < 1) throw new GameError('cos_luck');
       if (s.luck.kagit < 1) throw new GameError('cos_paper');
-      pay(w, p, rerollAllCost(c, L), 'cos.ench', { op: 'reroll', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
+      pay(w, p, rerollAllCost(c, costLevel(c, L)), 'cos.ench', { op: 'reroll', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
       const n = c.ench.length; c.ench = []; for (let i = 0; i < n; i++) c.ench.push(rollLine(rng, c.tier, [LOOKS[c.look].base, ...c.ench.map((e) => e.k)], !!nazar));
       c.rr++; p.meDirty = true; w.recalc(p); return null;
     }
@@ -82,17 +82,17 @@ export function costumeRpc(w: World, p: Player, a: Record<string, unknown>): unk
       needLoom(p); const c = costume(); if (isExpired(c, now)) throw new GameError('cos_expired'); const i = Math.floor(Number(a.line)); if (!(i >= 0 && i < c.ench.length)) throw new GameError('cos_no_lines');
       const nazar = a.nazar ? 1 : 0; if (nazar && s.luck.nazar < 1) throw new GameError('cos_luck');
       if (s.luck.kagit < 1) throw new GameError('cos_paper');
-      pay(w, p, rerollLineCost(c, L), 'cos.ench', { op: 'line', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
+      pay(w, p, rerollLineCost(c, costLevel(c, L)), 'cos.ench', { op: 'line', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
       const others = c.ench.filter((_, j) => j !== i).map((e) => e.k); c.ench[i] = rollLine(rng, c.tier, [LOOKS[c.look].base, ...others], !!nazar); c.rr++; p.meDirty = true; w.recalc(p); return null;
     }
     case 'look': {
       needLoom(p); const c = costume(); const look = Math.floor(Number(a.look)); if (!(look >= 0 && look < LOOKS.length) || look === c.look) throw new GameError('bad_item');
-      pay(w, p, gold(L, COSTUME.lookChange), 'cos.look', { tier: c.tier }); c.look = look; p.meDirty = true; w.recalc(p); return null;
+      pay(w, p, gold(costLevel(c, L), COSTUME.lookChange), 'cos.look', { tier: c.tier }); c.look = look; p.meDirty = true; w.recalc(p); return null;
     }
     case 'extend': {
       needLoom(p); const c = costume(); const exp = isExpired(c, now); if (exp && !inGrace(c, now)) throw new GameError('cos_lost');
       const from = exp ? now : c.expiresAt; if (from + COSTUME.extendDays * DAY - now > COSTUME.maxDays * DAY) throw new GameError('cos_max');
-      pay(w, p, extendCost(c, L, exp), 'cos.extend', { tier: c.tier, lines: c.ench.length, expired: exp }); c.expiresAt = from + COSTUME.extendDays * DAY; p.meDirty = true; w.recalc(p); return null;
+      pay(w, p, extendCost(c, costLevel(c, L), exp), 'cos.extend', { tier: c.tier, lines: c.ench.length, expired: exp }); c.expiresAt = from + COSTUME.extendDays * DAY; p.meDirty = true; w.recalc(p); return null;
     }
   }
   throw new GameError('bad_item');

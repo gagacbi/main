@@ -39,3 +39,32 @@ describe('pazar: her şey takas edilir (yığın mallar)', () => {
     void total; expect(() => { const rows = w.ctx.db.marketSellerOpen(s.dbId); if (!rows.length) throw new Error('x'); rpc(s, 'market.buy', { id: rows[0].id }); }).toThrow();
   });
 });
+
+describe('pazar: kostüm takası', () => {
+  test('kostüm ilanı/alımı: kalan süre alıcıya aynen geçer (zaman durmaz), giyili kostüm satılamaz, süresi dolan alınamaz, iptalde iade, çanta dolu reddi', async () => {
+    const { newCostume, COSTUME, DAY, costumeBounds } = await import('../../shared/costume'); const { mulberry32 } = await import('../../shared/rng');
+    const { w, s, b, rpc, rig } = two(); s.d.level = 40; b.d.level = 40;
+    const mk = (n: number) => { const c = newCostume(mulberry32(n), 1, 2, w.now, 40); return c; };
+    const c1 = mk(1), c2 = mk(2); s.d.cos = { worn: c2, bag: [c1], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 };
+    expect(() => rpc(s, 'market.list', { costume: c2.id, price: 5000 })).toThrow();   // giyili
+    const bd = costumeBounds(c1, w.now); expect(() => rpc(s, 'market.list', { costume: c1.id, price: bd.min - 1 })).toThrow(); expect(() => rpc(s, 'market.list', { costume: c1.id, price: bd.max + 1 })).toThrow();
+    const r = rpc(s, 'market.list', { costume: c1.id, price: bd.min + 100 }); expect(s.d.cos.bag.length).toBe(0);
+    rig.clock.advance(2 * DAY); const exp = c1.expiresAt;   // 2 gün sonra satın al: kalan 5 gün
+    const buy = rpc(b, 'market.buy', { id: r.id }); expect(buy.costume.expiresAt).toBe(exp); expect(b.d.cos!.bag[0].expiresAt - w.now).toBeLessThan(5 * DAY + 1000); expect(b.d.cos!.bag[0].lv).toBe(40);
+    // iptal ve iade
+    const r2 = rpc(b, 'market.list', { costume: b.d.cos!.bag[0].id, price: bd.min + 100 }); rpc(b, 'market.cancel', { id: r2.id }); expect(b.d.cos!.bag.length).toBe(1);
+    // süresi dolan ilan alınamaz
+    const r3 = rpc(b, 'market.list', { costume: b.d.cos!.bag[0].id, price: bd.min + 100 }); rig.clock.advance(5 * DAY); expect(() => rpc(s, 'market.buy', { id: r3.id })).toThrow();
+    // çanta dolu
+    const c3 = mk(3); s.d.cos.bag = []; const fresh = [1, 2, 3, 4, 5].map((i) => mk(10 + i)); b.d.cos!.bag = fresh; s.d.cos.bag.push(c3); const r4 = rpc(s, 'market.list', { costume: c3.id, price: bd.min + 100 }); expect(fresh.length).toBe(COSTUME.bagMax); expect(() => rpc(b, 'market.buy', { id: r4.id })).toThrow();
+  });
+  test('sink delinmez: düşük seviyeli hesap pahalı kostümü ucuza uzatamaz (maliyet max(sahip, üretim seviyesi))', async () => {
+    const { newCostume, extendCost, costLevel } = await import('../../shared/costume'); const { mulberry32 } = await import('../../shared/rng');
+    const c = newCostume(mulberry32(5), 0, 3, 0, 45); expect(costLevel(c, 10)).toBe(45); expect(extendCost(c, costLevel(c, 10), false)).toBe(extendCost(c, 45, false));
+    const { w, p, cos } = (() => { const rig = makeRig(61, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.level = 10; p.d.gold = 1e9; p.x = 20 - 3; p.z = -25; return { w, p, cos: (a: Record<string, unknown>) => w.rpcRun(p, 'cos', a) as unknown }; })();
+    p.d.cos = { worn: null, bag: [newCostume(mulberry32(6), 0, 1, w.now, 45)], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 };
+    const g = p.d.gold; cos({ op: 'extend', id: p.d.cos.bag[0].id }); expect(g - p.d.gold).toBeGreaterThan(extendCost({ ...p.d.cos.bag[0], tier: 1 }, 10, false) * 3);
+    expect(() => cos({ op: 'wear', id: newCostume(mulberry32(7), 0, 3, w.now, 45).id })).toThrow();   // olmayan kostüm
+    p.d.cos.bag.push(newCostume(mulberry32(8), 0, 3, w.now, 45)); expect(() => cos({ op: 'wear', id: p.d.cos!.bag[1].id })).toThrow();   // Sv10 Hanlık giyemez (Sv42)
+  });
+});

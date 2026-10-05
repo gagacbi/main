@@ -15,7 +15,9 @@ export type LuckKey = 'boncuk' | 'dugum' | 'nazar' | 'kagit';
 export const LUCK_KEYS: LuckKey[] = ['boncuk', 'dugum', 'nazar', 'kagit'];
 export type LoomKind = 'daily' | 'weekly';
 
-export interface Costume { id: string; look: number; tier: CostumeTier; expiresAt: number; ench: Ench[]; rr: number }
+/** lv: üretildiği seviye. Maliyetler max(sahibin seviyesi, lv) ile ölçeklenir: düşük seviyeli bir 'ikinci hesap' pahalı kostümü ucuza uzatamaz (pazar takasında sink delinmesin). */
+export interface Costume { id: string; look: number; tier: CostumeTier; expiresAt: number; ench: Ench[]; rr: number; lv?: number }
+export const costLevel = (c: Pick<Costume, 'lv'>, ownerLevel: number) => Math.max(ownerLevel, c.lv ?? 0);
 export interface CostumeState {
   worn: Costume | null; bag: Costume[];
   mats: Record<CosMat, number>; luck: Record<LuckKey, number>;
@@ -90,15 +92,22 @@ export const rerollLineCost = (c: Costume, level: number) => gold(level, COSTUME
 /** Tezgâh üretim tablosu (bir günlük tur) */
 export function loomRoll(rng: Rng): { mats: Partial<Record<CosMat, number>>; luck: Partial<Record<LuckKey, number>> } {
   const mats: Partial<Record<CosMat, number>> = { lif: 6 + Math.floor(rng() * 5) };
-  const boya = Math.floor(rng() * 3); if (boya) mats.boya = boya;
-  if (rng() < 0.4) mats.ipek = 1; if (rng() < 0.12) mats.nakis = 1;
+  const boya = Math.floor(rng() * 4) + (rng() < 0.3 ? 1 : 0); if (boya) mats.boya = boya;   // simülasyon: boya darboğaz (stok 106), nakış stokta (129) → yalnızca boya/ipek artırıldı
+  if (rng() < 0.55) mats.ipek = 1; if (rng() < 0.12) mats.nakis = 1;
   const luck: Partial<Record<LuckKey, number>> = {}; const r = rng(); if (r < 0.02) luck.boncuk = 1; else if (r < 0.03) luck.nazar = 1; else if (r < 0.035) luck.dugum = 1; else if (r < 0.085) luck.kagit = 1;
   return { mats, luck };
 }
-export function newCostume(rng: Rng, look: number, tier: CostumeTier, now: number): Costume {
-  const c: Costume = { id: newId('c'), look, tier, expiresAt: now + COSTUME.baseDays * DAY, ench: [], rr: 0 };
+export function newCostume(rng: Rng, look: number, tier: CostumeTier, now: number, lv = 1): Costume {
+  const c: Costume = { id: newId('c'), look, tier, expiresAt: now + COSTUME.baseDays * DAY, ench: [], rr: 0, lv };
   for (let i = 0; i < COSTUME.startLines[tier]; i++) c.ench.push(rollLine(rng, tier, [LOOKS[look].base, ...c.ench.map((e) => e.k)]));
   return c;
 }
 /** Kostüm kapıdaki Dokuma Tezgâhı */
 export const LOOM_POS = { x: 20, z: -25, interact: 9 };
+
+/** Pazar referans değeri: üretim maliyeti × kalan süre payı × efsun satırı; kalan süre alıcıya aynen geçer */
+export const costumeRef = (c: Costume, now: number) => {
+  const rem = Math.max(0, Math.min(1, (c.expiresAt - now) / (COSTUME.baseDays * DAY)));
+  return Math.max(1, Math.round(gold(c.lv ?? 1, COSTUME.craftGold[c.tier] * 0.9) * (0.15 + 0.85 * rem) * (1 + 0.25 * c.ench.length)));
+};
+export const costumeBounds = (c: Costume, now: number) => ({ min: Math.max(1, Math.round(costumeRef(c, now) * 0.15)), max: Math.round(costumeRef(c, now) * 8) + 500 });

@@ -274,6 +274,7 @@ const D: Record<string, [string, string]> = {
   "err.dun_party_full": ["Parti dolu; bir sonraki turu bekle.", "The party is full; wait for the next one."],
   "err.dun_daily": ["Bugünkü zindan hakkın bitti.", "No dungeon runs left today."], "err.dun_in_lobby": ["Zaten bir parti sırasındasın.", "You are already queued."], "err.dun_lobby_open": ["Açık bir parti var; ona katıl.", "A party is open; join it."],
   "mk.goods": ["Mallar", "Goods"], "mk.unit": ["adet", "unit"], "mk.qty": ["Adet", "Qty"], "mk.myGoods": ["Mallarım (malzeme, kitap, tılsım, kostüm malzemesi, şans eşyası)", "My goods (materials, books, charms, costume materials, luck items)"],
+  "mk.costumes": ["Kostümler", "Costumes"], "mk.myCostumes": ["Kostümlerim (kalan süre alıcıya aynen geçer)", "My costumes (remaining time passes to the buyer)"], "mk.cosNote": ["Kostümün kalan süresi satışla değişmez; alıcı aynı süreyi alır. Giyili kostüm satılamaz.", "The costume keeps its remaining time when sold. A worn costume cannot be listed."],
   "npc.loom": ["Dokuma Tezgâhı", "Weaving Loom"],
   "cos.look.kurt": ["Bozkurt Kaftanı", "Steppe-Wolf Kaftan"],
   "cos.look.ates": ["Ateş Kaftanı", "Fire Kaftan"],

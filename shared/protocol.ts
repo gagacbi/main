@@ -1,4 +1,4 @@
-import type { CostumeState } from './costume';
+import type { Costume, CostumeState } from './costume';
 import type { Boy, Bag, Companion, Expedition, Item, Slot, Spec, StatusKey, Stats, MobType, BuildingKey } from './game';
 
 // ───────── İstemci → Sunucu ─────────
@@ -60,7 +60,7 @@ export interface Snapshot {
   players: SnapPlayer[]; mobs: SnapMob[]; rifts: SnapRift[]; drops: SnapDrop[]; ev: GameEvent[]; pop: number;
 }
 /** ilan: ya bir eşya ya da bir yığın mal (malzeme, kitap, tılsım, kostüm malzemesi, şans eşyası) */
-export interface MarketListing { id: number; sellerId: number; seller: string; item?: Item; good?: { k: string; qty: number }; price: number; expires: number; ref: number }
-export interface MarketMail { id: number; kind: 'gold' | 'item'; gold: number; item?: Item; good?: { k: string; qty: number }; note: string }
+export interface MarketListing { id: number; sellerId: number; seller: string; item?: Item; good?: { k: string; qty: number }; costume?: Costume; price: number; expires: number; ref: number }
+export interface MarketMail { id: number; kind: 'gold' | 'item'; gold: number; item?: Item; good?: { k: string; qty: number }; costume?: Costume; note: string }
 export interface ChatMsg { ch: 'near' | 'boy' | 'oymak' | 'sys' | 'whisper'; from: string; boy?: Boy; text: string; key?: string; p?: Record<string, string | number> }
 export interface RpcRes { id: number; ok: boolean; err?: string; data?: unknown; p?: Record<string, string | number> }
