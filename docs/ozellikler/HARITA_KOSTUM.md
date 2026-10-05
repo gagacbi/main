@@ -30,7 +30,7 @@ Her harita ayrı bir oda yerine **aynı World içinde, birbirinden ≥ 300 birim
 ## 2. İsteğe bağlı PvP bayrağı
 
 1. *Nereye bakar?* Sağ üstte kalıcı `PvP: Açık/Kapalı` düğmesi, rakibin isim levhasında ⚔ işareti ve kırmızı nokta; bölge PvP'ye kapalıysa düğme "Kapalı" ve pasif.
-2. *En kolay yol?* Bayrağı hiç açmamak (güvenli). Açmak için neden var? **%10 yaratık XP/akçe bonusu** + PvP avcısına av. Açgözlü oyuncu bonus için açar, avcı da onları bulur: bu rızaya dayalı bir risk-ödül.
+2. *En kolay yol?* Bayrağı hiç açmamak (güvenli). Açmak için neden var? **%15 yaratık XP/akçe/düşüş bonusu** + PvP avcısına av. Açgözlü oyuncu bonus için açar, avcı da onları bulur: bu rızaya dayalı bir risk-ödül.
 3. *Herkes açarsa?* Eski "açık PvP" durumuna döner; bonus herkese gittiği için bayrağın avantajı kalmaz — simülasyon bunu ölçer (bayraklı payı).
 4. *Işık sönerse?* Bayrağı açık unutan: `sys.pvp_on` mesajı ve düğme rengi; kapatma PvP'den 30 sn sonra (bayrak "kaçış" aracı olmasın).
 5. *Seviye grupları:* yeni oyuncu varsayılan kapalı; Otlak/zindan zaten kapalı.

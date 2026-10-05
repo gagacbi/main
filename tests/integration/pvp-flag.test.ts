@@ -32,10 +32,10 @@ describe('isteğe bağlı PvP bayrağı', () => {
     a.x = HUB.fire.x; a.z = HUB.fire.z; b.x = a.x + 1; b.z = a.z; expect(w.canHitPlayer(a, b, true)).toBe(false);
     a.x = 80; a.z = 0; b.x = 82; b.z = 0; expect(w.pvpActive(a)).toBe(true);
   });
-  test('bayraklı alp yaratıklardan %10 fazla XP alır; Otlak’ta bonus yok', () => {
+  test('bayraklı alp yaratıklardan %15 fazla XP alır; Otlak’ta bonus yok', () => {
     const { w, a, b, rpc } = pair(); rpc(a, true);
     const xp = (p: typeof a) => { p.d.xp = 0; const m = w.makeMob('cakal', 20, p.x + 2, p.z, -1); m.contrib.set(p.id, 100); w.damage(p, m, 1e9); return p.d.xp; };
-    const flagged = xp(a), plain = xp(b); expect(flagged / plain).toBeGreaterThan(1.05); expect(flagged / plain).toBeLessThan(1.16);
+    const flagged = xp(a), plain = xp(b); expect(flagged / plain).toBeGreaterThan(1.1); expect(flagged / plain).toBeLessThan(1.21);
     void F;
   });
 });
