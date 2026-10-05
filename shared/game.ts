@@ -318,6 +318,9 @@ export const mobDef = (lvl: number) => 1 + 1.4 * lvl;
 /** Altın girişi dengesi: nüfus simülasyonu günlük girişin sink'in 11 katı olduğunu gösterdi (BALANS_RAPORU/POPULASYON_RAPORU) */
 export const GOLD_MULT = 0.45;
 export const mobGold = (lvl: number) => Math.max(1, Math.round((3 + 2 * (lvl <= 30 ? lvl : 30 + (lvl - 30) * 0.5)) * GOLD_MULT * 10) / 10);
+/** Eşya/kaynak düşme çarpanı (yaratık seviyesi − oyuncu seviyesi): üstteki yaratık (+1…+5) daha çok düşürür ama kesmesi zordur;
+ * +5'in ötesinde azalır; alttaki yaratık hızla azalır (düşük seviye kasma ödülsüz). */
+export const dropLevelMult = (diff: number) => (diff >= 0 ? Math.max(0.6, diff <= 5 ? 1 + 0.1 * diff : 1.5 - 0.1 * (diff - 5)) : Math.max(0.1, 1 + 0.15 * diff));
 export const MOB_RESPAWN: [number, number] = [10, 18];
 export const MAX_CAMP_LEVEL = 48;
 export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + (dist - 40) / 2.5)));

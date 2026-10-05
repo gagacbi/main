@@ -2,7 +2,7 @@ import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
@@ -482,14 +482,15 @@ export class World {
     const gold = Math.round(mobGold(m.lvl) * (0.7 + r() * 0.6) * (1 + (share - 0.15) * 0.0) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1));
     this.spawnDrop(p, 'gold', m.x, m.z, { amount: gold });
     if (r() < 0.12) this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * 0.6) });
-    if (r() < 0.45) { const k = (['ore', 'hide', 'wood'] as MatKey[])[Math.floor(r() * 3)]; this.spawnDrop(p, 'mat', m.x, m.z, { m: k, amount: irange(r, 1, 3) }); }
-    if (r() < 0.11) {
+    const dm = dropLevelMult(m.lvl - p.d.level);
+    if (r() < 0.45 * Math.min(1, dm)) { const k = (['ore', 'hide', 'wood'] as MatKey[])[Math.floor(r() * 3)]; this.spawnDrop(p, 'mat', m.x, m.z, { m: k, amount: irange(r, 1, 3) }); }
+    if (r() < 0.11 * dm) {
       const it = makeItem(r, randomSlot(r), m.lvl, rollTier(r));
       this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
     }
-    if (r() < 0.012) this.spawnDrop(p, 'book', m.x, m.z);
-    if (r() < 0.006) this.spawnDrop(p, 'charm', m.x, m.z);
-    if (r() < 0.006) this.spawnDrop(p, 'frag', m.x, m.z);
+    if (r() < 0.012 * dm) this.spawnDrop(p, 'book', m.x, m.z);
+    if (r() < 0.006 * dm) this.spawnDrop(p, 'charm', m.x, m.z);
+    if (r() < 0.006 * dm) this.spawnDrop(p, 'frag', m.x, m.z);
   }
   giveItem(p: Player, it: Item) {
     if (p.d.items.length >= BAG_SIZE) return false;
