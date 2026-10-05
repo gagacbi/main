@@ -388,6 +388,15 @@ if (want('harita')) {
   check('H13.bayrak', P3().d.pvp === true && /Açık/.test(pvpOn ?? ''), `HUD düğmesiyle PvP bayrağı açıldı: sunucu=${P3().d.pvp}, düğme="${(pvpOn ?? '').trim()}"`);
   P3().lastPvp = 0; await pg3.click('#pvpbtn'); await sleep(900);
   check('H13.bayrak-kapat', P3().d.pvp === false, 'PvP yoksa bayrak hemen kapanır');
+  // pazar: yığın mal (malzeme) ilanı ve arayüzde mallar sekmesi
+  await gm3('tp hub'); await sleep(1500); P3().d.bag.ore += 120; P3().d.bag.charm += 5; await pg3.keyboard.press('p'); await sleep(1800);
+  await pg3.evaluate(() => { const pn = (window as any).__game.ui.panels; pn.mkTab = 'mine'; void pn.loadMarket().then(() => pn.render()); }); await sleep(1500);
+  const mkp = await pg3.textContent('.panel');
+  const lr = await pg3.evaluate(async () => (await (window as any).__game.net.rpc('market.list', { good: 'ore', qty: 100, price: 900 })).ok);
+  await sleep(800); await pg3.evaluate(() => { const pn = (window as any).__game.ui.panels; pn.mkTab = 'browse'; pn.mkSlot = 'good'; void pn.loadMarket().then(() => pn.render()); }); await sleep(2000); await sh3('42-pazar-mallar');
+  const mkb = await pg3.textContent('.panel');
+  check('H16.pazar-mal', lr === true && /Mallarım/.test(mkp ?? '') && /Demir cevheri ×100/.test(mkb ?? ''), `Pazar: malzeme yığını ilanı verildi (ok=${lr}); "Mallar" görünümünde "Demir cevheri ×100" listelendi; satış panelinde "Mallarım" bölümü var`);
+  await pg3.keyboard.press('Escape'); await sleep(400);
   // Erlik Diyarı + zindan (taze sayfa)
   await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
   await gm3('level 46'); await gm3('god'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(3000); for (let i = 0; i < 4 && !/Demir Madeni/.test((await pg3.textContent('.panel', { timeout: 3000 }).catch(() => '')) ?? ''); i++) { await pg3.keyboard.press('e'); await sleep(1500); } await sh3('38-erlik-kapi-zindan');

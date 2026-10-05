@@ -92,6 +92,8 @@ uçtan uca testi (gerçek Chromium, ekran görüntüsü / ölçüm), **B** = bui
 | H13 | İsteğe bağlı PvP bayrağı + yeni oyuncu bölgesi (PvP yok) | I, E |
 | H14 | Parti zindanları (Demir Madeni, Gölge Mağarası): ücret, günlük hak, dalga + boss, ödül | I, E |
 | H15 | Kostüm: Dokuma Tezgâhı, şansa bağlı üretim, efsunlama, süre/uzatma, akçe sinki | U, I, E |
+| H16 | Pazar her şeyi takas eder (ekipman + malzeme, kitap, tılsım, parça, kostüm malzemesi, şans eşyası) | I, E |
+| H17 | Drop seviye farkı eğrisi; kostüm 1 hafta/yok olur/yüklü uzatma/kağıt | U, I |
 | H9 | Sokak lambası avı: sistemlerin kesiştiği yerlerde arayan testler, PvP eşleşme matrisi, belgelenmiş bulgular | I, doküman |
 
 ## G. Kalite kapısı

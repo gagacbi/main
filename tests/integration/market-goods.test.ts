@@ -13,7 +13,7 @@ describe('pazar: her şey takas edilir (yığın mallar)', () => {
   test('her mal türü (malzeme, kitap, tılsım, parça, kostüm malzemesi, şans eşyası, kâğıt) ilan → satın alma: el değiştirir, vergi ve ilan ücreti sink', () => {
     const { s, b, rpc, w } = two(); expect(GOOD_KEYS.length).toBe(14);
     for (const k of GOOD_KEYS) {
-      const qty = 7; if (k === 'ore' || k === 'hide' || k === 'wood' || k === 'book' || k === 'charm' || k === 'frag') s.d.bag[k] += qty; else { s.d.cos ??= { worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 }; (k in s.d.cos.mats ? s.d.cos.mats : s.d.cos.luck)[k as never] += qty; }
+      const qty = 7; if (k === 'ore' || k === 'hide' || k === 'wood' || k === 'book' || k === 'charm' || k === 'frag') s.d.bag[k] += qty; else { s.d.cos ??= { worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 }; { const t = (k in s.d.cos.mats ? s.d.cos.mats : s.d.cos.luck) as Record<string, number>; t[k] += qty; } }
       const have = goodGet(s.d, k); const price = goodRef(k, qty); const g0 = s.d.gold; const bg = b.d.gold; const bHave = goodGet(b.d, k);
       const r = rpc(s, 'market.list', { good: k, qty, price }); expect(goodGet(s.d, k)).toBe(have - qty); expect(g0 - s.d.gold).toBe(r.fee);
       const buy = rpc(b, 'market.buy', { id: r.id }); expect(buy.good).toEqual({ k, qty }); expect(goodGet(b.d, k)).toBe(bHave + qty); expect(bg - b.d.gold).toBe(price);
