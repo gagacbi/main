@@ -39,7 +39,8 @@ export function dungeonRpc(w: World, p: Player, op: 'dungeon.enter' | 'dungeon.l
   for (const l of w.lobbies.values()) if (l.ids.includes(p.id)) throw new GameError('dun_in_lobby');
   if (!adm && dunLeft(p, def, now) <= 0) throw new GameError('dun_daily');
   if (p.d.gold < def.fee) throw new GameError('no_gold');
-  const solo = !!a.solo; let lobby = w.lobbies.get(lobbyKey(id));
+  const solo = !!a.solo; if (w.lobbies.get(lobbyKey(id))?.ids.length! >= def.partyMax) throw new GameError('dun_party_full');
+  let lobby = w.lobbies.get(lobbyKey(id));
   if (solo && lobby) throw new GameError('dun_lobby_open');
   p.d.gold -= def.fee; w.ledger(p, 'dungeon.fee', { d: id, fee: def.fee }); p.meDirty = true;
   if (!lobby) { lobby = { d: id, ids: [], at: now + (solo ? 0 : def.lobbySec * 1000) }; w.lobbies.set(lobbyKey(id), lobby); }
@@ -89,12 +90,12 @@ function startRun(w: World, l: Lobby) {
 }
 
 function spawnWave(w: World, r: DungeonRun, alive: Player[]) {
-  const def = r.def; const rng = w.ctx.rng; const scale = 1 + def.hpPerExtra * (r.n - 1);
+  const def = r.def; const rng = w.ctx.rng; const scale = (1 + def.hpPerExtra * (r.n - 1)) * def.hpMult;
   const cfg = def.waves[r.wave]; const c = r.region;
   for (let i = 0; i < cfg.n; i++) {
     const a = (i / cfg.n) * Math.PI * 2 + rng(); const d = 16 + rng() * 12; const type = cfg.types[Math.floor(rng() * cfg.types.length)] as MobType;
     const m = w.makeMob(type, def.lvl + irange(rng, -1, 1), c.cx + Math.cos(a) * d, c.cz + Math.sin(a) * d, -1, -1, scale);
-    m.hx = c.cx; m.hz = c.cz; m.leash = 80; m.dun = r.id; r.mobs.add(m.id); const t = alive[i % alive.length]; if (t) m.target = t.id;
+    m.atk *= def.atkMult; m.hx = c.cx; m.hz = c.cz; m.leash = 80; m.dun = r.id; r.mobs.add(m.id); const t = alive[i % alive.length]; if (t) m.target = t.id;
   }
   r.state = 'wave'; for (const p of alive) { w.sys(p, 'sys.dun_wave', { n: r.wave + 1, of: def.waves.length }); p.meDirty = true; }
 }
@@ -102,7 +103,7 @@ function spawnBoss(w: World, r: DungeonRun, alive: Player[]) {
   const c = r.region; const [lvl, , ] = FIELD_BOSS.list[r.def.bossId - 1];
   const m = w.spawnBoss({ id: r.def.bossId, level: lvl, kind: FIELD_BOSS.list[r.def.bossId - 1][1], nameKey: FIELD_BOSS.list[r.def.bossId - 1][2], x: c.cx, z: c.cz - 18, map: r.d });
   m.hx = c.cx; m.hz = c.cz; m.leash = 90; m.dun = r.id; r.mobs.add(m.id); r.state = 'boss';
-  const base = m.baseHp ?? m.maxHp; m.baseHp = base; const sc = 1 + r.def.hpPerExtra * (r.n - 1); m.maxHp = Math.round(base * sc); m.hp = m.maxHp; m.baseHp = m.maxHp;
+  const base = m.baseHp ?? m.maxHp; m.baseHp = base; const sc = (1 + r.def.hpPerExtra * (r.n - 1)) * r.def.bossHpMult; m.atk *= r.def.atkMult; m.maxHp = Math.round(base * sc); m.hp = m.maxHp; m.baseHp = m.maxHp;
   const t = alive[0]; if (t) m.target = t.id;
   for (const p of alive) { w.sys(p, 'sys.dun_boss'); p.meDirty = true; }
 }

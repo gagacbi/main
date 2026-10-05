@@ -2,7 +2,7 @@
 
 Ham veri: `docs/balans/populasyon/ham.json` · **Her karakterin kendi raporu: [`oyuncular/`](balans/populasyon/oyuncular/README.md)** (150 dosya) · Felsefe: [`TASARIM_FELSEFESI.md`](TASARIM_FELSEFESI.md)
 
-150 oyuncu · 14 gün · dilim 10 dk (günde 4 dilim) · tohum 7 · gerçek süre 8 dk
+150 oyuncu · 14 gün · dilim 10 dk (günde 4 dilim) · tohum 7 · gerçek süre 25 dk
 
 ## 1. Yöntem ve dürüstlük notları
 
@@ -22,111 +22,111 @@ Ham veri: `docs/balans/populasyon/ham.json` · **Her karakterin kendi raporu: [`
 
 | Gün | Sv1–10 | Sv11–20 | Sv21–30 | Sv31–40 | Sv41–50 |
 |---|---|---|---|---|---|
-| 1 | 22 | 45 | 49 | 22 | 12 |
-| 7 | 0 | 2 | 50 | 37 | 61 |
-| 14 | 0 | 0 | 12 | 49 | 89 |
+| 1 | 9 | 53 | 45 | 36 | 7 |
+| 7 | 0 | 0 | 36 | 43 | 71 |
+| 14 | 0 | 0 | 0 | 45 | 105 |
 
 **Arketip karşılaştırması:**
 
 | Arketip | Oyuncu | Seviye kazancı (gün başı) | Ort. ölüm/sa | Ort. ödül/sa | Yok olan eşya | Ort. ayrılma riski | Yüksek riskli % |
 |---|---|---|---|---|---|---|---|
-| Boss avcısı | 8 | 1 | 0.5 | 14.9 | 0 | 0.8 | 0 |
-| Gündelik oyuncu | 32 | 1.5 | 6.3 | 21.8 | 0 | 2.4 | 31 |
-| Tüccar / zanaatkâr | 17 | 1.5 | 2 | 19.1 | 0 | 0.9 | 0 |
-| Sürü izleyen | 6 | 1.7 | 6.2 | 23.1 | 28 | 3.3 | 33 |
-| Yeni başlayan | 24 | 1.6 | 15 | 28.2 | 379 | 4.8 | 67 |
-| Savunma teorisyeni | 8 | 0.8 | 0.6 | 15.5 | 0 | 0.8 | 0 |
-| Çekirdek farmcı | 21 | 1.4 | 0.5 | 14.4 | 0 | 0.4 | 0 |
-| PvP avcısı | 11 | 1 | 8 | 16.8 | 0 | 2 | 9 |
-| Çatlak avcısı | 16 | 1.1 | 0.9 | 14.2 | 0 | 0.5 | 0 |
-| Oba / sosyal | 7 | 1.5 | 1.6 | 20.1 | 0 | 1.1 | 0 |
+| Boss avcısı | 13 | 1.2 | 0.8 | 18.8 | 0 | 0.3 | 0 |
+| Gündelik oyuncu | 40 | 1.7 | 0.8 | 22.4 | 0 | 0.1 | 0 |
+| PvP avcısı | 7 | 1 | 5.6 | 16.9 | 0 | 0.6 | 0 |
+| Çatlak avcısı | 17 | 1.1 | 0.4 | 19 | 0 | 0 | 0 |
+| Çekirdek farmcı | 29 | 1.4 | 1.2 | 19.1 | 1 | 0.1 | 0 |
+| Yeni başlayan | 18 | 1.8 | 1.1 | 30.8 | 389 | 1.5 | 0 |
+| Oba / sosyal | 7 | 1.9 | 0.2 | 22.7 | 0 | 0 | 0 |
+| Tüccar / zanaatkâr | 12 | 1.5 | 0.1 | 19.1 | 0 | 0 | 0 |
+| Sürü izleyen | 4 | 1.6 | 0.2 | 22.3 | 18 | 1.5 | 0 |
+| Savunma teorisyeni | 3 | 0.8 | 0.1 | 18.1 | 1 | 0 | 0 |
 
 **Ekonomi** (akçe arzı, Gini, pazar):
 
 | Gün | Akçe arzı | Gini | Pazar satış | Pazar hacmi | Vergi | İlan ücreti | Satış/değer |
 |---|---|---|---|---|---|---|---|
-| 1 | 7.216.835 | 0.747 | 42 | 28.473 | 1.425 | 10.831 | 1.06 |
-| 2 | 32.004.606 | 0.64 | 5 | 35.301 | 1.765 | 416 | 3.99 |
-| 3 | 63.585.047 | 0.591 | 2 | 8.547 | 427 | 3.089 | 2.66 |
-| 4 | 98.718.880 | 0.565 | 6 | 90.238 | 4.511 | 13.388 | 5.33 |
-| 5 | 135.842.019 | 0.549 | 8 | 64.103 | 3.204 | 1.922 | 2.94 |
-| 6 | 174.468.978 | 0.537 | 3 | 2.054 | 104 | 2.773 | 0.87 |
-| 7 | 209.476.232 | 0.524 | 1 | 26.498 | 1.325 | 15.368 | 5.98 |
-| 8 | 240.123.904 | 0.514 | 1 | 18.732 | 937 | 2.222 | 5.47 |
-| 9 | 268.707.149 | 0.502 | 2 | 21.008 | 1.050 | 2.925 | 3.37 |
-| 10 | 299.243.163 | 0.49 | 0 | 0 | 0 | 14.984 | 0 |
-| 11 | 328.238.882 | 0.478 | 2 | 28.365 | 1.419 | 2.412 | 4.85 |
-| 12 | 356.268.801 | 0.468 | 2 | 2.040 | 103 | 2.158 | 0.78 |
-| 13 | 386.424.214 | 0.461 | 1 | 989 | 49 | 13.797 | 0.84 |
-| 14 | 416.512.450 | 0.454 | 0 | 0 | 0 | 2.409 | 0 |
+| 1 | 9.327.028 | 0.701 | 52 | 40.246 | 2.012 | 10.679 | 1.09 |
+| 2 | 37.273.185 | 0.583 | 5 | 2.571 | 128 | 210 | 1.03 |
+| 3 | 65.717.340 | 0.538 | 3 | 3.204 | 161 | 2.829 | 1.11 |
+| 4 | 91.313.595 | 0.524 | 4 | 24.619 | 1.231 | 13.248 | 2.36 |
+| 5 | 115.232.131 | 0.514 | 5 | 30.873 | 1.544 | 629 | 2.43 |
+| 6 | 141.757.006 | 0.513 | 0 | 0 | 0 | 3.063 | 0 |
+| 7 | 169.204.350 | 0.51 | 3 | 3.099 | 155 | 13.489 | 0.91 |
+| 8 | 193.823.912 | 0.501 | 1 | 22.552 | 1.128 | 1.314 | 5.46 |
+| 9 | 220.720.433 | 0.494 | 2 | 1.765 | 89 | 2.766 | 0.91 |
+| 10 | 253.054.178 | 0.489 | 0 | 0 | 0 | 13.201 | 0 |
+| 11 | 282.973.412 | 0.496 | 0 | 0 | 0 | 2.252 | 0 |
+| 12 | 314.322.696 | 0.497 | 0 | 0 | 0 | 2.326 | 0 |
+| 13 | 342.448.971 | 0.493 | 0 | 0 | 0 | 12.143 | 0 |
+| 14 | 371.962.089 | 0.49 | 0 | 0 | 0 | 2.776 | 0 |
 
-**Günlük ortalama kaynak:** 38.753.953 akçe — yaratık %54, NPC satış %30, sefer %15, kilometre taşı %1, gizem %0, boss (altın yağmuru dahil) %0
+**Günlük ortalama kaynak:** 52.897.288 akçe — yaratık %56, NPC satış %32, sefer %11, kilometre taşı %1, gizem %0, boss (altın yağmuru dahil) %0
 
-**Günlük ortalama sink:** 9.073.598 akçe — artı basma %82, üretim %8, beceri %8, efsun yenileme %2, pazar ilan ücreti %0, oba %0, pazar vergisi %0
+**Günlük ortalama sink:** 26.403.407 akçe — kostüm: efsun %53, artı basma %27, kostüm: üretim %7, üretim %4, kostüm: tezgâh %3, beceri %3, kostüm: şans eşyası %2, efsun yenileme %1, zindan ücreti %0, kostüm: uzatma %0, pazar ilan ücreti %0, oba %0, pazar vergisi %0
 
-**Sink / kaynak oranı: %23.4** (100'ün çok altı = enflasyon)
+**Sink / kaynak oranı: %49.9** (100'ün çok altı = enflasyon)
 
-Tüccar/zanaatkâr pazar neti: ortalama 14.435 akçe (en iyi 44.215); üretilen 10295 parça, üretim maliyeti 10.239.270 akçe; çanta doluluğundan kaybolan ganimet 21.824.
+Tüccar/zanaatkâr pazar neti: ortalama 5.237 akçe (en iyi 22.876); üretilen 13371 parça, üretim maliyeti 13.992.790 akçe; çanta doluluğundan kaybolan ganimet 26.527.
 
 **Kalabalık ve kamp kullanımı:**
 
 | Kampta eşzamanlı oyuncu | Gözlem | Öldürme/dk (kişi başı) |
 |---|---|---|
-| 1 | 761 | 29.6 |
-| 2-3 | 1268 | 37.7 |
-| 4-6 | 816 | 40 |
-| 7-10 | 175 | 35.2 |
-| 11+ | 1094 | 16.7 |
+| 1 | 1108 | 29.5 |
+| 2-3 | 1712 | 36.4 |
+| 4-6 | 1008 | 39.4 |
+| 7-10 | 400 | 35.4 |
+| 11+ | 73 | 26.5 |
 
-Kullanılan kamp sayısı 64/42 · en kalabalık 5 kamp: kamp 14 %16, kamp 60 %15, kamp 15 %2, kamp 34 %2, kamp 57 %2 · yoğunlaşma (HHI) 0.057 (1/42=0,024 tam dağılım)
+Kullanılan kamp sayısı 124/42 · en kalabalık 5 kamp: kamp 102 %6, kamp 60 %4, kamp 14 %4, kamp 114 %3, kamp 100 %3 · yoğunlaşma (HHI) 0.017 (1/42=0,024 tam dağılım)
 
 **Boss'lar:**
 
 | Boss | Öldürme (dilimde) | Ort. süre (sn) | Ort. katılımcı | Ölüm/öldürme |
 |---|---|---|---|---|
-| 1 | 29 | 28.4 | 2 | 0 |
-| 2 | 45 | 56 | 4.6 | 0.1 |
-| 3 | 24 | 52.8 | 2.3 | 0 |
-| 4 | 27 | 46.1 | 6.7 | 0 |
-| 5 | 26 | 38.1 | 6.3 | 0 |
+| 1 | 21 | 27.9 | 2 | 0 |
+| 2 | 42 | 51.5 | 2.4 | 0 |
+| 3 | 22 | 51.1 | 2.5 | 0 |
+| 4 | 25 | 70.3 | 4 | 0 |
+| 5 | 16 | 52.4 | 2.1 | 0 |
 
-Boss öldüren oyuncu: 132/150 (%88); boss avcılarının boss başına dilim öldürmesi 20.9
+Boss öldüren oyuncu: 141/150 (%94); boss avcılarının boss başına dilim öldürmesi 22
 
-**Çatlak:** Dilimlerde açılan çatlak 152, kapanan 42 (%28); kapatan oyuncu 138/150
+**Çatlak:** Dilimlerde açılan çatlak 163, kapanan 38 (%23); kapatan oyuncu 112/150
 
-**PvP:** PvP öldürme 2678; bunun 1991 tanesi (%74) 8+ seviye altındaki oyuncuya (gank); kırmızı adlı oyuncu 11; PvP'de en az 5 kez öldürülüp hiç öldürmeyen 68
+**PvP:** PvP öldürme 527; bunun 182 tanesi (%35) 8+ seviye altındaki oyuncuya (gank); kırmızı adlı oyuncu 0; PvP'de en az 5 kez öldürülüp hiç öldürmeyen 3
 
 **Savunma türleri** (alınan hasar payı ve oyuncuların savunması):
 
 | Hasar türü | Alınan hasar payı | Ortalama savunma % | Savunması ≥%15 olan oyuncu % |
 |---|---|---|---|
-| kilic | %0 | 3.8 | 3 |
-| cift | %23 | 4.3 | 3 |
-| bicak | %21 | 4.8 | 3 |
-| yay | %0 | 4.2 | 2 |
-| buyu | %56 | 10.1 | 35 |
+| kilic | %0 | 3.2 | 1 |
+| cift | %16 | 4.8 | 5 |
+| bicak | %20 | 5.4 | 9 |
+| yay | %0 | 3.1 | 2 |
+| buyu | %64 | 11.4 | 44 |
 
 | Grup | Oyuncu | Ölüm/sa | Ana tehdit türüne karşı savunma % | Bloklanan vuruş |
 |---|---|---|---|---|
-| Savunma bilinçli | 53 | 2.7 | 21.1 | 681 |
-| Bilinçsiz | 97 | 6.4 | 4.2 | 986 |
+| Savunma bilinçli | 67 | 1.1 | 20.8 | 857 |
+| Bilinçsiz | 83 | 0.9 | 3.6 | 445 |
 
-Ana tehdit türüne karşı savunması %10'un altında olup hasarın %40+'ını o türden alan oyuncu: **25/150**
+Ana tehdit türüne karşı savunması %10'un altında olup hasarın %40+'ını o türden alan oyuncu: **63/150**
 
 **Mini harita A/B** (aynı nüfus içinde: haritayı — kamp seviyesi rengi + doluluk sayısı — okuyan ve okumayan yeni/gündelik oyuncular):
 
 | Grup | Oyuncu | Ölüm/sa | Ort. ayrılma riski | Yüksek riskli % | Ödül/sa |
 |---|---|---|---|---|---|
-| Mini haritayı okuyan (yeni+gündelik) | 23 | 8.6 | 3 | 35 | 23.3 |
-| Okumayan (yeni+gündelik) | 33 | 11.1 | 3.7 | 55 | 25.4 |
+| Mini haritayı okuyan (yeni+gündelik) | 35 | 0.4 | 0.4 | 0 | 24.8 |
+| Okumayan (yeni+gündelik) | 23 | 1.5 | 0.6 | 0 | 25.4 |
 
 **Ayrılma riski** (ödül sıklığı, ölüm oranı, durgunluk, kayıp eşya, zorbalık):
 
-Düşük 60 · orta 61 · **yüksek 29** (toplam 150).
+Düşük 143 · orta 7 · **yüksek 0** (toplam 150).
 
-En sık nedenler: # kez oyuncular tarafından öldürüldü (68); saatte # ölüm (38); # eşya yok oldu (29); # gün üst üste ilerleme yok (13); # başarısız artı serisi (2)
+En sık nedenler: # eşya yok oldu (22); # kez oyuncular tarafından öldürüldü (3); saatte # ölüm (3); # gün üst üste ilerleme yok (1)
 
-**Performans:** Ortalama tick+ajan maliyeti 1.4 ms (dilimler: 56); en yoğun dilim 2.4 ms/tick, çevrimiçi 135 oyuncu.
+**Performans:** Ortalama tick+ajan maliyeti 4.5 ms (dilimler: 56); en yoğun dilim 7.8 ms/tick, çevrimiçi 135 oyuncu.
 
 ## 3. Lamba analizi: ışık nerede, cevap nerede?
 
