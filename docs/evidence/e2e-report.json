@@ -1,6 +1,61 @@
 {
- "at": "2026-10-05T17:25:44.413Z",
+ "at": "2026-10-05T17:43:54.415Z",
  "results": [
+  {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt480"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=76, kontur ağı=378, toplam ShaderMaterial=129"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 143 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=5.30 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.0001579149393364787, sessizlikte enerji=0.000"
+  },
   {
    "id": "F2.boy-kimlik",
    "ok": true,
@@ -44,7 +99,7 @@
   {
    "id": "B6.ganimet-toplandi",
    "ok": true,
-   "detail": "Ganimet mıknatısı: akçe 5000→5011"
+   "detail": "Ganimet mıknatısı: akçe 5000→5013"
   },
   {
    "id": "D5.envanter",
@@ -124,7 +179,7 @@
   {
    "id": "E2.yukseltme",
    "ok": true,
-   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-05T17:05:02.003Z; öğretici adımı=3"
+   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-05T17:41:03.880Z; öğretici adımı=3"
   },
   {
    "id": "E4.sefer",
@@ -169,7 +224,7 @@
   {
    "id": "H1.rol",
    "ok": true,
-   "detail": "Yönetici hesabı \"Yonetici649\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+   "detail": "Yönetici hesabı \"Yonetici709\": rol=admin, GM düğmesi görünür, HUD etiketi var"
   },
   {
    "id": "H1.panel",
@@ -179,7 +234,7 @@
   {
    "id": "H1.komut",
    "ok": true,
-   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=749"
+   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=680"
   },
   {
    "id": "H1.sohbet-gm",
@@ -200,61 +255,6 @@
    "id": "H3.kodeks",
    "ok": true,
    "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
-  },
-  {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt411"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=77, kontur ağı=390, toplam ShaderMaterial=130"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 144 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=6.17 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
   },
   {
    "id": "H5.kilometre-tasi",
@@ -279,7 +279,7 @@
   {
    "id": "H5.olum-ipucu",
    "ok": true,
-   "detail": "Ölüm ekranı ipucu: “Seni öldüren: Demir Dişli Börü · Bıçak (sende: %5) İpucu: Bıçak savunması giyen eşyalar bu hasarı keser (Demirci’de efsunlu parçal”"
+   "detail": "Ölüm ekranı ipucu: “Seni öldüren: Demir Dişli Börü · Bıçak (sende: %15)”"
   },
   {
    "id": "H5.pazar-paneli",
@@ -329,7 +329,7 @@
   {
    "id": "H14.zindan-giris",
    "ok": true,
-   "detail": "Zindan başladı: bölge=demir#0, ücret düştü (900 akçe), HUD: \"Demir Madeni (zindan)19:45Dalga 1/3×\""
+   "detail": "Zindan başladı: bölge=demir#0, ücret düştü (900 akçe), HUD: \"Demir Madeni (zindan)19:43Dalga 1/3×\""
   },
   {
    "id": "H14.zindan-cikis",
@@ -349,7 +349,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=441.94 ms; aktif mesh=308/920; üçgen=1292144; (yazılım rasterleştirmede FPS=2)"
+   "detail": "Kare başına JS/CPU maliyeti=519.41 ms; aktif mesh=45/265; üçgen=825604; (yazılım rasterleştirmede FPS=1)"
   },
   {
    "id": "G.konsol",
@@ -358,15 +358,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 6.1708984375,
+  "audioPeak": 5.2958984375,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 2,
-   "meshes": 920,
-   "active": 308,
+   "fps": 1,
+   "meshes": 265,
+   "active": 45,
    "draw": 0,
-   "tris": 1292144,
-   "cpuMs": 441.94
+   "tris": 825604,
+   "cpuMs": 519.41
   },
   "gl": {
    "vendor": "Google Inc. (Google)",
