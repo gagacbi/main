@@ -390,7 +390,7 @@ if (want('harita')) {
   check('H13.bayrak-kapat', P3().d.pvp === false, 'PvP yoksa bayrak hemen kapanır');
   // Erlik Diyarı + zindan (taze sayfa)
   await pg3.reload(); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
-  await gm3('level 46'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(3000); for (let i = 0; i < 4 && !/Demir Madeni/.test((await pg3.textContent('.panel', { timeout: 3000 }).catch(() => '')) ?? ''); i++) { await pg3.keyboard.press('e'); await sleep(1500); } await sh3('38-erlik-kapi-zindan');
+  await gm3('level 46'); await gm3('god'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(3000); for (let i = 0; i < 4 && !/Demir Madeni/.test((await pg3.textContent('.panel', { timeout: 3000 }).catch(() => '')) ?? ''); i++) { await pg3.keyboard.press('e'); await sleep(1500); } await sh3('38-erlik-kapi-zindan');
   const dp = await pg3.textContent('.panel');
   check('H14.zindan-paneli', /Demir Madeni/.test(dp ?? '') && /Gölge Mağarası/.test(dp ?? '') && /Giriş ücreti/.test(dp ?? '') && /Bugün kalan hak/.test(dp ?? '') && /Tek başına gir/.test(dp ?? ''), 'Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)');
   const g0 = P3().d.gold; await pg3.click('.gatecard[data-dun="demir"] button[data-solo="1"]'); await sleep(2500);
