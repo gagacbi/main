@@ -1,5 +1,5 @@
 {
- "at": "2026-10-05T00:17:50.620Z",
+ "at": "2026-10-05T00:25:20.136Z",
  "results": [
   {
    "id": "F6.tr",
@@ -24,17 +24,17 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt802"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt943"
   },
   {
    "id": "F1.toon",
    "ok": true,
-   "detail": "Toon materyal=61, kontur ağı=312, toplam ShaderMaterial=100"
+   "detail": "Toon materyal=59, kontur ağı=304, toplam ShaderMaterial=98"
   },
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 142 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 146 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -49,12 +49,12 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=2.80 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=7.42 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
   },
   {
    "id": "F2.boy-kimlik",
@@ -99,7 +99,7 @@
   {
    "id": "B6.ganimet-toplandi",
    "ok": true,
-   "detail": "Ganimet mıknatısı: akçe 5000→5028"
+   "detail": "Ganimet mıknatısı: akçe 5000→5029"
   },
   {
    "id": "D5.envanter",
@@ -179,7 +179,7 @@
   {
    "id": "E2.yukseltme",
    "ok": true,
-   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-05T00:23:28.645Z; öğretici adımı=3"
+   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-05T00:31:13.850Z; öğretici adımı=3"
   },
   {
    "id": "E4.sefer",
@@ -224,7 +224,7 @@
   {
    "id": "H1.rol",
    "ok": true,
-   "detail": "Yönetici hesabı \"Yonetici653\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+   "detail": "Yönetici hesabı \"Yonetici775\": rol=admin, GM düğmesi görünür, HUD etiketi var"
   },
   {
    "id": "H1.panel",
@@ -234,7 +234,7 @@
   {
    "id": "H1.komut",
    "ok": true,
-   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=715"
+   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=644"
   },
   {
    "id": "H1.sohbet-gm",
@@ -269,17 +269,17 @@
   {
    "id": "H5.temel-efsun",
    "ok": true,
-   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Tengri Kılıcı +5Efsanevi · Silah · Eşya seviyesi 30Saldırı309Silah türüYay◆ Tem”"
+   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Tengri Kılıcı +5Efsanevi · Silah · Eşya seviyesi 30Saldırı309Silah türüÇift el◆”"
   },
   {
    "id": "H5.saha-bossu",
-   "ok": false,
-   "detail": "Saha bossu adıyla görünüyor: ; sv29, can 48227"
+   "ok": true,
+   "detail": "Saha bossu adıyla görünüyor: 29Demir Dişli Börü; sv29, can 48227"
   },
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=591.21 ms; aktif mesh=61/234; üçgen=670238; (yazılım rasterleştirmede FPS=5)"
+   "detail": "Kare başına JS/CPU maliyeti=17.91 ms; aktif mesh=41/215; üçgen=607378; (yazılım rasterleştirmede FPS=3)"
   },
   {
    "id": "G.konsol",
@@ -288,15 +288,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 2.7958984375,
+  "audioPeak": 7.419921875,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 5,
-   "meshes": 234,
-   "active": 61,
+   "fps": 3,
+   "meshes": 215,
+   "active": 41,
    "draw": 0,
-   "tris": 670238,
-   "cpuMs": 591.21
+   "tris": 607378,
+   "cpuMs": 17.91
   },
   "gl": {
    "vendor": "Google Inc. (Google)",
