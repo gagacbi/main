@@ -40,7 +40,7 @@ export const COSTUME = {
   craftMats: [{ lif: 12, boya: 2, ipek: 0, nakis: 0 }, { lif: 20, boya: 6, ipek: 3, nakis: 0 }, { lif: 30, boya: 10, ipek: 8, nakis: 1 }, { lif: 45, boya: 16, ipek: 14, nakis: 2 }] as Record<CosMat, number>[],
   craftChance: [0.85, 0.6, 0.38, 0.18] as number[], pityStep: 0.04, pityMax: 0.25, boncukStep: 0.08, boncukMax: 3, dugumReturn: 0.6,
   addLine: 4, rerollAll: 2, rerollAllPerLine: 2, rerollLine: 3, rerollGrow: 0.15, lookChange: 3,
-  extend: [8, 22, 55, 130] as number[], extendPerLine: 0.25, extendGraceMult: 2,
+  extend: [14, 36, 85, 190] as number[], extendPerLine: 0.25, extendGraceMult: 2,
   /** efsun değiştirme: kağıt + akçe (kağıt tezgâh dükkânından ya da zindan/tezgâh düşüşünden) */
   shop: { boncuk: 6, dugum: 14, nazar: 10, kagit: 3 } as Record<LuckKey, number>,
 };

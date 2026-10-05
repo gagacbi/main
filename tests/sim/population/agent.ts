@@ -291,10 +291,10 @@ export class Agent {
     }
     // alım: kostümcü ham madde/şans eşyası, yükselticiler kitap-tılsım; bütçe kasanın %12'si
     const want: GoodKey[] = [];
-    if (this.par.cos) want.push('boncuk', 'kagit', 'ipek', 'nakis', 'boya', 'lif'); if (this.par.book) want.push('book'); if (this.par.charm) want.push('charm');
+    if (this.par.cos) want.push('boncuk', 'kagit', 'ipek', 'nakis', 'boya', 'lif'); if (this.par.book) want.push('book'); if (this.par.charm) want.push('charm'); if ((this.par.book || this.par.charm) && d.bag.ore < 120) want.push('ore');
     let budget = Math.floor(d.gold * 0.12);
     for (const k of want) {
-      if (budget < 50) break; const have = goodGet(d, k); if (have >= (k === 'lif' ? 60 : k === 'book' || k === 'charm' || k === 'boncuk' ? 3 : 8)) continue;
+      if (budget < 50) break; const have = goodGet(d, k); if (have >= (k === 'lif' ? 60 : k === 'ore' ? 120 : k === 'book' || k === 'charm' || k === 'boncuk' ? 3 : 8)) continue;
       const l = mk.goodsFor(k).find((x) => x.sellerId !== this.p.dbId && x.price <= budget && x.unit <= goodRef(k, 1) * 2.2); if (!l) continue;
       if (this.rpc('market.buy', { id: l.id }).ok) { budget -= l.price; this.tot.mktBought++; this.ext.goodBought = (this.ext.goodBought ?? 0) + 1; mk.invalidate(); }
     }

@@ -118,6 +118,12 @@ export class Engine {
       for (const m of ix.bosses) if (m.contrib.size && !this.bossStart.has(m.bossId)) { this.bossStart.set(m.bossId, w.now); bossTouch.add(m.bossId); }
       this.rig.tick();
     }
+    // süren zindan koşuları dilim bitince yarıda kalmasın (dilim kısa tutulur; zindan 6–10 dk sürer): bitene kadar en çok 14 dk ek tick
+    for (let t = 0; t < 14 * 600 && w.dungeons.size > 0 && [...w.dungeons.values()].some((r) => r.state !== 'won' && r.state !== 'lost' || r.exitAt > w.now); t++) {
+      const ix = this.index(); for (const { a } of online) a.step(ix); if (t % 20 === 0) this.trackDungeons(); this.rig.tick();
+      if (![...w.dungeons.values()].some((r) => r.state === 'wave' || r.state === 'gap' || r.state === 'boss') && ![...w.lobbies.values()].length) break;
+    }
+    this.trackDungeons();
     // dilim sonu: ölçekleme (gerçek ödül tabloları), ikinci yurt ziyareti, çıkış
     const log: SliceLog = { day: this.day, slice: si, online: online.length, riftsOpened: this.riftOpen, riftsClosed: this.riftDone, riftsFailed: 0, bossKills: this.bossFights.length - bossKills0, occBuckets: {}, campUse, tickMs: 0 };
     for (const { a, mins } of online) {
