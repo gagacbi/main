@@ -402,7 +402,7 @@ if (want('harita')) {
   // Dokuma Tezgâhı + kostüm (taze sayfa)
   await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
   await gm3('tp hub'); await sleep(1500); await gm3('gold 3000000'); await gm3('cos mats'); await gm3('cos give 3 1'); await gm3('cos give 2 5'); await gm3('cos loom');
-  const LP = (await import('../../shared/costume')).LOOM_POS; await gm3(`tp ${LP.x - 3} ${LP.z}`); await sleep(2200); await pg3.keyboard.press('e'); await sleep(1500); await sh3('40-dokuma-tezgahi');
+  const LP = (await import('../../shared/costume')).LOOM_POS; await gm3(`tp ${LP.x - 3} ${LP.z}`); await sleep(3000); for (let i = 0; i < 6 && !(await pg3.$('.panel')); i++) { await pg3.keyboard.press('e'); await sleep(2000); } await sh3('40-dokuma-tezgahi');
   const lp = await pg3.textContent('.panel');
   check('H15.tezgah-paneli', /Dokuma Tezgâhı/.test(lp ?? '') && /Günlük tur/.test(lp ?? '') && /Haftalık tur/.test(lp ?? '') && /Başarı şansı/.test(lp ?? '') && /Hanlık/.test(lp ?? '') && /Efsun ekle/.test(lp ?? ''), 'Tezgâh paneli: günlük/haftalık üretim, şansa bağlı üretim, kostüm kartları (efsun ekle/değiştir/uzat)');
   await pg3.click('.costume [data-act="cos"][data-op="wear"]'); await sleep(1800); await pg3.keyboard.press('Escape'); await sleep(900); await sh3('41-kostum-giyili');
