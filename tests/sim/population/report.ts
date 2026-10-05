@@ -11,6 +11,8 @@ const n = (x: number) => Math.round(x).toLocaleString('tr-TR'); const f1 = (x: n
 const tab = (head: string[], rows: (string | number)[][]) => `| ${head.join(' | ')} |\n|${head.map(() => '---').join('|')}|\n${rows.map((r) => `| ${r.join(' | ')} |`).join('\n')}`;
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0); const avg = (a: number[]) => (a.length ? sum(a) / a.length : 0); const med = (a: number[]) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
 
+const mapMin = (a: any, m: string) => ((a.mapTicks?.[m] ?? 0) / 600);
+const MAPN: Record<string, string> = { otlak: 'Kutlu Otlak', bozkir: 'Yazık Bozkır', erlik: 'Erlik Diyarı' };
 // ── karakter başına çıkarım ──
 interface Ins { name: string; arch: string; level0: number; level1: number; prog0: number; prog1: number; gold1: number; hours: number; kills: number; deaths: number; deathsPerH: number; defMain: string; defMainPct: number; mainShare: number; defs: Record<string, number>; churn: number; reasons: string[]; rewardsPerH: number; stagn: number; worthGain: number; income: number; spent: number; blocked: number }
 const ins: Ins[] = agents.map((a) => {
@@ -63,6 +65,10 @@ Aldığı hasar: ${threat} · oyuncu hasarı ${n(a.dmgByKind.pl ?? 0)} · zehir 
 Kuşanılan:
 - ${eq || 'yok'}
 
+## Harita, bayrak, zindan, kostüm
+Harita süresi: ${['otlak', 'bozkir', 'erlik'].map((m) => `${MAPN[m]} ${f1(mapMin(a, m))} dk`).join(' · ')} · PvP bayrağı ${a.final.pvp ? 'AÇIK' : 'kapalı'} · zindan: sıraya ${a.ext?.dunQueued ?? 0}, bitirme ${JSON.stringify(a.final.dun)}, içeride ölüm ${a.ext?.dunDeaths ?? 0}
+Kostüm: ${a.final.cos ? `${a.par.cos ? 'ilgili' : 'ilgisiz'} · üretim ${a.ext?.cosMade ?? 0} başarılı/${a.ext?.cosFailed ?? 0} başarısız · uzatma ${a.ext?.extends ?? 0} · giyili ${a.final.cos.worn ? `basamak ${a.final.cos.worn.tier} (${a.final.cos.worn.lines} efsun)` : 'yok'}` : 'hiç dokunmadı'}
+
 ## Pazar
 İlan ${a.tot.mktListed} · alış ${a.tot.mktBought} · pazar neti ${n(sum(dr.map((d: any) => d.marketNet)))} akçe
 
@@ -107,6 +113,41 @@ S.CHURN = `Düşük ${risk.low} · orta ${risk.mid} · **yüksek ${risk.high}** 
 S.PERF = `Ortalama tick+ajan maliyeti ${f1(avg(SL.map((s) => s.tickMs)))} ms (dilimler: ${SL.length}); en yoğun dilim ${f1(Math.max(...SL.map((s) => s.tickMs)))} ms/tick, çevrimiçi ${Math.max(...SL.map((s) => s.online))} oyuncu.`;
 S.META = `${D.meta.N} oyuncu · ${D.meta.DAYS} gün · dilim ${D.meta.W} dk (günde 4 dilim) · tohum ${D.meta.SEED} · gerçek süre ${Math.round(D.meta.wallSec / 60)} dk`;
 S.MKT2 = (() => { const t = agents.filter((a) => a.arch === 'tuccar'); const prof = t.map((a) => sum(a.days.map((d: any) => d.marketNet))); return `Tüccar/zanaatkâr pazar neti: ortalama ${n(avg(prof))} akçe (en iyi ${n(Math.max(...prof, 0))}); üretilen ${D.stats.crafted} parça, üretim maliyeti ${n(D.stats.craftGold)} akçe; çanta doluluğundan kaybolan ganimet ${n(D.stats.lostBagFull)}.`; })();
+// ── yeni içerik: haritalar, PvP bayrağı, zindan, kostüm ──
+S.MAPUSE = tab(['Harita', 'Oyuncu (≥10 dk oynayan)', 'Toplam saat', 'Öldürme/sa', 'Ölüm/sa (kişi başı)', 'Notlar'], ['otlak', 'bozkir', 'erlik'].map((m) => {
+  const who = agents.filter((a) => mapMin(a, m) >= 10); const hrs = sum(agents.map((a) => mapMin(a, m))) / 60; const k = sum(agents.map((a) => a.ext?.['k_' + m] ?? 0)); const dd = sum(agents.map((a) => a.ext?.['d_' + m] ?? 0));
+  const lv = who.map((a) => a.final.level);
+  return [MAPN[m], who.length, f1(hrs), hrs ? f1(k / hrs) : '—', hrs ? f1(dd / hrs) : '—', who.length ? `ort. Sv ${f1(avg(lv))}` : '—'];
+}));
+const dl: any[] = D.dunLog ?? []; const dunRows = ['demir', 'golge'].map((t) => { const x = dl.filter((r) => r.d === t); const w = x.filter((r) => r.state === 'won'); return [t === 'demir' ? 'Demir Madeni' : 'Gölge Mağarası', x.length, w.length, x.length ? `%${Math.round((w.length / x.length) * 100)}` : '—', w.length ? f1(avg(w.map((r) => r.sec)) / 60) : '—', x.length ? f1(avg(x.map((r) => r.n))) : '—']; });
+const qd = sum(agents.map((a) => a.ext?.dunQueued ?? 0)), denied = sum(agents.map((a) => a.ext?.dunDenied ?? 0)), dDeaths = D.dunDeaths ?? 0;
+const dunFee = sum(E.map((e: any) => e.sinks['zindan ücreti'] ?? 0)) / Math.max(1, E.length);
+const eAg = agents.filter((a) => mapMin(a, 'erlik') >= 10); const kpm = sum(eAg.map((a) => a.ext?.k_erlik ?? 0)) / Math.max(1, sum(eAg.map((a) => mapMin(a, 'erlik'))));
+S.DUN = tab(['Zindan', 'Başlayan', 'Kazanılan', 'Kazanma oranı', 'Ort. süre (dk, kazanılan)', 'Ort. parti'], dunRows)
+  + `\n\nSıraya giren ${qd} (reddedilen ${denied}); zindan içinde ölüm ${dDeaths} (başlayan koşu başına ${dl.length ? f1(dDeaths / dl.length) : '—'}); günlük ortalama zindan ücreti sink'i ${n(dunFee)} akçe. Erlik'te saha farm hızı ≈ ${f1(kpm)} öldürme/dk — bir zindan ≈ 22–36 dalga yaratığı + boss (boss ×70–110 deneyim).`;
+const flagged = agents.filter((a) => a.final.pvp), unfl = agents.filter((a) => !a.final.pvp);
+const pk = agents.map((a) => a.tot.pvpKills); const flaggedKills = sum(flagged.map((a) => a.tot.pvpKills)); const nonHunter = (g: any[]) => g.filter((a) => a.arch !== 'pvp');
+const dph = (g: any[]) => { const h = sum(g.map((a) => sum(a.days.map((d: any) => d.minutes)) / 60)); return h ? sum(g.map((a) => a.tot.deaths + a.tot.extraDeaths)) / h : 0; };
+S.FLAG = `Bayraklı oyuncu ${flagged.length}/${agents.length} (PvP avcısı arketipi hepsi bayraklı; diğer arketiplerde %${Math.round((nonHunter(flagged).length / Math.max(1, nonHunter(agents).length)) * 100)}). PvP öldürmelerin ${flaggedKills}/${sum(pk)}'i bayraklılar tarafından. `
+  + `Bayraksızlar yalnızca bayraklılara vurulabildiği için zorbalıktan etkilenmez: bayraksız (PvP avcısı dışı) oyuncuların PvP'de öldürülmesi ${sum(nonHunter(unfl).map((a) => a.tot.pvpDeaths))}, bayraklılarınki ${sum(nonHunter(flagged).map((a) => a.tot.pvpDeaths))}. Genel ölüm/sa: bayraksız ${f1(dph(nonHunter(unfl)))} · bayraklı ${f1(dph(nonHunter(flagged)))}.`;
+const cosAg = agents.filter((a) => a.final.cos); const cm = sum(cosAg.map((a) => a.ext?.cosMade ?? 0)), cf = sum(cosAg.map((a) => a.ext?.cosFailed ?? 0));
+const cosK = Object.keys(snk).filter((k) => k.startsWith('kostüm') || k === 'zindan ücreti'); const cosSink = sum(cosK.map((k) => snk[k]));
+const tiers = [0, 1, 2, 3].map((t) => sum(agents.map((a) => a.ext?.['tier' + t] ?? 0)));
+const wornT = [0, 1, 2, 3].map((t) => cosAg.filter((a) => a.final.cos.worn && a.final.cos.worn.tier === t).length);
+S.COS = tab(['Ölçü', 'Değer'], [
+  ['Kostümle ilgilenen oyuncu', `${agents.filter((a) => a.par.cos).length}/${agents.length}`], ['Tezgâh turu / toplama', `${sum(agents.map((a) => a.ext?.loomRuns ?? 0))} / ${sum(agents.map((a) => a.ext?.loomCollects ?? 0))}`],
+  ['Üretim: başarılı / başarısız', `${cm} / ${cf}${cm + cf ? ` (%${Math.round((cm / (cm + cf)) * 100)} başarı)` : ''}`], ['Üretilen basamak (Sade/Süslü/Şahane/Hanlık)', tiers.join(' / ')], ['Şu an giyili basamak (Sade/Süslü/Şahane/Hanlık)', wornT.join(' / ')],
+  ['Uzatma sayısı', sum(agents.map((a) => a.ext?.extends ?? 0))], ['Efsun yenileme (kovalayanlar)', sum(agents.map((a) => a.ext?.rerolls ?? 0))], ['Şans eşyası alımı', sum(agents.map((a) => a.ext?.luckBought ?? 0))],
+  ['Günlük ortalama kostüm + zindan sink\'i', `${n(cosSink)} akçe (toplam sink'in %${Math.round((cosSink / Math.max(1, snkT)) * 100)}'i)`],
+]) + `\n\nKostüm sink\'i kategorilere göre: ${cosK.map((k) => `${k} ${n(snk[k])}`).join(' · ') || '—'}.`;
+{ // Otlak A/B: aynı tohum, yeni oyuncular Otlak'a gitmeyince
+  const abPath = 'docs/balans/populasyon-ab/ham.json';
+  if (existsSync(abPath) && !process.env.POP_OUT) {
+    const B = JSON.parse(readFileSync(abPath, 'utf8')); const grp = (A: any[]) => A.filter((a) => a.seedLevel <= 14 && ['yeni', 'gundelik', 'tuccar', 'sosyal', 'surucu'].includes(a.arch));
+    const m = (A: any[]) => { const g = grp(A); const h = sum(g.map((a) => sum(a.days.map((d: any) => d.minutes)) / 60)); const lv = g.map((a) => a.final.level - a.seedLevel); return [g.length, h ? f1(sum(g.map((a) => a.tot.deaths + a.tot.extraDeaths)) / h) : '—', f1(avg(lv)), f1(avg(g.map((a) => a.tot.pvpDeaths))), g.length ? f1(avg(g.map((a) => a.frustration))) : '—']; };
+    S.OTLAKAB = tab(['Grup (başlangıç ≤ Sv14)', 'Oyuncu', 'Ölüm/sa', 'Ort. seviye kazancı', 'Ort. PvP ölümü', 'Ort. hayal kırıklığı'], [['Kutlu Otlak açık (varsayılan)', ...m(agents)], ['Otlak yok (hepsi Bozkır)', ...m(B.agents)]]);
+  } else S.OTLAKAB = '_(A/B çalıştırılmadı: `POP_NOOTLAK=1 POP_OUT=docs/balans/populasyon-ab ...`)_';
+}
 const tpl = readFileSync('docs/POPULASYON_RAPORU.sablon.md', 'utf8');
 if (!process.env.POP_OUT) writeFileSync('docs/POPULASYON_RAPORU.md', tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => String(S[k] ?? `{{${k}?}}`)));
 writeFileSync(`${OUT}/ozet.json`, JSON.stringify({ S, ins, risk }, null, 1));

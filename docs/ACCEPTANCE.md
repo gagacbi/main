@@ -88,6 +88,10 @@ uçtan uca testi (gerçek Chromium, ekran görüntüsü / ölçüm), **B** = bui
 | H8 | Seviye grubu içeriği: saha bossları, kilometre taşı armağanı, aura | I, E |
 | H10 | Oyuncular arası pazar (ilan, satın alma, vergi, kısıtlar, posta, korunum) | I |
 | H11 | Nüfus simülasyonu: 150 oyuncu, karakter başına rapor, lamba analizi | simülasyon, doküman |
+| H12 | Çoklu harita (Bozkır, Kutlu Otlak, Erlik Diyarı), kapı taşı yolculuğu, bölgeye duyarlı sistemler | I, U, E |
+| H13 | İsteğe bağlı PvP bayrağı + yeni oyuncu bölgesi (PvP yok) | I, E |
+| H14 | Parti zindanları (Demir Madeni, Gölge Mağarası): ücret, günlük hak, dalga + boss, ödül | I, E |
+| H15 | Kostüm: Dokuma Tezgâhı, şansa bağlı üretim, efsunlama, süre/uzatma, akçe sinki | U, I, E |
 | H9 | Sokak lambası avı: sistemlerin kesiştiği yerlerde arayan testler, PvP eşleşme matrisi, belgelenmiş bulgular | I, doküman |
 
 ## G. Kalite kapısı

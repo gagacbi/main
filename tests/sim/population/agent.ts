@@ -3,12 +3,16 @@ import {
   type DmgKind, type Item, type Slot, type Spec,
 } from '../../../shared/game';
 import { dist2, type Camp } from '../../../shared/world';
+import { MAPS, regionAt, type MapId } from '../../../shared/maps';
+import { DUNGEONS } from '../../../shared/dungeon';
+import { COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
+import { gatePos } from '../../../shared/game';
 import type { Mob, Player } from '../../../server/world';
 import type { Arch } from './archetypes';
 import type { Engine } from './engine';
 
-export type Activity = 'farm' | 'boss' | 'rift' | 'pvp';
-export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
+export type Activity = 'farm' | 'boss' | 'rift' | 'pvp' | 'dun';
+export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
 export interface DayRec { day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
 
 const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
@@ -17,9 +21,10 @@ const DEFAULT_ORDER = [0, 1, 5, 4, 3, 2];
 /** Bir oyuncunun kararlarını ve ölçümlerini taşıyan ajan. */
 export class Agent {
   p!: Player; activity: Activity = 'farm'; camp: Camp | null = null; resting = false; noticeAt: number[] = [0, 0, 0, 0, 0, 0];
+  map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
   victim: number | null = null; bossTarget: Mob | null = null; fightBackUntil = 0; fightBackId = 0;
   // ölçümler
-  days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0 };
+  days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0, dun: 0 };
   tot = { kills: 0, extraKills: 0, deaths: 0, extraDeaths: 0, bossKills: 0, riftCloses: 0, pvpKills: 0, pvpDeaths: 0, minutes: 0, upgradesOk: 0, upgradesFail: 0, destroyed: 0, lostBagFull: 0, rare: 0, mktListed: 0, mktSold: 0, mktBought: 0, mktProfit: 0, blocked: 0, pierced: 0 };
   dmgByKind: Record<string, number> = { kilic: 0, cift: 0, bicak: 0, yay: 0, buyu: 0, pl: 0, dot: 0 }; deathBy: Record<string, number> = {};
   lastRewardMin = 0; maxRewardGap = 0; sinceReward = 0; frustration = 0; failStreak = 0; maxFailStreak = 0; levelAtDay: number[] = []; farmMin = 0; farmKills = 0; farmDeaths = 0; rate = 18; deathRate = 0.01;
@@ -95,6 +100,7 @@ export class Agent {
     this.sellJunk();
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
+    this.applyFlag(); this.costumeRoutine();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
   }
   /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
@@ -197,27 +203,105 @@ export class Agent {
     const r = this.eng.rng(); const a = this.arch.act; const L = this.d.level; let t = r * (a.farm + a.boss + a.rift + a.pvp);
     let act: Activity = 'farm'; if ((t -= a.farm) < 0) act = 'farm'; else if ((t -= a.boss) < 0) act = 'boss'; else if ((t -= a.rift) < 0) act = 'rift'; else act = 'pvp';
     if (act === 'boss' && !this.pickBoss()) act = 'farm';
-    if (act === 'rift' && L < 5) act = 'farm'; if (act === 'pvp' && L < 8) act = 'farm';
-    this.activity = act; this.pickCamp();
+    if (act === 'rift' && (L < 5 || this.map === 'otlak')) act = 'farm'; if (act === 'pvp' && (L < 8 || this.map === 'otlak' || !this.par.flag)) act = 'farm';
+    if (this.map === 'erlik' && this.dunWanted()) act = 'dun';
+    this.activity = act; this.dunPhase = 0; this.pickCamp();
   }
   pickBoss(): boolean {
     const L = this.d.level; let best: Mob | null = null;
-    for (const m of this.w.mobs.values()) if (m.bossId && !m.dead && m.lvl >= L - 6 && m.lvl <= L + 8) { if (!best || Math.abs(m.lvl - L - 2) < Math.abs(best.lvl - L - 2)) best = m; }
+    for (const m of this.w.mobs.values()) if (m.bossId && !m.dun && m.reg === this.map && !m.dead && m.lvl >= L - 6 && m.lvl <= L + 8) { if (!best || Math.abs(m.lvl - L - 2) < Math.abs(best.lvl - L - 2)) best = m; }
     this.bossTarget = best; return !!best;
   }
   pickCamp() {
-    const L = this.d.level; const par = this.par; const camps = this.w.camps; const mode = this.arch.camp;
+    const L = this.d.level; const par = this.par; const camps = this.w.camps.filter((c) => c.map === this.map); const mode = this.arch.camp; const mp = MAPS[this.map];
     // haritayı okuyan oyuncu: tehlikeli (≥ +2 seviye) kampa gitmez ve kalabalık (≥8) kamptan kaçınır (mini haritadaki renk ve sayı)
-    let want = Math.max(1, Math.min(48, L + (par.readsMap ? Math.min(par.offset, 1) : par.offset))); let pool = camps;
+    let want = Math.max(mp.lv[0], Math.min(mp.lv[1], L + (par.readsMap ? Math.min(par.offset, 1) : par.offset))); let pool = camps;
     if (par.readsMap && mode !== 'random') {
       const ok = camps.filter((c) => c.level >= want - 3 && c.level <= want && (this.eng.occupancy.get(c.id) ?? 0) < 8);
-      if (ok.length) { this.camp = ok.sort((a, b) => (this.eng.occupancy.get(a.id) ?? 0) - (this.eng.occupancy.get(b.id) ?? 0) || Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z))[Math.floor(this.eng.rng() * Math.min(3, ok.length))]; return; }
+      if (ok.length) { this.camp = ok.sort((a, b) => (this.eng.occupancy.get(a.id) ?? 0) - (this.eng.occupancy.get(b.id) ?? 0) || this.dc(a) - this.dc(b))[Math.floor(this.eng.rng() * Math.min(3, ok.length))]; return; }
     }
     if (par.readsMap && mode === 'random') want = Math.min(want, L + 1);
-    if (mode === 'random') { const lo = Math.max(1, L - 4), hi = Math.min(48, L + 2); pool = camps.filter((c) => c.level >= lo && c.level <= hi); if (!pool.length) pool = camps; this.camp = pool[Math.floor(this.eng.rng() * pool.length)]; return; }
+    if (mode === 'random') { const lo = Math.max(mp.lv[0], L - 4), hi = Math.min(mp.lv[1], L + 2); pool = camps.filter((c) => c.level >= lo && c.level <= hi); if (!pool.length) pool = camps.slice().sort((a, b) => Math.abs(a.level - want) - Math.abs(b.level - want)).slice(0, 4); this.camp = pool[Math.floor(this.eng.rng() * pool.length)]; return; }
     if (mode === 'crowd') { let best: Camp | null = null, bn = -1; for (const c of camps) { if (c.level < L - 3 || c.level > L + 1) continue; const n = this.eng.occupancy.get(c.id) ?? 0; if (n > bn) { bn = n; best = c; } } if (best) { this.camp = best; return; } }
-    const sorted = camps.slice().sort((a, b) => Math.abs(a.level - want) - Math.abs(b.level - want) || Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
+    const sorted = camps.slice().sort((a, b) => Math.abs(a.level - want) - Math.abs(b.level - want) || this.dc(a) - this.dc(b));
     const bestDelta = Math.abs(sorted[0].level - want); this.camp = sorted.filter((c) => Math.abs(c.level - want) === bestDelta)[Math.floor(this.eng.rng() * Math.min(2, sorted.filter((c) => Math.abs(c.level - want) === bestDelta).length))] ?? sorted[0];
+  }
+
+
+  // ───────────── harita, PvP bayrağı, zindan, kostüm ─────────────
+  /** kampın bölge merkezine uzaklığı (yakın olan önce) */
+  private dc(c: Camp) { const g = regionAt(c.x, c.z); return g ? Math.hypot(c.x - g.cx, c.z - g.cz) : 0; }
+  /** dilim başında hangi haritada oynanacağı: yeni oyuncu öğreticiden Otlak'ı bulur, zirve oyuncu Erlik'e gider */
+  pickMap() {
+    const L = this.d.level; const x = this.arch.x; const r = this.eng.rng(); let m: MapId = 'bozkir';
+    if (!process.env.POP_NOOTLAK && L <= 14 && r < x.otlak) m = 'otlak'; else if (L >= 38 && !process.env.POP_NOERLIK && r < x.erlik) m = 'erlik';
+    this.map = m;
+  }
+  /** kapı taşından geçiş (gerçek travel RPC'si; kapıya ışınlanıp çağırır) */
+  enterMap() {
+    const p = this.p; if (this.map === 'bozkir') return;
+    this.at(HUB.gate.x, HUB.gate.z + 2); const r = this.rpc('travel', { to: this.map });
+    if (!r.ok) { this.map = 'bozkir'; this.ext.travelFail = (this.ext.travelFail ?? 0) + 1; return; }
+    void p;
+  }
+  private applyFlag() { if (!!this.par.flag !== !!this.d.pvp) { const r = this.rpc('pvp', { on: !!this.par.flag }); if (r.ok && this.par.flag) this.ext.flagged = 1; } }
+  dunWanted() {
+    const L = this.d.level; if (L < 41) return false; const def = DUNGEONS[L >= 46 && this.eng.rng() < 0.5 ? 'golge' : 'demir']!;
+    const s = this.d.dun; const used = s && s.day === Math.floor((this.w.now + 3 * 3600000) / 86400000) ? (s.n[def.id] ?? 0) : 0;
+    return used < def.daily && this.d.gold >= def.fee * 2 && this.eng.rng() < this.arch.x.dun * 0.75;
+  }
+  private doDun(ix: { dunMobs: Mob[] }) {
+    const p = this.p; const w = this.w; const reg = regionAt(p.x, p.z); const inDun = !!reg && MAPS[reg.map].kind === 'dungeon'; this.actTicks.dun++;
+    if (inDun) {
+      this.dunPhase = 2; const run = [...w.dungeons.values()].find((r) => r.region.id === reg!.id); if (!run) { this.rpc('dungeon.leave'); this.activity = 'farm'; return; }
+      if (run.state === 'won' || run.state === 'lost') {
+        this.stop(); w.onAttack(p, { on: false }); if (!this.dunWonAt) this.dunWonAt = w.now;
+        const pending = [...w.drops.values()].some((d) => d.owner === p.id);
+        if (w.now - this.dunWonAt > 12000 || !pending) { this.dunWonAt = 0; this.rpc('dungeon.leave'); this.dunPhase = 3; this.activity = 'farm'; this.pickCamp(); } return;
+      }
+      const mobs = ix.dunMobs.filter((m) => m.dun === run.id); if (!this.fightMobs(mobs)) { const t = this.nearest(mobs, 200); if (t) this.go(t.x, t.z); else this.stop(); } return;
+    }
+    if (this.dunPhase === 2 || this.dunPhase === 3) { this.dunPhase = 3; this.activity = 'farm'; this.pickCamp(); return; }  // öldü ya da çıktı
+    if (this.dunPhase === 0) {
+      const g = gatePos('erlik'); if (regionAt(p.x, p.z)?.id !== 'erlik') { this.activity = 'farm'; return; }
+      this.at(g.x, g.z + 3); const id = p.d.level >= 46 && this.eng.rng() < 0.5 ? 'golge' : 'demir'; const open = [...w.lobbies.values()].some((l) => l.d === id);
+      let r = this.rpc('dungeon.enter', { d: id, solo: !open && this.eng.rng() < 0.35 }); if (!r.ok && !open) r = this.rpc('dungeon.enter', { d: id, solo: false });
+      if (!r.ok) { this.ext.dunDenied = (this.ext.dunDenied ?? 0) + 1; this.activity = 'farm'; return; }
+      this.dunPhase = 1; this.ext.dunQueued = (this.ext.dunQueued ?? 0) + 1; return;
+    }
+    // sırada bekle; lobi dağıldıysa (ör. kapıdan ayrıldı) farm'a dön
+    this.stop(); w.onAttack(p, { on: false }); if (![...w.lobbies.values()].some((l) => l.ids.includes(p.id))) { this.activity = 'farm'; this.dunPhase = 0; }
+  }
+  /** günlük kostüm rutini: tezgâh, üretim, giyme, efsunlama, uzatma. Harcama oyuncunun kasasıyla sınırlıdır. */
+  costumeRoutine() {
+    if (!this.par.cos || process.env.POP_NOCOS) return; const d = this.d; const w = this.w; const L = d.level; const u = costUnit(L); const now = w.now; const r = this.eng.rng;
+    this.at(LOOM_POS.x - 3, LOOM_POS.z); const cos = (a: Record<string, unknown>) => this.rpc('cos', a); const st = () => d.cos ?? (cos({ op: 'wear', id: null }), d.cos!);
+    const s = st(); const reserve = 4 * u;
+    if (s.loom && now >= s.loom.endAt) { cos({ op: 'loom.collect' }); this.ext.loomCollects = (this.ext.loomCollects ?? 0) + 1; }
+    if (!s.loom && d.gold >= reserve + 6 * u) { const weekly = this.par.cosWeekly && d.gold > reserve + 14 * u; if (cos({ op: 'loom.start', kind: weekly ? 'weekly' : 'daily' }).ok) this.ext.loomRuns = (this.ext.loomRuns ?? 0) + 1; }
+    // shop: zengin ve hedefi yüksek basamak ise şans eşyası alır
+    if (L >= COSTUME.tierLevel[2] && d.gold > reserve + 80 * u && s.luck.boncuk < 3) { cos({ op: 'buy', item: 'boncuk', n: 3 }); this.ext.luckBought = (this.ext.luckBought ?? 0) + 3; }
+    // üretim: karşılayabildiği en yüksek basamağı dener (çanta doluysa en eski/ en düşüğü bırakır)
+    for (const tier of [3, 2, 1, 0] as CostumeTier[]) {
+      if (L < COSTUME.tierLevel[tier] || s.bag.length >= COSTUME.bagMax) continue; const need = COSTUME.craftMats[tier];
+      if (!COS_MATS.every((k) => s.mats[k] >= need[k]) || d.gold < reserve + gold(L, COSTUME.craftGold[tier])) continue;
+      const boncuk = Math.min(COSTUME.boncukMax, s.luck.boncuk); const dugum = tier >= 2 && s.luck.dugum > 0 ? 1 : 0; const res = cos({ op: 'craft', tier, look: Math.floor(r() * LOOKS.length), boncuk: tier >= 2 ? boncuk : 0, dugum });
+      if (res.ok) { this.ext[res.data.ok ? 'cosMade' : 'cosFailed'] = (this.ext[res.data.ok ? 'cosMade' : 'cosFailed'] ?? 0) + 1; if (res.data.ok) { this.ext['tier' + tier] = (this.ext['tier' + tier] ?? 0) + 1; } } break;
+    }
+    // giy: en yüksek basamak, süresi dolmamış
+    const best = () => [...(s.worn ? [s.worn] : []), ...s.bag].filter((c) => !isExpired(c, now)).sort((a, b) => b.tier - a.tier || b.ench.length - a.ench.length)[0];
+    const b0 = best(); if (b0 && (!s.worn || s.worn.id !== b0.id)) cos({ op: 'wear', id: b0.id });
+    const c = s.worn; if (!c) return;
+    // efsunlama: satırları doldurur; takipçi (chase) oyuncu birkaç kez daha değiştirir
+    if (c.ench.length < COSTUME.maxLines && d.gold > reserve + 3 * addLineCost(c, L)) cos({ op: 'ench.add', id: c.id, nazar: s.luck.nazar > 0 });
+    const chase = (this.par.cosChase ?? 0) > r() ? 1 + Math.floor(r() * 3) : 0;
+    for (let i = 0; i < chase && c.ench.length && d.gold > reserve + 4 * rerollAllCost(c, L); i++) { cos({ op: 'ench.reroll', id: c.id, nazar: s.luck.nazar > 0 }); this.ext.rerolls = (this.ext.rerolls ?? 0) + 1; }
+    // uzatma: 3 günden az kaldıysa ve yatırımı varsa (efsunlu ya da Şahane+)
+    for (const q of [c, ...s.bag]) {
+      const left = q.expiresAt - now; const invest = q.ench.length >= 1 || q.tier >= 2; if (!invest) continue;
+      if (left < 3 * DAY && (left > 0 || inGrace(q, now)) && d.gold > reserve + extendCost(q, L, left <= 0)) { if (cos({ op: 'extend', id: q.id }).ok) this.ext.extends = (this.ext.extends ?? 0) + 1; }
+    }
+    void craftChance;
   }
 
   // ───────────── gerçek zamanlı davranış ─────────────
@@ -240,13 +324,15 @@ export class Agent {
     if (this.activity === 'farm') this.sliceFarmWall++;
     const p = this.p; const w = this.w; const risky = zoneAt(p.x, p.z) === 'risky';
     if (p.deadUntil > 0) { try { w.respawn(p); } catch { /* erken */ } this.resting = true; return; }
-    if (this.resting) { if (risky) { this.go(0, 0); w.onAttack(p, { on: false }); this.actTicks.rest++; return; } this.stop(); w.onAttack(p, { on: false }); this.actTicks.rest++; if (p.hp >= p.stats.maxHp * 0.95) this.resting = false; return; }
+    if (this.resting) { if (risky) { const rg = regionAt(p.x, p.z); this.go(rg ? rg.cx : 0, rg ? rg.cz : 0); w.onAttack(p, { on: false }); this.actTicks.rest++; return; } this.stop(); w.onAttack(p, { on: false }); this.actTicks.rest++; if (p.hp >= p.stats.maxHp * 0.95) this.resting = false; return; }
     if (p.hp < p.stats.maxHp * this.par.retreat) { this.resting = true; return; }
     // saldırıya karşılık
     if (p.lastDamager && w.now - p.lastCombat < 4000 && this.par.fightBack && w.players.get(p.lastDamager) && p.lastDamager !== this.fightBackId) { this.fightBackId = p.lastDamager; this.fightBackUntil = w.now + 12000; }
     const fb = this.fightBackUntil > w.now ? w.players.get(this.fightBackId) : undefined;
-    if (fb && fb.deadUntil === 0 && zoneAt(fb.x, fb.z) === 'risky') return this.attackPlayer(fb, ix, false);
+    if (fb && fb.deadUntil === 0 && zoneAt(fb.x, fb.z) === 'risky' && w.canHitPlayer(p, fb, true)) return this.attackPlayer(fb, ix, false);
+    this.mapTicks[this.map] = (this.mapTicks[this.map] ?? 0) + 1;
     switch (this.activity) {
+      case 'dun': return this.doDun(ix as never);
       case 'boss': return this.doBoss(ix);
       case 'rift': return this.doRift(ix);
       case 'pvp': return this.doPvp(ix);
@@ -274,7 +360,7 @@ export class Agent {
   }
   private doRift(ix: { riftMobs: Map<number, Mob[]> }) {
     this.actTicks.rift++; let r = null as null | { x: number; z: number; id: number; state: number }; let bd = Infinity;
-    for (const x of this.w.rifts.values()) if (x.state !== 3) { const d = dist2(this.p, x); if (d < bd) { bd = d; r = x; } }
+    for (const x of this.w.rifts.values()) if (x.state !== 3 && regionAt(x.x, x.z)?.id === this.map) { const d = dist2(this.p, x); if (d < bd) { bd = d; r = x; } }
     if (!r) { this.activity = 'farm'; return; }
     const mobs = ix.riftMobs.get(r.id) ?? []; const near = mobs.filter((m) => dist2(this.p, m) < 900);
     if (Math.sqrt(dist2(this.p, r)) > 14 && !near.length) { this.go(r.x, r.z); this.w.onAttack(this.p, { on: false }); return; }
@@ -283,10 +369,10 @@ export class Agent {
   private doPvp(ix: { campMobs: Map<number, Mob[]> }) {
     this.actTicks.pvp++; const w = this.w; const p = this.p; const L = this.d.level;
     let v = this.victim ? w.players.get(this.victim) : undefined;
-    if (!v || v.deadUntil > 0 || zoneAt(v.x, v.z) === 'safe') {
+    if (!v || v.deadUntil > 0 || zoneAt(v.x, v.z) === 'safe' || !w.pvpActive(v)) {
       this.victim = null; v = undefined; let best = Infinity;
       for (const q of w.players.values()) {
-        if (q === p || q.deadUntil > 0 || q.boy === p.boy || zoneAt(q.x, q.z) === 'safe') continue;
+        if (q === p || q.deadUntil > 0 || q.boy === p.boy || zoneAt(q.x, q.z) === 'safe' || !w.pvpActive(q)) continue;
         const dl = q.d.level - L; const ok = this.arch.pvp.lowbies ? dl <= 2 && dl >= -22 : Math.abs(dl) <= 5; if (!ok) continue;
         const d = dist2(p, q) + (this.arch.pvp.lowbies ? (dl + 22) * 30 : Math.abs(dl) * 60); if (d < best && d < 80 * 80) { best = d; v = q; }
       }

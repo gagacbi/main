@@ -17,8 +17,8 @@ for (let d = 1; d <= DAYS; d++) {
 }
 const agents = eng.agents.map((a) => ({
   name: a.name, idx: a.idx, arch: a.arch.key, archName: a.arch.name, boy: a.boy, par: a.par, seedLevel: a.seedLevel, days: a.days, events: a.events, tot: a.tot, dmgByKind: a.dmgByKind, deathBy: a.deathBy,
-  actTicks: a.actTicks, maxFailStreak: a.maxFailStreak, frustration: a.frustration, farmMin: a.farmMin, def: Object.fromEntries(Object.entries(JSON.parse(eng.rig.db.playerById(a.dbId)!.data).equip ?? {}).map(([s, it]: [string, any]) => [s, it])),
-  final: (() => { const d = JSON.parse(eng.rig.db.playerById(a.dbId)!.data); return { level: d.level, gold: d.gold, spec: d.spec, rank: d.rank, kut: d.kut, clues: d.clues?.length ?? 0, dreams: d.dreams, items: d.items.length, bag: d.bag, counters: d.counters, skillRanks: d.skillRanks }; })(),
+  actTicks: a.actTicks, ext: a.ext, mapTicks: a.mapTicks, maxFailStreak: a.maxFailStreak, frustration: a.frustration, farmMin: a.farmMin, def: Object.fromEntries(Object.entries(JSON.parse(eng.rig.db.playerById(a.dbId)!.data).equip ?? {}).map(([s, it]: [string, any]) => [s, it])),
+  final: (() => { const d = JSON.parse(eng.rig.db.playerById(a.dbId)!.data); return { pvp: !!d.pvp, cos: d.cos ? { crafted: d.cos.crafted, worn: d.cos.worn ? { tier: d.cos.worn.tier, look: d.cos.worn.look, lines: d.cos.worn.ench.length, exp: d.cos.worn.expiresAt } : null, bag: d.cos.bag.length, mats: d.cos.mats, luck: d.cos.luck } : null, dun: d.dun?.clears ?? {}, level: d.level, gold: d.gold, spec: d.spec, rank: d.rank, kut: d.kut, clues: d.clues?.length ?? 0, dreams: d.dreams, items: d.items.length, bag: d.bag, counters: d.counters, skillRanks: d.skillRanks }; })(),
 }));
-writeFileSync(`${OUT}/ham.json`, JSON.stringify({ meta: { N, DAYS, W, SEED, wallSec: Math.round((Date.now() - t0) / 1000) }, agents, econ: eng.econ, slices: eng.sliceLogs, bossFights: eng.bossFights, pvpLog: eng.pvpLog, stats: eng.stats }));
+writeFileSync(`${OUT}/ham.json`, JSON.stringify({ meta: { N, DAYS, W, SEED, wallSec: Math.round((Date.now() - t0) / 1000) }, agents, econ: eng.econ, slices: eng.sliceLogs, bossFights: eng.bossFights, dunLog: eng.dunLog, dunDeaths: eng.dunDeaths, pvpLog: eng.pvpLog, stats: eng.stats }));
 console.log(`bitti: ${Math.round((Date.now() - t0) / 1000)} sn → ${OUT}/ham.json`);

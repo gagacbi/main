@@ -360,6 +360,54 @@ if (want('icerik')) {
   await pg2.close();
 }
 
+// ───────── 10b. Haritalar, isteğe bağlı PvP, zindan, kostüm (H12–H15) ─────────
+if (want('harita')) {
+  const AN3 = 'Gezgin' + Math.floor(Math.random() * 900 + 100);
+  const seed3 = await new Bot(`ws://localhost:${srv.port}`, AN3).join('ay'); await seed3.leave(); await sleep(300); srv.ctx.db.setRole(AN3, 'admin');
+  const pg3: Page = await ctx.newPage(); pg3.on('pageerror', (e) => errors.push(e.message));
+  await pg3.goto(`${url}?name=${AN3}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  const sh3 = async (name: string) => { await pg3.screenshot({ path: `${OUT}/${name}.png` }); };
+  const gm3 = (line: string) => pg3.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
+  const reg = () => import('../../shared/maps').then((m) => m.regionAt(me3.x, me3.z)?.id);
+  await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(1500);
+  const me3 = [...world().players.values()].find((x) => x.name === AN3)!;
+  // kapı taşı: yurtta Kapı Taşı'na yaklaş, E, Kutlu Otlak kartı, geç
+  await gm3(`tp ${HUB.gate.x} ${HUB.gate.z + 4}`); await sleep(2200);
+  const prompt = await pg3.textContent('#prompt'); await pg3.keyboard.press('e'); await sleep(1200); await sh3('35-kapi-tasi');
+  const gp = await pg3.textContent('.panel');
+  check('H12.kapi-paneli', /Kapı Taşı/.test(prompt ?? '') && /Kutlu Otlak/.test(gp ?? '') && /Erlik Diyarı/.test(gp ?? '') && /İsteğe bağlı/.test(gp ?? ''), 'Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür');
+  await pg3.click('.gatecard[data-map="otlak"] button[data-act="travel"]'); await sleep(2500);
+  const zone1 = await pg3.textContent('#zone'); await sh3('36-kutlu-otlak');
+  check('H12.otlak', (await reg()) === 'otlak' && /Otlak Kampı/.test(zone1 ?? ''), `Kapıdan geçince Kutlu Otlak'ta (bölge=${await reg()}); bölge etiketi: ${(zone1 ?? '').replace(/\s+/g, ' ').slice(0, 40)}`);
+  // kuralı giriş anında oku: PvP düğmesi Otlak'ta kapalı/pasif
+  const pvpOtlak = await pg3.textContent('#pvpbtn');
+  check('H13.otlak-pvp-yok', /Kapalı/.test(pvpOtlak ?? '') && (await pg3.$eval('#pvpbtn', (b) => b.classList.contains('na'))), `Otlak'ta PvP düğmesi pasif: "${(pvpOtlak ?? '').trim()}"`);
+  // PvP bayrağı yurtta (Bozkır): aç
+  await gm3('tp hub'); await sleep(1800); await pg3.click('#pvpbtn'); await sleep(1200);
+  const pvpOn = await pg3.textContent('#pvpbtn'); await sh3('37-pvp-bayragi');
+  check('H13.bayrak', me3.d.pvp === true && /Açık/.test(pvpOn ?? ''), `HUD düğmesiyle PvP bayrağı açıldı: sunucu=${me3.d.pvp}, düğme="${(pvpOn ?? '').trim()}"`);
+  me3.lastPvp = 0; await pg3.click('#pvpbtn'); await sleep(900);
+  check('H13.bayrak-kapat', me3.d.pvp === false, 'PvP yoksa bayrak hemen kapanır');
+  // Erlik Diyarı + zindan
+  await gm3('level 46'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(2500); await pg3.keyboard.press('e'); await sleep(1200); await sh3('38-erlik-kapi-zindan');
+  const dp = await pg3.textContent('.panel');
+  check('H14.zindan-paneli', /Demir Madeni/.test(dp ?? '') && /Gölge Mağarası/.test(dp ?? '') && /Giriş ücreti/.test(dp ?? '') && /Bugün kalan hak/.test(dp ?? '') && /Tek başına gir/.test(dp ?? ''), 'Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)');
+  const g0 = me3.d.gold; await pg3.click('.gatecard[data-dun="demir"] button[data-solo="1"]'); await sleep(2500);
+  await pg3.waitForFunction('(window.__game.me.dun && window.__game.me.dun.run)', null, { timeout: 60000 }).catch(() => undefined); await sleep(9000); await sh3('39-zindan');
+  const bar = await pg3.textContent('#dunbar');
+  check('H14.zindan-giris', (await reg())?.startsWith('demir#') === true && me3.d.gold <= g0 - 900 && /Dalga|Hazırlan/.test(bar ?? ''), `Zindan başladı: bölge=${await reg()}, ücret düştü (${g0 - me3.d.gold} akçe), HUD: "${(bar ?? '').replace(/\s+/g, ' ').trim().slice(0, 50)}"`);
+  await pg3.click('#dunbar [data-dunleave]'); await sleep(2500);
+  check('H14.zindan-cikis', (await reg()) === 'erlik', 'Zindandan çıkış düğmesi Erlik kampına döndürür');
+  // Dokuma Tezgâhı + kostüm
+  await gm3('tp hub'); await sleep(1500); await gm3('gold 3000000'); await gm3('cos mats'); await gm3('cos give 3 1'); await gm3('cos give 2 5'); await gm3('cos loom');
+  const LP = (await import('../../shared/costume')).LOOM_POS; await gm3(`tp ${LP.x - 3} ${LP.z}`); await sleep(2200); await pg3.keyboard.press('e'); await sleep(1500); await sh3('40-dokuma-tezgahi');
+  const lp = await pg3.textContent('.panel');
+  check('H15.tezgah-paneli', /Dokuma Tezgâhı/.test(lp ?? '') && /Günlük tur/.test(lp ?? '') && /Haftalık tur/.test(lp ?? '') && /Başarı şansı/.test(lp ?? '') && /Hanlık/.test(lp ?? '') && /Efsun ekle/.test(lp ?? ''), 'Tezgâh paneli: günlük/haftalık üretim, şansa bağlı üretim, kostüm kartları (efsun ekle/değiştir/uzat)');
+  await pg3.click('.costume [data-act="cos"][data-op="wear"]'); await sleep(1800); await pg3.keyboard.press('Escape'); await sleep(900); await sh3('41-kostum-giyili');
+  check('H15.kostum-giy', me3.d.cos?.worn?.tier === 3 && (await pg3.evaluate(() => (window as any).__game.selfView.cs)) > 0, `Kostüm giyildi: sunucu basamak=${me3.d.cos?.worn?.tier}, istemci avatarı yeniden kuruldu (kod=${await pg3.evaluate(() => (window as any).__game.selfView.cs)})`);
+  await pg3.close();
+}
+
 // ───────── 11. Ölçümler (F7, A10) ─────────
 const perf = await ev<{ fps: number; meshes: number; active: number; draw: number; tris: number; cpuMs: number }>(`(() => {
   const sc = g.gs.scene; const e = g.gs.engine; const t0 = performance.now(); for (let i = 0; i < 30; i++) sc.render(); const cpu = (performance.now() - t0) / 30;

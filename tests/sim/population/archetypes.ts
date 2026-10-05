@@ -22,8 +22,18 @@ export interface Arch {
   /** oba özeni (bağış, bina, sefer) */ oba: number;
   spec: 'kilic' | 'kalkan' | 'random';
   /** başlangıç seviyesi aralığı (nüfusun yaşı karışık) */ start: [number, number];
+  /** yeni içerik (harita, PvP bayrağı, zindan, kostüm) eğilimleri: olasılıklar */
+  x: { otlak: number; erlik: number; flag: number; dun: number; cos: number; weekly: number; chase: number };
 }
-const A = (a: Arch) => a;
+const A = (a: Omit<Arch, 'x'>): Arch => ({ ...a, x: EXTRA[a.key] });
+/** Yeni içerik eğilimleri (Kutlu Otlak, Erlik Diyarı, PvP bayrağı, zindan, kostüm). Lamba: oyuncu ışığı gördüğü yere gider — yeni oyuncu otlağı öğreticiden, zirve oyuncu zindanı ödülden bulur. */
+const EXTRA: Record<string, Arch['x']> = {
+  cekirdek: { otlak: 0.6, erlik: 0.85, flag: 0.3, dun: 0.9, cos: 0.6, weekly: 0.3, chase: 0.3 }, gundelik: { otlak: 0.8, erlik: 0.35, flag: 0.1, dun: 0.25, cos: 0.35, weekly: 0.1, chase: 0.1 },
+  boss: { otlak: 0.5, erlik: 0.8, flag: 0.3, dun: 0.8, cos: 0.5, weekly: 0.3, chase: 0.2 }, catlak: { otlak: 0.5, erlik: 0.8, flag: 0.35, dun: 0.6, cos: 0.5, weekly: 0.3, chase: 0.2 },
+  pvp: { otlak: 0.4, erlik: 0.9, flag: 1.0, dun: 0.5, cos: 0.4, weekly: 0.2, chase: 0.4 }, tuccar: { otlak: 0.6, erlik: 0.3, flag: 0.05, dun: 0.3, cos: 0.9, weekly: 0.7, chase: 0.6 },
+  teorisyen: { otlak: 0.4, erlik: 0.85, flag: 0.2, dun: 0.8, cos: 0.5, weekly: 0.3, chase: 0.7 }, yeni: { otlak: 0.95, erlik: 0.2, flag: 0.05, dun: 0.0, cos: 0.15, weekly: 0.05, chase: 0.0 },
+  sosyal: { otlak: 0.6, erlik: 0.4, flag: 0.1, dun: 0.4, cos: 0.5, weekly: 0.3, chase: 0.1 }, surucu: { otlak: 0.6, erlik: 0.6, flag: 0.1, dun: 0.4, cos: 0.3, weekly: 0.1, chase: 0.1 },
+};
 export const ARCHS: Arch[] = [
   A({ key: 'cekirdek', name: 'Çekirdek farmcı', weight: 14, minutes: [240, 420], slices: [0.2, 0.7, 0.8, 0.9], camp: 'best', offset: [0, 1], skill: [0.85, 1], retreat: [0.25, 0.35], act: { farm: 0.8, boss: 0.1, rift: 0.1, pvp: 0 }, upgrade: { safeUp: 4, riskUp: 6, charm: true, book: true }, defAware: 0.6, smartWeapon: 1, market: { sell: 0.5, buy: 0.4, flip: false, craft: true }, pvp: { fightBack: 0.5, lowbies: false, flee: 0.3 }, oba: 0.8, spec: 'kilic', start: [8, 40] }),
   A({ key: 'gundelik', name: 'Gündelik oyuncu', weight: 24, minutes: [45, 120], slices: [0.05, 0.3, 0.5, 0.8], camp: 'random', offset: [-3, 1], skill: [0.5, 0.85], retreat: [0.2, 0.35], act: { farm: 0.9, boss: 0.03, rift: 0.07, pvp: 0 }, upgrade: { safeUp: 3, riskUp: 4, charm: false, book: false }, defAware: 0.1, smartWeapon: 0.7, market: { sell: 0.3, buy: 0.1, flip: false, craft: false }, pvp: { fightBack: 0.3, lowbies: false, flee: 0.4 }, oba: 0.3, spec: 'random', start: [1, 25] }),

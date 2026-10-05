@@ -49,6 +49,14 @@ yaratık çağırma, kukla ve DPS ölçümü, çatlak aç/kapat, zaman ileri sar
 * **Tasarım felsefesi (lamba etkisi):** [`docs/TASARIM_FELSEFESI.md`](docs/TASARIM_FELSEFESI.md), özellik şablonu [`docs/OZELLIK_SABLONU.md`](docs/OZELLIK_SABLONU.md); **150 oyunculu nüfus simülasyonu** ve karakter başına raporlar: [`docs/POPULASYON_RAPORU.md`](docs/POPULASYON_RAPORU.md) (`npx tsx tests/sim/population/run.ts`).
 * **Test felsefesi:** [`docs/TEST_FELSEFESI.md`](docs/TEST_FELSEFESI.md) (sokak lambası etkisi) ve PvP eşleşme matrisi: `npx tsx tests/sim/pvp.ts`.
 
+## Haritalar, PvP bayrağı, zindan ve kostüm
+
+* **Haritalar:** tek dünyada üç uzak bölge — **Yazık Bozkır** (ana saha, Sv 1–48), **Kutlu Otlak** (yeni oyuncu bölgesi: Sv 1–14 kamp, ilk boss, PvP yok, Sv 20'den sonra girilmez), **Erlik Diyarı** (zirve: Sv 38–54 kamp, 3 boss, çatlaklar). Yurdun güneydoğusundaki **Kapı Taşı** (`E`) bölgeler arası geçirir; dövüşten sonra 8 sn beklenir.
+* **İsteğe bağlı PvP:** sağ üstteki `PvP` düğmesi ya da `/pvp`. İki taraf da bayraklıysa vuruşulur (güvenli bölge, Otlak ve zindan hariç); bayraklıyken yaratıklardan %10 fazla kazanırsın; kapatmak için PvP'den 30 sn uzak durulur.
+* **Zindanlar** (Erlik kampındaki Kapı Taşı): **Demir Madeni** (Sv 41+) ve **Gölge Mağarası** (Sv 46+). 4 kişilik parti (30 sn toplanma) ya da tek başına; giriş ücreti akçe, günde 3 hak; dalgalar + boss; süre sınırlı; boss garanti destansı+ ganimet, kostüm malzemesi ve şans eşyası düşürür.
+* **Kostüm** (yurttaki **Dokuma Tezgâhı**, `E`): süreli, minimal özellikli giysi. Tezgâh günlük/haftalık ücretle malzeme dokur → şansa bağlı kostüm üretimi (Şans Boncuğu / Koruyucu Düğüm / Nazar Taşı şansı artırır) → efsunlama, değiştirme, görünüm değiştirme → **efsunlar yalnızca kostüm yaşadığı sürece kalır; akçeyle +1 hafta uzatılır**. Maliyetler seviyeyle ölçeklenir (`shared/costume.ts`).
+* Tasarım gerekçeleri ve lamba testi cevapları: [`docs/ozellikler/HARITA_KOSTUM.md`](docs/ozellikler/HARITA_KOSTUM.md). GM: `/gm tp otlak|erlik`, `/gm cos mats|give|expire|loom`.
+
 ## Gizem
 
 Oyunun bir sırrı var: *Mühür dışarıdan açıldı.* Beş ayrı sistem birer iplik besler (Kayıp Yazıtlar, Kurdun Rüyaları, Ak Sakal, Balbal Taşları, Mühür Kırıkları);
