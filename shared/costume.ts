@@ -10,8 +10,9 @@ export type CostumeTier = 0 | 1 | 2 | 3;
 export const TIER_NAMES = ['sade', 'susulu', 'sahane', 'hanlik'] as const;
 export type CosMat = 'lif' | 'boya' | 'ipek' | 'nakis';
 export const COS_MATS: CosMat[] = ['lif', 'boya', 'ipek', 'nakis'];
-export type LuckKey = 'boncuk' | 'dugum' | 'nazar';
-export const LUCK_KEYS: LuckKey[] = ['boncuk', 'dugum', 'nazar'];
+/** şans eşyaları + Efsun Değiştirme Kağıdı (kagit): her efsun değiştirmede 1 kağıt harcanır (Metin2 efsun kâğıdı gibi) */
+export type LuckKey = 'boncuk' | 'dugum' | 'nazar' | 'kagit';
+export const LUCK_KEYS: LuckKey[] = ['boncuk', 'dugum', 'nazar', 'kagit'];
 export type LoomKind = 'daily' | 'weekly';
 
 export interface Costume { id: string; look: number; tier: CostumeTier; expiresAt: number; ench: Ench[]; rr: number }
@@ -22,11 +23,11 @@ export interface CostumeState {
   /** üst üste başarısız üretim sayısı (şans payı) */
   pity: number; crafted: number;
 }
-export const newCostumeState = (): CostumeState => ({ worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0 }, loom: null, pity: 0, crafted: 0 });
+export const newCostumeState = (): CostumeState => ({ worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 });
 
 export const DAY = 86400000;
 export const COSTUME = {
-  baseDays: 14, extendDays: 7, maxDays: 28, graceDays: 3, bagMax: 5, maxLines: 3,
+  baseDays: 7, extendDays: 7, maxDays: 14, graceDays: 0, bagMax: 5, maxLines: 3,
   /** kostüm basamağı için en düşük seviye */
   tierLevel: [1, 12, 28, 42] as number[],
   /** başlangıç efsun satırı */
@@ -39,8 +40,9 @@ export const COSTUME = {
   craftMats: [{ lif: 12, boya: 2, ipek: 0, nakis: 0 }, { lif: 20, boya: 6, ipek: 3, nakis: 0 }, { lif: 30, boya: 10, ipek: 8, nakis: 1 }, { lif: 45, boya: 16, ipek: 14, nakis: 2 }] as Record<CosMat, number>[],
   craftChance: [0.85, 0.6, 0.38, 0.18] as number[], pityStep: 0.04, pityMax: 0.25, boncukStep: 0.08, boncukMax: 3, dugumReturn: 0.6,
   addLine: 4, rerollAll: 2, rerollAllPerLine: 2, rerollLine: 3, rerollGrow: 0.15, lookChange: 3,
-  extend: [1.5, 4, 10, 24] as number[], extendPerLine: 0.2, extendGraceMult: 2,
-  shop: { boncuk: 6, dugum: 14, nazar: 10 } as Record<LuckKey, number>,
+  extend: [8, 22, 55, 130] as number[], extendPerLine: 0.25, extendGraceMult: 2,
+  /** efsun değiştirme: kağıt + akçe (kağıt tezgâh dükkânından ya da zindan/tezgâh düşüşünden) */
+  shop: { boncuk: 6, dugum: 14, nazar: 10, kagit: 3 } as Record<LuckKey, number>,
 };
 /** Maliyet birimi: seviye 10 ≈ 1.6 bin, 30 ≈ 9 bin, 45 ≈ 18 bin akçe */
 export const costUnit = (level: number) => Math.max(60, Math.round(40 * Math.pow(Math.max(1, level), 1.6) / 10) * 10);
@@ -90,7 +92,7 @@ export function loomRoll(rng: Rng): { mats: Partial<Record<CosMat, number>>; luc
   const mats: Partial<Record<CosMat, number>> = { lif: 6 + Math.floor(rng() * 5) };
   const boya = Math.floor(rng() * 3); if (boya) mats.boya = boya;
   if (rng() < 0.4) mats.ipek = 1; if (rng() < 0.12) mats.nakis = 1;
-  const luck: Partial<Record<LuckKey, number>> = {}; const r = rng(); if (r < 0.02) luck.boncuk = 1; else if (r < 0.03) luck.nazar = 1; else if (r < 0.035) luck.dugum = 1;
+  const luck: Partial<Record<LuckKey, number>> = {}; const r = rng(); if (r < 0.02) luck.boncuk = 1; else if (r < 0.03) luck.nazar = 1; else if (r < 0.035) luck.dugum = 1; else if (r < 0.085) luck.kagit = 1;
   return { mats, luck };
 }
 export function newCostume(rng: Rng, look: number, tier: CostumeTier, now: number): Costume {

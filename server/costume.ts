@@ -73,14 +73,16 @@ export function costumeRpc(w: World, p: Player, a: Record<string, unknown>): unk
     case 'ench.reroll': {
       needLoom(p); const c = costume(); if (isExpired(c, now)) throw new GameError('cos_expired'); if (!c.ench.length) throw new GameError('cos_no_lines');
       const nazar = a.nazar ? 1 : 0; if (nazar && s.luck.nazar < 1) throw new GameError('cos_luck');
-      pay(w, p, rerollAllCost(c, L), 'cos.ench', { op: 'reroll', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar;
+      if (s.luck.kagit < 1) throw new GameError('cos_paper');
+      pay(w, p, rerollAllCost(c, L), 'cos.ench', { op: 'reroll', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
       const n = c.ench.length; c.ench = []; for (let i = 0; i < n; i++) c.ench.push(rollLine(rng, c.tier, [LOOKS[c.look].base, ...c.ench.map((e) => e.k)], !!nazar));
       c.rr++; p.meDirty = true; w.recalc(p); return null;
     }
     case 'ench.line': {
       needLoom(p); const c = costume(); if (isExpired(c, now)) throw new GameError('cos_expired'); const i = Math.floor(Number(a.line)); if (!(i >= 0 && i < c.ench.length)) throw new GameError('cos_no_lines');
       const nazar = a.nazar ? 1 : 0; if (nazar && s.luck.nazar < 1) throw new GameError('cos_luck');
-      pay(w, p, rerollLineCost(c, L), 'cos.ench', { op: 'line', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar;
+      if (s.luck.kagit < 1) throw new GameError('cos_paper');
+      pay(w, p, rerollLineCost(c, L), 'cos.ench', { op: 'line', tier: c.tier, rr: c.rr }); s.luck.nazar -= nazar; s.luck.kagit--;
       const others = c.ench.filter((_, j) => j !== i).map((e) => e.k); c.ench[i] = rollLine(rng, c.tier, [LOOKS[c.look].base, ...others], !!nazar); c.rr++; p.meDirty = true; w.recalc(p); return null;
     }
     case 'look': {

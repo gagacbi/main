@@ -373,7 +373,7 @@ export class World {
     const b = irange(rng, 1, 2); s.mats.boya += b; got.push(`boya ${b}`);
     if (rng() < 0.5) { s.mats.ipek++; got.push('ipek 1'); }
     if (rng() < (golge ? 0.45 : 0.25)) { s.mats.nakis++; got.push('nakis 1'); }
-    if (rng() < 0.4) { s.luck.boncuk++; got.push('boncuk'); } if (rng() < 0.2) { s.luck.nazar++; got.push('nazar'); } if (rng() < 0.15) { s.luck.dugum++; got.push('dugum'); }
+    if (rng() < 0.4) { s.luck.boncuk++; got.push('boncuk'); } if (rng() < 0.2) { s.luck.nazar++; got.push('nazar'); } if (rng() < 0.15) { s.luck.dugum++; got.push('dugum'); } { const k = irange(rng, 1, 3); s.luck.kagit += k; got.push('kagit ' + k); }
     this.ledger(p, 'cos.loot', { d, got }); this.sys(p, 'sys.cos_loot'); p.meDirty = true;
   }
 

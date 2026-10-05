@@ -10,7 +10,7 @@ function setup(level = 30) {
   const cos = (a: Record<string, unknown>) => w.rpcRun(p, 'cos', a) as any;
   return { rig, w, p, cos, s: () => p.d.cos! };
 }
-const fill = (p: ReturnType<typeof setup>['p']) => { p.d.cos ??= { worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0 }, loom: null, pity: 0, crafted: 0 }; Object.assign(p.d.cos.mats, { lif: 500, boya: 200, ipek: 200, nakis: 50 }); Object.assign(p.d.cos.luck, { boncuk: 20, dugum: 20, nazar: 20 }); };
+const fill = (p: ReturnType<typeof setup>['p']) => { p.d.cos ??= { worn: null, bag: [], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 }; Object.assign(p.d.cos!.mats, { lif: 500, boya: 200, ipek: 200, nakis: 50 }); Object.assign(p.d.cos!.luck, { boncuk: 20, dugum: 20, nazar: 20, kagit: 50 }); };
 
 describe('kostüm: saf kurallar', () => {
   test('maliyet birimi seviyeyle büyür; kod/çözüm gidiş-dönüş; tezgâh yurtta ve engelsiz', () => {
@@ -69,19 +69,26 @@ describe('kostüm: sunucu akışı', () => {
     cos({ op: 'ench.add', id }); expect(() => cos({ op: 'ench.add', id })).toThrow(); // en çok 3 satır
     expect(p.stats.atk).not.toBe(hp0 * 0 - 1); w.recalc(p);
   });
-  test('süre dolunca kostüm devre dışı kalır, efsunlar yok olur; tolerans içinde uzatma (2×) kurtarır; tolerans sonrası silinir', () => {
-    const { rig, w, p, cos, s } = setup(40); fill(p); const c = newCostume(mulberry32(7), 0, 2, w.now); s().bag.push(c); cos({ op: 'wear', id: c.id });
+  test('süre dolunca kostüm devre dışı kalır ve YOK OLUR (tolerans yok); süresi dolmadan uzatılan kurtulur', () => {
+    const { rig, w, p, cos, s } = setup(40); fill(p); const c = newCostume(mulberry32(7), 0, 2, w.now); const keep = newCostume(mulberry32(8), 1, 2, w.now); s().bag.push(c, keep); cos({ op: 'wear', id: c.id });
     const mspd0 = p.stats.moveSpeed; expect(mspd0).toBeGreaterThan(computeStats({ level: 40, boy: 'gok', spec: 'none', equip: {}, kut: 0 }).moveSpeed - 1e-9);
-    rig.clock.advance(COSTUME.baseDays * DAY + 1000); rig.seconds(12);
-    expect(s().worn).toBeNull(); expect(s().bag.some((q) => q.id === c.id)).toBe(true); expect(() => cos({ op: 'wear', id: c.id })).toThrow();
-    const cost = extendCost(c, 40, true); const g = p.d.gold; cos({ op: 'extend', id: c.id }); expect(g - p.d.gold).toBe(cost); expect(cost).toBe(Math.round(extendCost(c, 40, false) * COSTUME.extendGraceMult));
-    cos({ op: 'wear', id: c.id }); expect(s().worn!.ench.length).toBe(c.ench.length);
-    rig.clock.advance((COSTUME.baseDays + 20) * DAY); rig.seconds(12); expect(s().worn).toBeNull(); expect(s().bag.find((q) => q.id === c.id)).toBeUndefined();
+    rig.clock.advance(6 * DAY); const cost = extendCost(keep, 40, false); const g = p.d.gold; cos({ op: 'extend', id: keep.id }); expect(g - p.d.gold).toBe(cost);
+    rig.clock.advance(1 * DAY + 1000); rig.seconds(12);
+    expect(s().worn).toBeNull(); expect(s().bag.some((q) => q.id === c.id)).toBe(false);   // uzatılmayan tamamen gitti
+    expect(s().bag.some((q) => q.id === keep.id)).toBe(true); expect(() => cos({ op: 'extend', id: c.id })).toThrow(); expect(() => cos({ op: 'wear', id: c.id })).toThrow();
+    expect(COSTUME.baseDays).toBe(7); expect(COSTUME.graceDays).toBe(0);
   });
-  test('uzatma: +1 hafta, en çok 4 hafta kalan; uzatma da akçe sinki; uzatma efsunlu kostümde pahalı', () => {
+  test('uzatma yüklüdür: Hanlık haftalık uzatma bir loom turunun ≥ 100 katı; efsun yenileme kağıt ister', () => {
+    expect(extendCost({ id: 'x', look: 0, tier: 3, expiresAt: 0, ench: [], rr: 0 }, 45, false)).toBeGreaterThan(gold(45, COSTUME.loomDaily) * 100);
+    const { w, p, cos, s } = setup(40); fill(p); s().bag.push(newCostume(mulberry32(5), 1, 2, w.now)); const id = s().bag[0].id; cos({ op: 'wear', id });
+    s().luck.kagit = 0; expect(() => cos({ op: 'ench.reroll', id })).toThrow(); expect(() => cos({ op: 'ench.line', id, line: 0 })).toThrow();
+    s().luck.kagit = 2; cos({ op: 'ench.reroll', id }); expect(s().luck.kagit).toBe(1); cos({ op: 'ench.line', id, line: 0 }); expect(s().luck.kagit).toBe(0);
+    cos({ op: 'buy', item: 'kagit', n: 3 }); expect(s().luck.kagit).toBe(3);
+  });
+  test('uzatma: +1 hafta, en çok 2 hafta kalan; uzatma da akçe sinki; uzatma efsunlu kostümde pahalı', () => {
     const { w, p, cos, s } = setup(40); fill(p); const c = newCostume(mulberry32(8), 0, 3, w.now); s().bag.push(c); const id = c.id;
-    const e0 = c.expiresAt; cos({ op: 'extend', id }); expect(c.expiresAt).toBe(e0 + 7 * DAY); cos({ op: 'extend', id }); expect(c.expiresAt).toBe(e0 + 14 * DAY);
-    expect(() => cos({ op: 'extend', id })).toThrow(); expect(() => cos({ op: 'extend', id })).toThrow(); // 14+7+7 > 28? 14 + 14 = 28 → üçüncü ek 35 gün: reddedilir
+    const e0 = c.expiresAt; cos({ op: 'extend', id }); expect(c.expiresAt).toBe(e0 + 7 * DAY);
+    expect(() => cos({ op: 'extend', id })).toThrow(); // 7+7+7 = 21 gün > 14: peşin yığılamaz
     const plain = { ...c, ench: [] }, rich = { ...c, ench: [{ k: 'atkPct' as const, v: 1 }, { k: 'crit' as const, v: 1 }, { k: 'mspd' as const, v: 1 }] }; expect(extendCost(rich, 40, false)).toBeGreaterThan(extendCost(plain, 40, false));
   });
   test('şans eşyaları tezgâhtan akçeyle alınır; yetersiz akçede alınmaz; dayanıklılık: akçe asla negatif', () => {
