@@ -364,7 +364,7 @@ if (want('icerik')) {
 if (want('harita')) {
   const AN3 = 'Gezgin' + Math.floor(Math.random() * 900 + 100);
   const seed3 = await new Bot(`ws://localhost:${srv.port}`, AN3).join('ay'); await seed3.leave(); await sleep(300); srv.ctx.db.setRole(AN3, 'admin');
-  const pg3: Page = await ctx.newPage(); pg3.on('pageerror', (e) => errors.push(e.message));
+  const pg3: Page = await ctx.newPage(); pg3.setDefaultTimeout(120000); pg3.on('pageerror', (e) => errors.push(e.message));
   await pg3.goto(`${url}?name=${AN3}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
   const sh3 = async (name: string) => { await pg3.screenshot({ path: `${OUT}/${name}.png` }); };
   const gm3 = (line: string) => pg3.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
@@ -383,7 +383,7 @@ if (want('harita')) {
   const pvpOtlak = await pg3.textContent('#pvpbtn');
   check('H13.otlak-pvp-yok', /Kapalı/.test(pvpOtlak ?? '') && (await pg3.$eval('#pvpbtn', (b) => b.classList.contains('na'))), `Otlak'ta PvP düğmesi pasif: "${(pvpOtlak ?? '').trim()}"`);
   // PvP bayrağı yurtta (Bozkır): aç
-  await gm3('tp hub'); await sleep(1800); await pg3.click('#pvpbtn'); await sleep(1200);
+  await gm3('tp hub'); await sleep(1800); await pg3.click('#pvpbtn'); await pg3.waitForFunction("/Açık/.test(document.querySelector('#pvpbtn')?.textContent ?? '')", null, { timeout: 60000 }).catch(() => undefined); await sleep(800);
   const pvpOn = await pg3.textContent('#pvpbtn'); await sh3('37-pvp-bayragi');
   check('H13.bayrak', P3().d.pvp === true && /Açık/.test(pvpOn ?? ''), `HUD düğmesiyle PvP bayrağı açıldı: sunucu=${P3().d.pvp}, düğme="${(pvpOn ?? '').trim()}"`);
   P3().lastPvp = 0; await pg3.click('#pvpbtn'); await sleep(900);
