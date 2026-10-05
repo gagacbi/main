@@ -1,61 +1,6 @@
 {
- "at": "2026-10-05T17:08:13.817Z",
+ "at": "2026-10-05T17:25:44.413Z",
  "results": [
-  {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt265"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=75, kontur ağı=368, toplam ShaderMaterial=128"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 141 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=5.47 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
-  },
   {
    "id": "F2.boy-kimlik",
    "ok": true,
@@ -257,6 +202,61 @@
    "detail": "Kodeks: 27/27 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
   },
   {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt411"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=77, kontur ağı=390, toplam ShaderMaterial=130"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 144 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 17 SVG ikon"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=6.17 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+  },
+  {
    "id": "H5.kilometre-tasi",
    "ok": true,
    "detail": "Seviye 10 kilometre taşı: akçe +4000, kitap +1, tılsım=1"
@@ -269,7 +269,7 @@
   {
    "id": "H5.temel-efsun",
    "ok": true,
-   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Tengri Kılıcı +5Efsanevi · Silah · Eşya seviyesi 30Saldırı309Silah türüBüyü çan”"
+   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Tengri Kılıcı +5Efsanevi · Silah · Eşya seviyesi 30Saldırı309Silah türüKılıç◆ T”"
   },
   {
    "id": "H5.saha-bossu",
@@ -278,8 +278,8 @@
   },
   {
    "id": "H5.olum-ipucu",
-   "ok": false,
-   "detail": "Ölüm ekranı ipucu: “Seni öldüren: Demir Dişli Börü · Bıçak (sende: %17)”"
+   "ok": true,
+   "detail": "Ölüm ekranı ipucu: “Seni öldüren: Demir Dişli Börü · Bıçak (sende: %5) İpucu: Bıçak savunması giyen eşyalar bu hasarı keser (Demirci’de efsunlu parçal”"
   },
   {
    "id": "H5.pazar-paneli",
@@ -318,8 +318,8 @@
   },
   {
    "id": "H16.pazar-mal",
-   "ok": false,
-   "detail": "Pazar: malzeme yığını ilanı verildi (ok=false); \"Mallar\" görünümünde \"Demir cevheri ×100\" listelendi; satış panelinde \"Mallarım\" bölümü var"
+   "ok": true,
+   "detail": "Pazar: malzeme yığını ilanı verildi (ok=true); \"Mallar\" görünümünde \"Demir cevheri ×100\" listelendi; satış panelinde \"Mallarım\" bölümü var"
   },
   {
    "id": "H14.zindan-paneli",
@@ -349,7 +349,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=528.5 ms; aktif mesh=45/265; üçgen=825604; (yazılım rasterleştirmede FPS=2)"
+   "detail": "Kare başına JS/CPU maliyeti=441.94 ms; aktif mesh=308/920; üçgen=1292144; (yazılım rasterleştirmede FPS=2)"
   },
   {
    "id": "G.konsol",
@@ -358,15 +358,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 5.47265625,
+  "audioPeak": 6.1708984375,
   "dropsSeenDuringLoot": 2,
   "perf": {
    "fps": 2,
-   "meshes": 265,
-   "active": 45,
+   "meshes": 920,
+   "active": 308,
    "draw": 0,
-   "tris": 825604,
-   "cpuMs": 528.5
+   "tris": 1292144,
+   "cpuMs": 441.94
   },
   "gl": {
    "vendor": "Google Inc. (Google)",
