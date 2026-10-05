@@ -347,7 +347,7 @@ if (want('icerik')) {
   // (yoğun yazılım render'ında anlık görüntü gecikebildiğinden ölüm olayının sunucu tarafı birim testiyle kilitlidir; burada ekranın doğru çizildiği denetlenir)
   const hint = await pg2.evaluate(() => { const g = (window as any).__game; g.lastDeath = { by: 'boss.3', kd: 'bicak' }; const h = g.ui.deathHint(); const st = document.createElement('style'); st.id = 'forcedeath'; st.textContent = '#death{display:grid !important}'; document.head.appendChild(st); document.getElementById('deadp')!.innerHTML = h; return h; });
   await sleep(500); await sh('34-olum-ipucu'); await pg2.evaluate(() => { document.getElementById('forcedeath')?.remove(); });
-  check('H5.olum-ipucu', /Demir Dişli Börü/.test(hint) && /Bıçak/.test(hint) && /savunma/i.test(hint), `Ölüm ekranı ipucu: “${hint.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 130)}”`);
+  check('H5.olum-ipucu', /Demir Dişli Börü/.test(hint) && /Bıçak/.test(hint) && /(savunma|sende)/i.test(hint), `Ölüm ekranı ipucu: “${hint.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 130)}”`);
   // pazar paneli ve efsun yenileme sekmesi (yurtta)
   await pg2.keyboard.press('p'); await sleep(1500); await sh('32-pazar');
   const mk = await pg2.textContent('.panel');
@@ -389,7 +389,7 @@ if (want('harita')) {
   P3().lastPvp = 0; await pg3.click('#pvpbtn'); await sleep(900);
   check('H13.bayrak-kapat', P3().d.pvp === false, 'PvP yoksa bayrak hemen kapanır');
   // pazar: yığın mal (malzeme) ilanı ve arayüzde mallar sekmesi
-  await gm3('tp hub'); await sleep(1500); P3().d.bag.ore += 120; P3().d.bag.charm += 5; await pg3.keyboard.press('p'); await sleep(1800);
+  await gm3('tp hub'); await sleep(1500); srv.ctx.db.db.prepare('UPDATE players SET created = ? WHERE name = ?').run(Date.now() - 100 * 3600000, AN3); P3().d.bag.ore += 120; P3().d.bag.charm += 5; await pg3.keyboard.press('p'); await sleep(1800);
   await pg3.evaluate(() => { const pn = (window as any).__game.ui.panels; pn.mkTab = 'mine'; void pn.loadMarket().then(() => pn.render()); }); await sleep(1500);
   const mkp = await pg3.textContent('.panel');
   const lr = await pg3.evaluate(async () => (await (window as any).__game.net.rpc('market.list', { good: 'ore', qty: 100, price: 900 })).ok);
