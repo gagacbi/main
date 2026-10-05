@@ -363,4 +363,13 @@ export const DEATH_XP_LOSS = 0.1; // riskli bölgede ölünce mevcut seviye dene
 export const RESPAWN_SEC = 3;
 export const COMBAT_FLAG_SEC = 15;
 export const RANK_RECOVER_KILLS = 20;
-export const NEW_ACCOUNT_NOTE = 48; // saat: ticaret sınırı (ileri aşama, belgelenmiş)
+export const NEW_ACCOUNT_NOTE = 48; // saat: yeni hesap ilan veremez (bot / gerçek para ticareti önlemi)
+
+// ───────────────────────── Pazar ─────────────────────────
+/** Oyuncular arası pazar. Vergi ve ilan ücreti akçe sinkidir; yeni hesap kısıtı ve fiyat tavanı bot/RMT önlemidir. */
+export const MARKET = { taxPct: 0.05, listFeePct: 0.01, listFeeMin: 10, maxListings: 8, durationH: 72, newAccountH: NEW_ACCOUNT_NOTE, maxPriceMult: 8, maxPriceFloor: 2000, pageSize: 30, absoluteMax: 50_000_000 };
+/** Satıcıya (NPC) satış fiyatı */
+export const vendorPrice = (it: Pick<Item, 'ilvl' | 'tier' | 'up'>) => Math.round((8 + it.ilvl * 4) * TIER_MULT[it.tier] * (1 + it.up * 0.5));
+/** Referans değer: NPC fiyatı ×6 + basılan artıların akçe maliyeti. Pazar fiyat tavanı ve "fırsat" göstergesi buna dayanır. */
+export const marketRef = (it: Pick<Item, 'ilvl' | 'tier' | 'up'>) => { let g = vendorPrice({ ilvl: it.ilvl, tier: it.tier, up: 0 }) * 6; for (let t = 1; t <= it.up; t++) g += upgradeCost(t, it.ilvl).gold; return g; };
+export const marketPriceBounds = (it: Pick<Item, 'ilvl' | 'tier' | 'up'>) => ({ min: vendorPrice(it), max: Math.min(MARKET.absoluteMax, Math.round(marketRef(it) * MARKET.maxPriceMult + MARKET.maxPriceFloor)) });

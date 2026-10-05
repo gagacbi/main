@@ -24,7 +24,7 @@ export class Game {
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
   focusId = 0; atkHeld = false; clickAttack = false; moveTarget: { x: number; z: number } | null = null; lastDir = { x: 0, z: 0 }; lastSend = 0;
   cdEnd = [0, 0, 0, 0, 0, 0]; cdTotal = SKILLS.map((s) => s.cd); castLock = 0; serverOffset = 0; time = 0; fps = 60; slowFrames = 0; typing = false;
-  nearby: { key: string; dist: number } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0;
+  nearby: { key: string; dist: number } | null = null; lastDeath: { by: string; kd?: string } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0;
   dustT = 0; autoQuality = new URLSearchParams(location.search).get('autoq') !== '0'; private dragging = false; private lastX = 0; private lastY = 0; private downAt = 0; private downPos = { x: 0, y: 0 };
 
   constructor(public canvas: HTMLCanvasElement, public uiRoot: HTMLElement, quality: Quality) {
@@ -181,6 +181,7 @@ export class Game {
         break;
       }
       case 'die': {
+        if (e.id === this.myId) this.lastDeath = { by: e.by ?? 'dot', kd: e.kd };
         const v = this.vs.get(e.id); if (!v) return; v.dyingT = 0; v.flags |= F.DEAD;
         if (v.kind === 'mob') { this.fx.burst('dust', v.x, 0.5, v.z, 14); if (near(v.x, v.z)) this.audio.sfx('kill', 0.5); } else if (v.self) { this.audio.sfx('die'); }
         break;

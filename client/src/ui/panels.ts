@@ -2,11 +2,11 @@ import {
   BOOK_BONUS, BOY_COLORS, EXPEDITION_HOURS, OBA, SKILLS, SKILL_MAX_RANK, SKILL_RANK_LABEL, SLOTS, SPEC_LEVEL, TIER_COLORS, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, UP_PCT, itemStats, skillRankGold, upgradeCost, type ExpeditionResult, type Item, type MatKey, type Slot,
 } from '@shared/game';
-import type { ObaInfo } from '@shared/protocol';
+import type { MarketListing, MarketMail, ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
-import { INSCRIPTIONS, CRAFT, DMG_KINDS } from '@shared/game';
+import { INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, marketRef, marketPriceBounds } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -19,7 +19,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm';
+export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -39,6 +39,7 @@ export function itemTip(it: Item, cmp?: Item): string {
 
 export class Panels {
   open: PanelName | null = null; el: HTMLElement; tipEl: HTMLElement;
+  mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'price' | 'new' = 'price'; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
   selUp = ''; smithTab: 'up' | 'craft' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
@@ -66,6 +67,7 @@ export class Panels {
     this.open = n; this.lastResult = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
     if (n === 'oba') await this.refreshOba();
     if (n === 'elder') await this.g.net.rpc('elder');
+    if (n === 'market') await this.loadMarket();
     this.render();
     if (n === 'oba') { clearInterval(this.obaTimer); this.obaTimer = window.setInterval(() => { if (this.open === 'oba') this.tickOba(); }, 500); }
   }
@@ -90,7 +92,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -128,6 +130,34 @@ export class Panels {
       ${ln(t('ui.spell'), '×' + s.spell.toFixed(2))}${ln(t('ui.rank'), m.rank < 0 ? `<span class="bad">${m.rank}</span>` : m.rank)}${ln(t('ui.kut'), m.kut)}${ln(t('ui.points'), num(m.points))}</div>
       <div class="sub">${t('ui.defs')}</div><div class="stats">${DMG_KINDS.map((k) => ln(t('dk.' + k), (s.defKind[k] * 100).toFixed(0) + '%')).join('')}${ln(t('ui.blockHit'), (s.blockHit * 100).toFixed(0) + '%')}${ln(t('ui.blockSkill'), (s.blockSkill * 100).toFixed(0) + '%')}${ln(t('ui.pierce'), (s.pierce * 100).toFixed(0) + '%')}${ln(t('ui.weaponKind'), t('dk.' + s.weaponKind))}</div>
       <div class="sub">${t('boy.' + m.boy)}</div><div class="card">${t('boy.' + m.boy + '.bonus')}</div>${specBlock}</div>`);
+  }
+
+  // ─── pazar ───
+  async loadMarket() {
+    const [b, m] = await Promise.all([this.g.net.rpc('market.browse', { slot: this.mkSlot || undefined, sort: this.mkSort }), this.g.net.rpc('market.mine')]);
+    if (b.ok) this.mkData = b.data as typeof this.mkData; if (m.ok) this.mkMine = m.data as typeof this.mkMine;
+  }
+  market() {
+    const m = this.me; const inTown = Math.hypot(this.g.pos.x, this.g.pos.z) < HUB_R; const gold = `<span class="chip">${icon('akce')}${num(m.gold)}</span>`;
+    const tabs = `<div class="tabs2"><div class="tab2 ${this.mkTab === 'browse' ? 'on' : ''}" data-act="mktab" data-v="browse">${t('mk.browse')} <small>${this.mkData.total}</small></div><div class="tab2 ${this.mkTab === 'mine' ? 'on' : ''}" data-act="mktab" data-v="mine">${t('mk.mine')} <small>${this.mkMine.listings.length}/${this.mkMine.max}</small>${this.mkMine.mail.length ? ' <span class="badge">' + this.mkMine.mail.length + '</span>' : ''}</div></div>`;
+    const warn = inTown ? '' : `<div class="card hint-card">${t('mk.town')}</div>`;
+    const row = (l: MarketListing, own: boolean) => {
+      const ratio = l.price / Math.max(1, l.ref); const cls = ratio < 0.7 ? 'good' : ratio > 1.6 ? 'bad' : '';
+      return `<div class="card mk-row"><div class="cell item" style="--tc:${TIER_COLORS[l.item.tier]}" data-item-tip="${l.id}">${icon(l.item.slot)}${l.item.up > 0 ? `<span class="up">+${l.item.up}</span>` : ''}</div>
+        <div class="grow"><b>${esc(itemName(l.item))}</b><div class="muted">${t('slot.' + l.item.slot)} · ${t('ui.ilvl')} ${l.item.ilvl}${l.item.slot === 'weapon' ? ' · ' + t('dk.' + (l.item.wk ?? 'kilic')) : ''} · ${esc(l.seller)}</div></div>
+        <div class="mk-price ${cls}">${icon('akce')}${num(l.price)}<small>${t('mk.ref')} ${num(l.ref)}</small></div>
+        ${own ? `<button class="btn small" data-act="mkcancel" data-id="${l.id}">${t('mk.cancel')}</button>` : `<button class="btn primary small" data-act="mkbuy" data-id="${l.id}" ${m.gold < l.price || !inTown ? 'disabled' : ''}>${t('mk.buy')}</button>`}</div>`;
+    };
+    if (this.mkTab === 'browse') {
+      const chips = ['', ...SLOTS].map((s) => `<div class="chip ${this.mkSlot === s ? 'on' : ''}" data-act="mkslot" data-v="${s}">${s ? t('slot.' + s) : t('mk.all')}</div>`).join('');
+      const list = this.mkData.listings.length ? this.mkData.listings.map((l) => row(l, false)).join('') : `<div class="muted" style="padding:14px">${t('mk.empty')}</div>`;
+      return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${chips}<span class="grow"></span><div class="chip" data-act="mksort">${this.mkSort === 'price' ? t('mk.sortPrice') : t('mk.sortNew')}</div></div><div class="itemlist" style="max-height:380px;overflow:auto">${list}</div><div class="muted" style="margin-top:6px">${t('mk.note', { tax: Math.round(MARKET.taxPct * 100), fee: Math.round(MARKET.listFeePct * 100), h: MARKET.durationH })}</div></div>`);
+    }
+    const mail = this.mkMine.mail.length ? `<div class="sub">${t('mk.mail')}</div>` + this.mkMine.mail.map((x) => `<div class="card">${x.kind === 'gold' ? `${icon('akce')} +${num(x.gold)}` : esc(itemName(x.item!))} <span class="muted">${x.note.startsWith('sold') ? t('mk.sold') : t('mk.expired')}</span></div>`).join('') + `<button class="btn primary small" data-act="mkclaim" style="margin-top:6px">${t('mk.claim')}</button>` : '';
+    const bag = m.items.map((it) => `<div class="cell item ${this.mkSel === it.id ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-act="mkpick" data-id="${it.id}" title="${esc(itemName(it))}">${icon(it.slot)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`).join('');
+    const sel = m.items.find((i) => i.id === this.mkSel); const b = sel ? marketPriceBounds(sel) : null;
+    const form = sel ? `<div class="card"><b>${esc(itemName(sel))}</b> <span class="muted">(${t('mk.limits', { min: num(b!.min), max: num(b!.max) })})</span><div class="row" style="margin-top:6px"><input id="mkprice" class="gminput" inputmode="numeric" placeholder="${t('mk.price')}" value="${esc(this.mkPrice)}" /><button class="btn primary small" data-act="mklist">${t('mk.list')}</button></div></div>` : `<div class="muted">${t('mk.pick')}</div>`;
+    return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div>${mail}<div class="sub">${t('mk.myListings')}</div>${this.mkMine.listings.length ? this.mkMine.listings.map((l) => row(l, true)).join('') : `<div class="muted">${t('mk.none')}</div>`}<div class="sub">${t('mk.sellFromBag')}</div><div class="grid-bag">${bag || `<span class="muted">${t('mk.noItems')}</span>`}</div>${form}</div>`);
   }
 
   // ─── yetenekler ───
@@ -284,6 +314,14 @@ export class Panels {
     switch (act) {
       case 'close': this.close(); break;
       case 'cx': this.codexTab = d.v as Thread; break;
+      case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
+      case 'mkslot': this.mkSlot = d.v ?? ''; await this.loadMarket(); break;
+      case 'mksort': this.mkSort = this.mkSort === 'price' ? 'new' : 'price'; await this.loadMarket(); break;
+      case 'mkbuy': { const r = await this.act('market.buy', { id: Number(d.id) }); if (r.ok) { this.g.audio.sfx('upok'); this.lastResult = null; } await this.loadMarket(); break; }
+      case 'mkcancel': { await this.act('market.cancel', { id: Number(d.id) }); await this.loadMarket(); break; }
+      case 'mkclaim': { await this.act('market.claim'); await this.loadMarket(); break; }
+      case 'mkpick': { this.mkSel = d.id!; const it = this.me.items.find((i) => i.id === d.id); this.mkPrice = it ? String(Math.round(marketRef(it))) : ''; break; }
+      case 'mklist': { const v = (this.el.querySelector('#mkprice') as HTMLInputElement | null)?.value ?? this.mkPrice; const r = await this.act('market.list', { id: this.mkSel, price: Number(String(v).replace(/\D/g, '')) }); if (r.ok) { this.mkSel = ''; this.mkPrice = ''; this.g.audio.sfx('upok'); } await this.loadMarket(); break; }
       case 'gm': await this.runGm(d.line!); return;
       case 'gmrun': await this.runGm(this.gmLine); return;
       case 'equip': await this.act('equip', { id: d.id }); this.selBag = ''; this.g.ui.sfx('ui'); break;

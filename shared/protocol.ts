@@ -7,7 +7,8 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen';
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen'
+  | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
 export interface Welcome {
@@ -43,7 +44,7 @@ export type GameEvent =
   | { k: 'dmg'; id: number; v: number; crit?: boolean; heal?: boolean; src?: number; pl?: boolean; blk?: boolean }
   | { k: 'swing'; id: number; tx?: number; tz?: number }
   | { k: 'fx'; fx: string; x: number; z: number; r: number; o: number }
-  | { k: 'die'; id: number }
+  | { k: 'die'; id: number; /** ölüm nedeni: yaratık türü, 'boss.N', 'pl' (oyuncu) ya da 'dot' */ by?: string; /** hasar türü */ kd?: string }
   | { k: 'lvl'; id: number; lvl: number }
   | { k: 'status'; id: number; s: StatusKey; dur: number }
   | { k: 'guard'; x: number; z: number; tx: number; tz: number }
@@ -53,5 +54,7 @@ export interface Snapshot {
   t: number; ack: number; you: { x: number; z: number; r: number; hp: number; f: number };
   players: SnapPlayer[]; mobs: SnapMob[]; rifts: SnapRift[]; drops: SnapDrop[]; ev: GameEvent[]; pop: number;
 }
+export interface MarketListing { id: number; sellerId: number; seller: string; item: Item; price: number; expires: number; ref: number }
+export interface MarketMail { id: number; kind: 'gold' | 'item'; gold: number; item?: Item; note: string }
 export interface ChatMsg { ch: 'near' | 'boy' | 'oymak' | 'sys' | 'whisper'; from: string; boy?: Boy; text: string; key?: string; p?: Record<string, string | number> }
 export interface RpcRes { id: number; ok: boolean; err?: string; data?: unknown; p?: Record<string, string | number> }

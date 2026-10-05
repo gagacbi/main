@@ -22,7 +22,7 @@ export async function startGameServer(opts: StartOptions = {}): Promise<GameServ
     mobScale: 1, rateLimit: true, spawnCamps: true, simLatency: 0, ...opts.cfg,
   };
   const ctx: Ctx = {
-    db, clock: new Clock(), rng: opts.rng ?? Math.random, cfg, worlds: new Set(), oymaks: new Map(),
+    db, clock: new Clock(), rng: opts.rng ?? Math.random, cfg, worlds: new Set(), oymaks: new Map(), mailFlag: new Set(),
     broadcastSys: (key, p) => { for (const w of ctx.worlds) for (const pl of w.players.values()) { w.sys(pl, key, p); pl.meDirty = true; } },
   };
   const app = express();

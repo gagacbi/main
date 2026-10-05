@@ -1,5 +1,5 @@
 import { Color3, Mesh, MeshBuilder, type InstancedMesh, type Scene } from '@babylonjs/core';
-import { FIELD_BOSS, type Boy, type MobType, type Spec } from '@shared/game';
+import { FIELD_BOSS, MOBS, type Boy, type MobType, type Spec } from '@shared/game';
 import { F } from '@shared/protocol';
 import { t } from '../i18n';
 import { buildHuman, buildMob, type AnimState, type Rig } from './models';
@@ -31,7 +31,8 @@ export class View {
   refreshName(friendly = true) {
     const nm = this.kind === 'mob' ? (this.bossId ? t('boss.' + this.bossId) : t('mob.' + this.mobType)) : this.name;
     const red = (this.flags & F.RED) !== 0;
-    this.nameEl.innerHTML = `<b class="lv">${this.level}</b>${esc(nm)}`;
+    const kd = this.kind === 'mob' ? (this.bossId ? FIELD_BOSS.list[this.bossId - 1][1] : MOBS[this.mobType].kind) : '';
+    this.nameEl.innerHTML = `<b class="lv">${this.level}</b>${esc(nm)}${kd ? `<span class="dk" title="${t('ui.dmgKind')}">${t('dk.' + kd)}</span>` : ''}`;
     this.plate.classList.toggle('red', red); this.plate.classList.toggle('foe', this.kind === 'player' && !friendly && !this.self); this.plate.classList.toggle('self', this.self);
   }
   /** snapshot örneği ekle */

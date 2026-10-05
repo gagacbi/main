@@ -2,13 +2,14 @@ import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
 import { dist, dist2, genBosses, genCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
 import { runGm } from './gm';
+import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
 import { GameError, type Ctx, type PlayerData } from './types';
@@ -55,7 +56,7 @@ export class World {
   events: { ev: GameEvent; x: number; z: number }[] = [];
   seq = 1; layer: number; tickCount = 0; startedAt: number;
   nextRiftAt = 0; lastSave = 0; tickMsSum = 0; tickMsMax = 0; tickMsN = 0;
-  roomId = ''; dummyLog: { t: number; v: number }[] = [];
+  roomId = ''; dummyLog: { t: number; v: number }[] = []; lastMarketExpire = 0;
 
   constructor(public ctx: Ctx, layer: number) {
     this.layer = layer;
@@ -122,6 +123,7 @@ export class World {
     const o = oba.loadOymak(this.ctx, p.oymakId);
     oba.ensureCompanions(this.ctx, p, o.lv.otag);
     this.players.set(p.id, p);
+    claimMail(this, p);
     this.sendMe(p);
     return p;
   }
@@ -371,7 +373,9 @@ export class World {
   killPlayer(p: Player, src: Player | Mob | null) {
     p.hp = 0; p.deadUntil = this.now + RESPAWN_SEC * 1000; p.atk = false; p.dirx = p.dirz = 0; p.status = {};
     p.d.counters.deaths++;
-    this.emit({ k: 'die', id: p.id }, p.x, p.z);
+    const by = src?.kind === 'mob' ? (src.bossId ? 'boss.' + src.bossId : src.type) : src?.kind === 'player' ? 'pl' : 'dot';
+    const kd = src?.kind === 'mob' ? (src.bossId ? FIELD_BOSS.list[src.bossId - 1][1] : MOBS[src.type].kind) : src?.kind === 'player' ? src.stats.weaponKind : undefined;
+    this.emit({ k: 'die', id: p.id, by, kd }, p.x, p.z);
     p.meDirty = true;
     const killer = src?.kind === 'player' ? src : (p.lastDamager && this.now - p.lastCombat < 6000 ? this.players.get(p.lastDamager) : undefined);
     if (killer && killer !== p) {
@@ -546,7 +550,7 @@ export class World {
       case 'sell': {
         this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci + 4);
         const i = d.items.findIndex((x) => x.id === a.id); if (i < 0) throw new GameError('no_item');
-        const it = d.items[i]; const price = Math.round((8 + it.ilvl * 4) * TIER_MULT[it.tier] * (1 + it.up * 0.5));
+        const it = d.items[i]; const price = vendorPrice(it);
         d.items.splice(i, 1); d.gold += price; this.ledger(p, 'sell', { item: it.id, tier: it.tier, up: it.up, price }); p.meDirty = true;
         return { price };
       }
@@ -619,6 +623,7 @@ export class World {
       }
       case 'inscription': return { frags: this.ctx.db.worldGet('frags', 0), thresholds: INSCRIPTIONS };
       case 'lang': d.lang = a.lang === 'en' ? 'en' : 'tr'; return null;
+      case 'market.browse': case 'market.mine': case 'market.claim': case 'market.list': case 'market.cancel': case 'market.buy': return marketRpc(this, p, op, a);
       case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }
       case 'stone': {
         const n = Math.floor(a.n); const st = genStones().find((s) => s.n === n); if (!st) throw new GameError('bad_stone');
@@ -725,10 +730,17 @@ export class World {
     this.updateRifts(now);
     this.updateDrops(now);
     this.updateGuards(now);
+    this.marketTick(now);
     this.sendSnapshots(now);
     if (now - this.lastSave > 10000) { this.lastSave = now; for (const p of this.players.values()) { p.d.x = p.x; p.d.z = p.z; p.d.hp = p.hp; this.flushGold(p); this.save(p); } }
     const ms = performance.now() - t0;
     this.tickMsSum += ms; this.tickMsN++; if (ms > this.tickMsMax) this.tickMsMax = ms;
+  }
+
+  /** pazar: satışı olan çevrimiçi satıcıya postayı hemen teslim et; süresi dolan ilanları kapat (dakikada bir) */
+  marketTick(now: number) {
+    if (this.ctx.mailFlag.size) for (const p of this.players.values()) if (this.ctx.mailFlag.delete(p.dbId)) { const r = claimMail(this, p); if (r.gold) this.sys(p, 'sys.market_sold', { gold: r.gold }); }
+    if (now - this.lastMarketExpire > 60000) { this.lastMarketExpire = now; for (const e of this.ctx.db.marketExpire(now)) this.ctx.mailFlag.add(e.sellerId); }
   }
 
   updatePlayers(dt: number, now: number) {

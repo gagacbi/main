@@ -20,6 +20,8 @@ export interface Config {
 }
 export interface Ctx {
   db: Db; clock: Clock; rng: Rng; cfg: Config; worlds: Set<World>; oymaks: Map<number, OymakRec>;
+  /** pazarda satışı olmuş, postası beklenen çevrimiçi satıcılar (tick'te otomatik teslim) */
+  mailFlag: Set<number>;
   broadcastSys: (key: string, p?: Record<string, string | number>) => void;
 }
 

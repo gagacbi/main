@@ -16,7 +16,7 @@ export function makeRig(seed = 1, cfg: Partial<Ctx['cfg']> = {}) {
   const db = new Db(':memory:');
   const clock = new Clock();
   const ctx: Ctx = {
-    db, clock, rng: mulberry32(seed), worlds: new Set(), oymaks: new Map(), broadcastSys: () => {},
+    db, clock, rng: mulberry32(seed), worlds: new Set(), oymaks: new Map(), mailFlag: new Set(), broadcastSys: () => {},
     cfg: { maxPerLayer: 150, riftEvery: [999999, 999999], test: true, mobScale: 1, rateLimit: false, spawnCamps: true, simLatency: 0, ...cfg },
   };
   const world = new World(ctx, 1);

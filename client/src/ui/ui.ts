@@ -1,4 +1,4 @@
-import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL } from '@shared/game';
+import { BOY_COLORS, HUB, HUB_R, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { genStones, worldObstacles } from '@shared/world';
 import type { Game } from '../game/game';
@@ -43,7 +43,7 @@ export class UI {
     this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
     this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
     // sağ üst düğmeler
-    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['globe', 'settings', '', 'ui.settings']];
+    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
     this.e.btns.innerHTML = btns.map(([ic, p, k, tt]) => `<button class="btn icon" data-p="${p}" title="${t(tt)}">${icon(ic)}${k ? `<span class="k">${k}</span>` : ''}<i class="dot"></i></button>`).join('');
     this.e.btns.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('button[data-p]') as HTMLElement | null; if (b) this.open(b.dataset.p as PanelName); });
     // sohbet
@@ -74,7 +74,7 @@ export class UI {
     if (k === 'enter') { e.preventDefault(); this.startTyping(); return; }
     if (k === 'f2' && this.g.me?.role === 'admin') { e.preventDefault(); this.panels.toggle('gm'); return; }
     if (k === 'escape') { if (this.panels.isOpen()) this.panels.close(); return; }
-    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', h: 'help', b: 'inv' };
+    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', p: 'market', h: 'help', b: 'inv' };
     if (map[k]) { e.preventDefault(); this.open(map[k], true); }
     if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
   }
@@ -186,8 +186,16 @@ export class UI {
     const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
-    if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.textContent = left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : ''; }
+    if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.innerHTML = (left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : '') + this.deathHint(); }
     void dt;
+  }
+  /** Ölüm ekranı: seni neyin öldürdüğü ve o hasar türüne karşı savunman (lamba: oyuncu burada bakar, cevap burada olmalı) */
+  deathHint(): string {
+    const d = this.g.lastDeath; if (!d) return '';
+    const who = d.by === 'pl' ? t('death.pl') : d.by === 'dot' ? t('death.dot') : d.by.startsWith('boss.') ? t(d.by) : t('mob.' + d.by);
+    let h = `<div class="dhint"><b>${t('death.by')}:</b> ${esc(who)}`;
+    if (d.kd) { const me = this.g.me; const def = Math.round((me.stats.defKind[d.kd as DmgKind] ?? 0) * 100); h += ` · ${t('dk.' + d.kd)} (${t('death.yourDef')}: %${def})`; if (def < 15 && d.by !== 'dot') h += `<div class="tip2">${t('death.advice', { kind: t('dk.' + d.kd) })}</div>`; }
+    return h + '</div>';
   }
   frame(dt: number, zone: string) {
     void zone; this.hudAcc += dt; this.mapAcc += dt; this.fpsAcc += dt;
