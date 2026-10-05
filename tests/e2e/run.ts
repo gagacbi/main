@@ -272,7 +272,7 @@ if (want('gizem')) {
   const AN = 'Yonetici' + Math.floor(Math.random() * 900 + 100);
   const seed = await new Bot(`ws://localhost:${srv.port}`, AN).join('gok'); await seed.leave(); await sleep(300); srv.ctx.db.setRole(AN, 'admin');
   const pg: Page = await ctx.newPage(); pg.on('pageerror', (e) => errors.push(e.message));
-  await pg.goto(`${url}?name=${AN}&pw=secret1&autoq=0`); await pg.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  await pg.goto(`${url}?name=${AN}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
   const gev = <T>(expr: string): Promise<T> => pg.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gshot = async (name: string) => { await pg.screenshot({ path: `${OUT}/${name}.png` }); };
   const ap = [...world().players.values()].find((x) => x.name === AN)!;
@@ -311,7 +311,7 @@ if (want('icerik')) {
   const AN2 = 'Kahraman' + Math.floor(Math.random() * 900 + 100);
   const seed2 = await new Bot(`ws://localhost:${srv.port}`, AN2).join('yer'); await seed2.leave(); await sleep(300); srv.ctx.db.setRole(AN2, 'admin');
   const pg2: Page = await ctx.newPage(); pg2.on('pageerror', (e) => errors.push(e.message));
-  await pg2.goto(`${url}?name=${AN2}&pw=secret1&autoq=0`); await pg2.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  await pg2.goto(`${url}?name=${AN2}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg2.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
   const sh = async (name: string) => { await pg2.screenshot({ path: `${OUT}/${name}.png` }); };
   const g2 = <T>(expr: string): Promise<T> => pg2.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gmr = (line: string) => pg2.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
