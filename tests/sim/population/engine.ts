@@ -145,7 +145,7 @@ export class Engine {
   /** zindan örneklerini izler: başlangıç/bitiş süreleri ve sonuç (dunLog) */
   private trackDungeons() {
     const w = this.rig.world; for (const r of w.dungeons.values()) if (!this.dunSeen.has(r.id)) this.dunSeen.set(r.id, { t0: r.startedAt, n: r.n, d: r.d });
-    for (const [id, x] of [...this.dunSeen]) { const r = w.dungeons.get(id); if (!r) { this.dunSeen.delete(id); continue; } if (r.state === 'won' || r.state === 'lost') { this.dunLog.push({ day: this.day, d: x.d, n: x.n, sec: Math.round((w.now - x.t0) / 1000), state: r.state }); this.dunSeen.delete(id); } }
+    for (const [id, x] of [...this.dunSeen]) { const r = w.dungeons.get(id); if (!r) { this.dunSeen.delete(id); continue; } if (r.state === 'won' || r.state === 'lost') { this.dunLog.push({ day: this.day, d: x.d, n: x.n, sec: Math.round(((r.state === 'won' ? r.exitAt - 45000 : Math.min(w.now, r.endAt)) - x.t0) / 1000), state: r.state }); this.dunSeen.delete(id); } }
   }
   private index() {
     const campMobs = new Map<number, Mob[]>(); const bosses: Mob[] = []; const riftMobs = new Map<number, Mob[]>(); const dunMobs: Mob[] = [];
