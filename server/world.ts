@@ -1,5 +1,5 @@
 import {
-  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
+  AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
   CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
@@ -21,7 +21,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; aggressorUntil = 0; lastDamager = 0; tauntUntil = 0;
+  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -221,7 +221,7 @@ export class World {
   /** Tek hasar giriş noktası. */
   damage(src: Player | Mob | null, tgt: Player | Mob, amount: number, o: { crit?: boolean; dot?: boolean } = {}) {
     if (tgt.kind === 'mob' ? tgt.dead : tgt.deadUntil > 0) return 0;
-    if (tgt.kind === 'player' && tgt.god) return 0;
+    if (tgt.kind === 'player' && (tgt.god || tgt.protectUntil > this.now)) return 0;   // yeniden doğuş koruması: muhafız/yaratık döngüsüyle öldürülemez
     let dmg = Math.max(1, Math.round(amount));
     if (tgt.kind === 'player') {
       dmg = Math.max(1, Math.round(dmg * tgt.stats.dmgTaken));
@@ -262,6 +262,7 @@ export class World {
   /** Güvenli bölgedeki oyuncu yaratığa vuramaz (yaratık karşılık veremediği için menzilli silahla bedava öldürme olurdu). Kukla ve yönetici hariç. */
   canHitMob(p: Player, m: Mob) { return m.dummy === true || p.role === 'admin' || zoneAt(p.x, p.z) !== 'safe'; }
   playerHit(p: Player, tgt: Player | Mob, mult: number, extra = 1, o: { skill?: boolean; dk?: DmgKind } = {}) {
+    p.protectUntil = 0;                              // saldıran koruma kalkanını kaybeder
     const pvp = tgt.kind === 'player';
     const crit = this.ctx.rng() * 100 < p.stats.crit;
     const roll = 0.92 + this.ctx.rng() * 0.16;
@@ -419,7 +420,7 @@ export class World {
   respawn(p: Player) {
     if (!p.deadUntil) return;
     if (this.now < p.deadUntil) throw new GameError('too_soon');
-    p.deadUntil = 0; p.status = {}; this.recalc(p); p.hp = p.stats.maxHp;
+    p.deadUntil = 0; p.status = {}; this.recalc(p); p.hp = p.stats.maxHp; p.protectUntil = this.now + RESPAWN_PROTECT_MS;
     const s = HUB.spawn[p.boy]; p.x = s.x; p.z = s.z; p.meDirty = true;
   }
 

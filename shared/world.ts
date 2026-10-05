@@ -73,16 +73,18 @@ export function genBosses(): BossDef[] {
 }
 
 /** Yaratık kampları (sunucu doğurur). */
+/** Kamp sayısı: nüfus simülasyonu zirve seviyede (41–50) çok az kamp olduğunu ve 2 kampın farm zamanının %43'ünü aldığını gösterdi */
+export const MAX_CAMPS = 64; export const CAMP_SPACING = 21;
 export function genCamps(): Camp[] {
   const r = mulberry32(WORLD_SEED ^ 0x9e3779b9);
   const obs = genObstacles();
   const camps: Camp[] = [];
   let tries = 0;
-  while (camps.length < 42 && tries++ < 3000) {
+  while (camps.length < MAX_CAMPS && tries++ < 8000) {
     const a = r() * Math.PI * 2;
     const d = HUB_R + 7 + Math.sqrt(r()) * (WORLD_R - HUB_R - 19);
     const x = Math.cos(a) * d; const z = Math.sin(a) * d;
-    if (camps.some((c) => (c.x - x) ** 2 + (c.z - z) ** 2 < 26 * 26)) continue;
+    if (camps.some((c) => (c.x - x) ** 2 + (c.z - z) ** 2 < CAMP_SPACING * CAMP_SPACING)) continue;
     if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 3) ** 2)) continue;
     camps.push({ id: camps.length, x, z, types: campTypes(d), level: campLevel(d), count: 5 + Math.floor(r() * 4) });
   }

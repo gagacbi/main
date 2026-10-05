@@ -371,6 +371,8 @@ export const DEATH_XP_LOSS = 0.1;
 /** yeni oyuncuyu korur: Sv10 altında ölünce deneyim kaybı yok, Sv20 altında yarısı (nüfus simülasyonu: yeni başlayanın ayrılma riski en yüksek) */
 export const deathXpLoss = (level: number) => (level < 10 ? 0 : level < 20 ? DEATH_XP_LOSS * 0.5 : DEATH_XP_LOSS); // riskli bölgede ölünce mevcut seviye deneyiminin bu oranı gider (seviye düşmez)
 export const RESPAWN_SEC = 3;
+/** yeniden doğduktan sonra dokunulmazlık (ms): muhafız/yaratık ölüm döngüsünü kırar; saldırınca biter */
+export const RESPAWN_PROTECT_MS = 8000;
 export const COMBAT_FLAG_SEC = 15;
 export const RANK_RECOVER_KILLS = 20;
 export const NEW_ACCOUNT_NOTE = 48; // saat: yeni hesap ilan veremez (bot / gerçek para ticareti önlemi)

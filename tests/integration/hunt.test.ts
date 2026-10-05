@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest';
 import { makeRig } from '../sim/rig';
 import { BAG_SIZE, CRAFT, DEATH_XP_LOSS, FIELD_BOSS, campRespawnMult, deathXpLoss, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
 import { newPlayerData } from '../../server/types';
-import { genBosses } from '../../shared/world';
+import { genBosses, genCamps } from '../../shared/world';
 import { mulberry32 } from '../../shared/rng';
 import { startTestServer, Bot, type TestServer } from './helpers';
 
@@ -177,5 +177,19 @@ describe('av 7: sürü ve cezasız avcılık (nüfus simülasyonu bulgusu)', () 
   });
   test('yeni oyuncu koruması: Sv10 altında ölüm deneyim kaybettirmez, Sv20 altında yarısı', () => {
     expect(deathXpLoss(5)).toBe(0); expect(deathXpLoss(15)).toBe(DEATH_XP_LOSS * 0.5); expect(deathXpLoss(30)).toBe(DEATH_XP_LOSS);
+  });
+});
+
+describe('av 8: ölüm döngüleri ve zirve kalabalığı (nüfus simülasyonu bulgusu)', () => {
+  test('kırmızı adlı oyuncu yurtta doğunca muhafız döngüsüne düşmez: 8 sn dokunulmaz, saldırınca koruma biter', () => {
+    const rig = makeRig(51, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.rank = -3; w.recalc(p); p.hp = p.stats.maxHp;
+    w.killPlayer(p, null); rig.seconds(3.2); w.respawn(p); expect(Math.hypot(p.x, p.z)).toBeLessThan(36);
+    rig.seconds(6); expect(p.deadUntil).toBe(0); expect(p.hp).toBe(p.stats.maxHp);              // muhafızlar vurur ama koruma sürerken hasar işlemez
+    rig.seconds(4); expect(p.hp).toBeLessThan(p.stats.maxHp);                                   // koruma bitti: yurda kırmızı adla kalmak yine tehlikeli
+    const q = rig.add('yer'); q.x = 80; q.z = 0; const e = rig.add('ay'); e.x = 82; e.z = 0; q.protectUntil = w.now + 8000; q.focus = e.id; w.playerHit(q, e, 1); expect(q.protectUntil).toBe(0);
+  });
+  test('zirve seviye (41–48) için yeterli kamp var: ≥12 kamp, kamplar arası ≥21 birim', () => {
+    const c = genCamps(); expect(c.length).toBeGreaterThanOrEqual(60); expect(c.filter((x) => x.level >= 41).length).toBeGreaterThanOrEqual(12);
+    for (let i = 0; i < c.length; i++) for (let j = i + 1; j < c.length; j++) expect(Math.hypot(c[i].x - c[j].x, c[i].z - c[j].z)).toBeGreaterThanOrEqual(21);
   });
 });
