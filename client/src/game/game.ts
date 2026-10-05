@@ -19,7 +19,7 @@ interface Npc { key: 'aksakal' | 'demirci' | 'guard'; rig: Rig; x: number; z: nu
 export class Game {
   gs: GameScene; world: World3D; fx: FX; audio = new Audio(); net = new Net(); vs: ViewSystem; ui!: UI;
   me!: Me; prevMe: Me | null = null; myId = 0; myBoy: Boy = 'gok'; pred = new Predictor(); pos = this.pred.pos; rot = 0; hp = 1; flags = 0; selfView: View | null = null;
-  serverYou = { x: 0, z: 0 }; snap: Snapshot | null = null; snapAt = 0;
+  campOcc: number[] = []; serverYou = { x: 0, z: 0 }; snap: Snapshot | null = null; snapAt = 0;
   drops = new Map<number, DropView>(); rifts = new Map<number, RiftView>(); riftSnap: SnapRift[] = []; npcs: Npc[] = [];
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
   focusId = 0; atkHeld = false; clickAttack = false; moveTarget: { x: number; z: number } | null = null; lastDir = { x: 0, z: 0 }; lastSend = 0;
@@ -85,6 +85,7 @@ export class Game {
     await this.net.connect(name, password, create, getLang());
     this.net.on('welcome', (w) => { this.myId = w.id; this.serverOffset = w.serverTime - Date.now(); });
     this.net.on('me', (m) => this.onMe(m));
+    this.net.on('camps', (o) => { this.campOcc = o; });
     this.net.on('snap', (s) => this.onSnap(s));
     this.net.on('chat', (c) => this.onChat(c));
     this.net.on('duelInvite', (from) => this.ui.duelInvite(from));

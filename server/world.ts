@@ -764,6 +764,7 @@ export class World {
     this.updateDrops(now);
     this.updateGuards(now);
     this.marketTick(now);
+    if (!this.ctx.cfg.headless && this.tickCount % (TICK_HZ * 5) === 0) this.broadcastCampOcc();
     if (this.ctx.cfg.headless) this.events = []; else this.sendSnapshots(now);
     if (now - this.lastSave > 10000) { this.lastSave = now; for (const p of this.players.values()) { p.d.x = p.x; p.d.z = p.z; p.d.hp = p.hp; this.flushGold(p); this.save(p); } }
     const ms = performance.now() - t0;
@@ -775,6 +776,14 @@ export class World {
     if (this.ctx.mailFlag.size) for (const p of this.players.values()) if (this.ctx.mailFlag.delete(p.dbId)) { const r = claimMail(this, p); if (r.gold) this.sys(p, 'sys.market_sold', { gold: r.gold }); }
     if (now - this.lastMarketExpire > 60000) { this.lastMarketExpire = now; for (const e of this.ctx.db.marketExpire(now)) this.ctx.mailFlag.add(e.sellerId); }
   }
+
+  /** kamp başına oyuncu sayısı (yalnızca ≥1 olanlar); istemci mini haritada gösterir: kalabalık bilgisi oyuncunun baktığı yerde */
+  campOccupancy(): number[] {
+    const occ = this.camps.map(() => 0);
+    for (const p of this.players.values()) { if (p.deadUntil > 0) continue; for (const c of this.camps) if ((p.x - c.x) ** 2 + (p.z - c.z) ** 2 < 20 * 20) { occ[c.id]++; break; } }
+    return occ;
+  }
+  broadcastCampOcc() { const occ = this.campOccupancy(); for (const p of this.players.values()) p.send('camps', occ); }
 
   updatePlayers(dt: number, now: number) {
     for (const p of this.players.values()) {

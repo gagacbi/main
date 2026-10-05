@@ -8,7 +8,7 @@ import type { Arch } from './archetypes';
 import type { Engine } from './engine';
 
 export type Activity = 'farm' | 'boss' | 'rift' | 'pvp';
-export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number }
+export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
 export interface DayRec { day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
 
 const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
@@ -207,7 +207,13 @@ export class Agent {
   }
   pickCamp() {
     const L = this.d.level; const par = this.par; const camps = this.w.camps; const mode = this.arch.camp;
-    const want = Math.max(1, Math.min(48, L + par.offset)); let pool = camps;
+    // haritayı okuyan oyuncu: tehlikeli (≥ +2 seviye) kampa gitmez ve kalabalık (≥8) kamptan kaçınır (mini haritadaki renk ve sayı)
+    let want = Math.max(1, Math.min(48, L + (par.readsMap ? Math.min(par.offset, 1) : par.offset))); let pool = camps;
+    if (par.readsMap && mode !== 'random') {
+      const ok = camps.filter((c) => c.level >= want - 3 && c.level <= want && (this.eng.occupancy.get(c.id) ?? 0) < 8);
+      if (ok.length) { this.camp = ok.sort((a, b) => (this.eng.occupancy.get(a.id) ?? 0) - (this.eng.occupancy.get(b.id) ?? 0) || Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z))[Math.floor(this.eng.rng() * Math.min(3, ok.length))]; return; }
+    }
+    if (par.readsMap && mode === 'random') want = Math.min(want, L + 1);
     if (mode === 'random') { const lo = Math.max(1, L - 4), hi = Math.min(48, L + 2); pool = camps.filter((c) => c.level >= lo && c.level <= hi); if (!pool.length) pool = camps; this.camp = pool[Math.floor(this.eng.rng() * pool.length)]; return; }
     if (mode === 'crowd') { let best: Camp | null = null, bn = -1; for (const c of camps) { if (c.level < L - 3 || c.level > L + 1) continue; const n = this.eng.occupancy.get(c.id) ?? 0; if (n > bn) { bn = n; best = c; } } if (best) { this.camp = best; return; } }
     const sorted = camps.slice().sort((a, b) => Math.abs(a.level - want) - Math.abs(b.level - want) || Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));

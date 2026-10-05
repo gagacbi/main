@@ -37,7 +37,7 @@ export class Engine {
       const par: Params = {
         skill: this.range(arch.skill), retreat: this.range(arch.retreat), offset: Math.round(this.range(arch.offset)), safeUp: arch.upgrade.safeUp, riskUp: arch.upgrade.riskUp, charm: arch.upgrade.charm, book: arch.upgrade.book,
         defAware: r() < arch.defAware, smartWeapon: r() < arch.smartWeapon, spec: specOf(arch, r), sellP: arch.market.sell, buyP: arch.market.buy, fightBack: r() < arch.pvp.fightBack,
-        skillOrder: r() < 0.7 ? DEFAULT_ORDER : [...DEFAULT_ORDER].sort(() => r() - 0.5), obaDil: arch.oba,
+        skillOrder: r() < 0.7 ? DEFAULT_ORDER : [...DEFAULT_ORDER].sort(() => r() - 0.5), obaDil: arch.oba, readsMap: process.env.POP_NOMAP ? false : r() < 0.5,
       };
       const p = this.rig.add(boy, 'player', (d) => this.seedData(d, L, par, arch));
       // hesap yaşı: tohum oyuncuları eskidir (yeni başlayanlar 48 sa pazar kısıtına takılır)

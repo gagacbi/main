@@ -9,7 +9,7 @@ export function serverUrl(): string {
 }
 const httpBase = () => serverUrl().replace(/^ws/, 'http');
 
-type Handlers = { snap: (s: Snapshot) => void; me: (m: Me) => void; chat: (c: ChatMsg) => void; welcome: (w: Welcome) => void; close: (code: number) => void; duelInvite: (from: string) => void };
+type Handlers = { snap: (s: Snapshot) => void; me: (m: Me) => void; chat: (c: ChatMsg) => void; welcome: (w: Welcome) => void; close: (code: number) => void; duelInvite: (from: string) => void; camps: (occ: number[]) => void };
 
 export class Net {
   room!: Room; welcome!: Welcome; h: Partial<Handlers> = {};
@@ -33,6 +33,7 @@ export class Net {
     r.onMessage('snap', (s: Snapshot) => this.h.snap?.(s)); r.onMessage('me', (m: Me) => this.h.me?.(m));
     r.onMessage('chat', (c: ChatMsg) => this.h.chat?.(c)); r.onMessage('welcome', (w: Welcome) => { this.welcome = w; this.offset = w.serverTime - Date.now(); this.h.welcome?.(w); });
     r.onMessage('rpcr', (x: RpcRes) => { this.pend.get(x.id)?.(x); this.pend.delete(x.id); });
+    r.onMessage('camps', (o: number[]) => this.h.camps?.(o));
     r.onMessage('duelInvite', (m: { from: string }) => this.h.duelInvite?.(m.from));
     r.onMessage('pong', (m: { t: number; st: number }) => { this.pingMs = Math.round(performance.now() - m.t); this.offset = m.st + this.pingMs / 2 - Date.now(); });
     r.onMessage('*', () => {});
