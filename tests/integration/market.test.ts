@@ -73,7 +73,7 @@ describe('pazar', () => {
   });
   test('rastgele alım-satım fuzz’ı: para korunumu (kayıp = vergi + ücret) ve eşya korunumu', () => {
     const { rig, w, seller, buyer } = setup(); const ps = [seller, buyer, rig.add('ay'), rig.add('gok')]; for (const p of ps) { p.x = 0; p.z = 5; p.d.gold = 50000; p.d.items.length = 0; for (let i = 0; i < 6; i++) p.d.items.push(makeItem(() => 0.3 + 0.1 * i, (['weapon', 'armor', 'helmet', 'amulet'] as const)[i % 4], 10 + i * 4, (i % 4) as 0)); }
-    const goldSum = () => ps.reduce((s, p) => s + p.d.gold, 0) + rig.db.db.prepare("SELECT COALESCE(SUM(gold),0) g FROM mail WHERE kind='gold'").get().g as number;
+    const goldSum = () => ps.reduce((s, p) => s + p.d.gold, 0) + (rig.db.db.prepare("SELECT COALESCE(SUM(gold),0) g FROM mail WHERE kind='gold'").get() as unknown as { g: number }).g;
     const itemCount = () => ps.reduce((s, p) => s + p.d.items.length, 0) + (rig.db.db.prepare("SELECT COUNT(*) c FROM market WHERE status='open'").get() as { c: number }).c + (rig.db.db.prepare("SELECT COUNT(*) c FROM mail WHERE kind='item'").get() as { c: number }).c;
     const g0 = goldSum(), n0 = itemCount(); let sunk = 0; let r = 7; const rnd = () => { r = (r * 1103515245 + 12345) & 0x7fffffff; return r / 0x7fffffff; };
     for (let i = 0; i < 400; i++) {

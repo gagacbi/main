@@ -731,7 +731,7 @@ export class World {
     this.updateDrops(now);
     this.updateGuards(now);
     this.marketTick(now);
-    this.sendSnapshots(now);
+    if (this.ctx.cfg.headless) this.events = []; else this.sendSnapshots(now);
     if (now - this.lastSave > 10000) { this.lastSave = now; for (const p of this.players.values()) { p.d.x = p.x; p.d.z = p.z; p.d.hp = p.hp; this.flushGold(p); this.save(p); } }
     const ms = performance.now() - t0;
     this.tickMsSum += ms; this.tickMsN++; if (ms > this.tickMsMax) this.tickMsMax = ms;
