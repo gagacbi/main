@@ -25,6 +25,7 @@ export class UI {
       <div class="hud-tl leather" id="hudtl"><div class="portrait" id="portrait"></div><div class="lvl" id="lvl"></div><div class="nm"><span id="nm"></span><small id="spec"></small></div>
         <div class="bar hp" id="hpbar"><i></i><span></span></div><div class="bar xp" id="xpbar"><i class="rest"></i><i class="base"></i></div><div class="statusrow" id="tags"></div></div>
       <div class="hud-top"><div class="zonepill leather" id="zone"></div><button class="pvpbtn leather" id="pvpbtn" type="button"></button><div class="targetf leather" id="target"><div class="nm"><span></span><span></span></div><div class="bar hp"><i></i><span></span></div></div>
+        <div class="dunbar leather" id="dunbar"><div class="t"><span></span><span></span></div><div class="sub2"></div><button class="btn" data-dunleave>×</button></div>
         <div class="riftbar leather" id="riftbar"><div class="t"><span></span><span></span></div><div class="bar"><i></i></div></div></div>
       <div class="hud-tr"><div class="minimap"><canvas id="mm" width="340" height="340"></canvas><div class="n">N</div></div>
         <div class="btnrow" id="btns"></div><div class="quest leather" id="quest"></div><div class="info" id="info"></div></div>
@@ -37,7 +38,7 @@ export class UI {
       <div class="dream" id="dream"><div class="snow"></div><div class="box"><div class="eye"></div><h3></h3><p></p><button class="btn primary" id="wake"></button></div></div>
       <div class="fpsbox" id="fps"></div>
       <div class="conn" id="conn"><div class="felt" style="padding:28px 40px;text-align:center"><h2 style="margin:0 0 8px;font-family:var(--f-head)" id="connt"></h2><button class="btn primary" onclick="location.reload()">OK</button></div></div>`);
-    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes', 'lore', 'dream', 'wake', 'pvpbtn']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
+    for (const id of ['hudtl', 'portrait', 'lvl', 'nm', 'spec', 'hpbar', 'xpbar', 'tags', 'zone', 'target', 'riftbar', 'btns', 'quest', 'info', 'skillbar', 'chat', 'clog', 'cin', 'ctabs', 'prompt', 'toasts', 'compass', 'death', 'deadp', 'respawn', 'duelbox', 'duelt', 'fps', 'conn', 'connt', 'duelyes', 'lore', 'dream', 'wake', 'pvpbtn', 'dunbar']) this.e[id] = r.querySelector('#' + id) as HTMLElement;
     this.minimap = r.querySelector('#mm') as HTMLCanvasElement;
     // yetenek çubuğu
     this.e.skillbar.innerHTML = `<div class="slot atk" data-skill="-1" title="Space"><span class="key">␣</span>${icon('swords')}</div>` + SKILLS.map((s, i) => `<div class="slot" data-i="${i}" data-skill="${i}"><span class="key">${i + 1}</span>${icon(s.id)}<span class="rk"></span><div class="cd"></div><span class="cdt"></span><div class="lk"></div></div>`).join('');
@@ -60,6 +61,7 @@ export class UI {
     this.e.duelyes.addEventListener('click', async () => { await this.g.net.rpc('duelAccept'); this.e.duelbox.style.display = 'none'; });
     (this.e.duelbox.querySelector('#duelno') as HTMLElement).addEventListener('click', () => (this.e.duelbox.style.display = 'none'));
     this.e.pvpbtn.addEventListener('click', () => void this.togglePvp());
+    this.e.dunbar.querySelector('[data-dunleave]')!.addEventListener('click', () => void this.g.net.rpc('dungeon.leave'));
     this.relocalize();
   }
   relocalize() {
@@ -91,6 +93,18 @@ export class UI {
     const r = regionAt(this.g.pos.x, this.g.pos.z); if (!r) return; const d = MAPS[r.map];
     this.toast(`${t('map.' + r.map)} — ${t('map.pvp')}: ${t('map.pvp.' + d.pvp)}`, '');
     void id;
+  }
+  /** Zindan seferi ya da parti toplama çubuğu */
+  dunBar() {
+    const b = this.e.dunbar; const dn = this.g.me.dun; const now = this.g.net.now(); const sp = b.querySelectorAll('.t span'); const sub = b.querySelector('.sub2') as HTMLElement;
+    if (dn?.run) {
+      const r = dn.run; b.style.display = 'block'; sp[0].textContent = t('map.' + r.d);
+      const won = r.state === 'won'; const lost = r.state === 'lost'; const left = Math.max(0, ((won || lost ? r.exitAt : r.endAt) - now) / 1000);
+      sp[1].textContent = `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+      sub.textContent = won ? t('dun.won') : lost ? t('dun.lost') : r.state === 'boss' ? t('dun.boss') : r.state === 'gap' && r.wave === 0 ? t('dun.prepare') : t('dun.wave', { n: r.wave, of: r.waves });
+    } else if (dn?.lobby) {
+      b.style.display = 'block'; sp[0].textContent = t('dun.lobby', { m: t('map.' + dn.lobby.d) }); sp[1].textContent = `${Math.max(0, Math.ceil((dn.lobby.at - now) / 1000))}s`; sub.textContent = t('dun.party', { n: dn.lobby.n });
+    } else b.style.display = 'none';
   }
   /** PvP bayrağını değiştir (HUD düğmesi ve /pvp komutu) */
   async togglePvp() {
@@ -188,6 +202,7 @@ export class UI {
     // çatlak çubuğu + pusula
     let near: { x: number; z: number; d: number; w: number; st: number; h: number; H: number } | null = null;
     for (const r of g.riftSnap) { const d = Math.hypot(r.x - g.pos.x, r.z - g.pos.z); if (!near || d < near.d) near = { x: r.x, z: r.z, d, w: r.w, st: r.st, h: r.h, H: r.H }; }
+    this.dunBar();
     const rb = this.e.riftbar;
     if (near && near.d < 70) { rb.style.display = 'block'; const sp = rb.querySelectorAll('.t span'); sp[0].textContent = t('rift.name'); sp[1].textContent = near.st === 0 ? t('rift.idle') : near.st === 2 ? t('rift.boss') : t('rift.wave', { n: near.w }); (rb.querySelector('.bar i') as HTMLElement).style.width = near.H ? `${(near.h / near.H) * 100}%` : '100%'; } else rb.style.display = 'none';
     const cp = this.e.compass; if (near && near.d > 28) {

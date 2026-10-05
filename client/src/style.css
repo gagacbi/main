@@ -226,3 +226,9 @@ button { font-family: var(--f-head); cursor: pointer; }
 .pvpbtn { margin-left: 8px; padding: 5px 14px; font-family: var(--f-head); font-weight: 500; font-size: 14px; color: #d8c49a; border-radius: 16px; cursor: pointer; pointer-events: auto; }
 .pvpbtn.on { color: #ffd0c8; border-color: #e0584a; background: linear-gradient(#7a2a24, #4a1814); } .pvpbtn.na { opacity: .6; cursor: default; }
 .pip.pvp { background: #ff4a3a; } .plate.pvp .nm::after { content: ' ⚔'; color: #ff8a7a; font-size: 12px; }
+
+.dunbar { width: 360px; padding: 8px 14px 10px; display: none; border-color: #d6a24a; position: relative; background: var(--noise), linear-gradient(180deg, rgba(70,48,20,.94), rgba(36,24,10,.94)); }
+.dunbar .t { font-family: var(--f-head); font-weight: 600; font-size: 16px; color: #ffe6b0; display: flex; justify-content: space-between; } .dunbar .sub2 { font-size: 13px; color: #e8d2a0; margin-top: 2px; }
+.dunbar .btn { position: absolute; right: -10px; top: -10px; padding: 0 8px; pointer-events: auto; font-size: 14px; line-height: 20px; }
+.gatecard .row2 { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; } .gatecard .dl { font-size: 12px; color: #d8c49a; }
+.gatecard .ln { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 1px 0; } .gatecard .gt { font-size: 16px; margin-bottom: 2px; } .gatecard .btn { margin-top: 6px; }

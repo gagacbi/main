@@ -15,6 +15,8 @@ export interface PlayerData {
   clues: string[]; dreams: number; shards: number; pendingDream: number;
   /** isteğe bağlı PvP bayrağı (eski kayıtlarda yok = kapalı) */
   pvp?: boolean;
+  /** günlük zindan hakkı ve toplam bitirme sayısı */
+  dun?: { day: number; n: Record<string, number>; clears: Record<string, number> };
 }
 
 export interface Config {

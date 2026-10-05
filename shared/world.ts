@@ -90,7 +90,7 @@ export function genBosses(): BossDef[] { return (cachedBosses ??= buildBosses())
 function buildBosses(): BossDef[] {
   const r = mulberry32(WORLD_SEED ^ 0xb055); const obs = worldObstacles(); const camps = genAllCamps(); const out: BossDef[] = [];
   FIELD_BOSS.list.forEach(([level, kind, nameKey], i) => {
-    const map = FIELD_BOSS.maps[i]; const g = regionById(map); const def = MAPS[map];
+    const map = FIELD_BOSS.maps[i]; if (MAPS[map].kind === 'dungeon') return; /* zindan bossları örnek açılınca doğar */ const g = regionById(map); const def = MAPS[map];
     for (let t = 0; t < 600; t++) {
       let d: number, a: number;
       if (map === 'bozkir') { const dist0 = 40 + (level - 1) * 2.5; a = t < 300 ? (i / 5) * Math.PI * 2 + 0.4 + (r() - 0.5) * 0.8 : r() * Math.PI * 2; d = Math.min(150, dist0 + r() * (t < 300 ? 6 : 10)); }

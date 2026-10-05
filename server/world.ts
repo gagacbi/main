@@ -11,6 +11,7 @@ import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shar
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
 import { runGm } from './gm';
+import { cancelLobby, dungeonBossDown, dungeonRpc, dunInfo, updateDungeons, type DungeonRun, type Lobby } from './dungeon';
 import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
@@ -44,6 +45,8 @@ export interface Mob {
   bossId: number; slamAt: number; slamHitAt: number; baseHp?: number;
   /** bulunduğu bölge kimliği (boş bölgelerde yaratık güncellenmez) */
   reg: string;
+  /** zindan örneği kimliği (0 = değil) */
+  dun: number;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -55,6 +58,7 @@ export class World {
   players = new Map<number, Player>();
   mobs = new Map<number, Mob>();
   rifts = new Map<number, Rift>();
+  dungeons = new Map<number, DungeonRun>(); lobbies = new Map<string, Lobby>();
   drops = new Map<number, Drop>();
   camps: Camp[] = genAllCamps();
   events: { ev: GameEvent; x: number; z: number }[] = [];
@@ -86,7 +90,7 @@ export class World {
     const m: Mob = {
       kind: 'mob', id: this.nid(), type, lvl, x, z, rot: this.ctx.rng() * 6.28, hp, maxHp: hp, atk: mobAtk(lvl) * def.atk, def: mobDef(lvl) * def.def,
       hx: x, hz: z, campId, riftId, target: 0, nextAtk: 0, wanderAt: 0, wx: x, wz: z, status: {}, contrib: new Map(), dead: false, respawnAt: 0,
-      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0, bossId: 0, slamAt: 0, slamHitAt: 0, reg: regionAt(x, z)?.id ?? 'bozkir',
+      leash: type === 'bekci' ? 60 : 32, poisonAcc: 0, tauntUntil: 0, tauntBy: 0, lastSwing: 0, bossId: 0, slamAt: 0, slamHitAt: 0, reg: regionAt(x, z)?.id ?? 'bozkir', dun: 0,
     };
     this.mobs.set(m.id, m);
     return m;
@@ -123,7 +127,8 @@ export class World {
     p.x = d.x; p.z = d.z;
     p.hp = d.hp > 0 ? Math.min(d.hp, p.stats.maxHp) : p.stats.maxHp;
     p.lastCombat = 0;
-    if (!Number.isFinite(p.x) || !Number.isFinite(p.z) || !regionAt(p.x, p.z) || isDungeonRegion(regionAt(p.x, p.z))) { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; }
+    if (isDungeonRegion(regionAt(p.x, p.z))) { const g = gatePos('erlik'); p.x = g.x; p.z = g.z + 3.5; }
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.z) || !regionAt(p.x, p.z)) { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; }
     const o = oba.loadOymak(this.ctx, p.oymakId);
     oba.ensureCompanions(this.ctx, p, o.lv.otag);
     this.players.set(p.id, p);
@@ -133,6 +138,8 @@ export class World {
   }
   leave(p: Player) {
     if (!this.players.has(p.id)) return;
+    cancelLobby(this, p);
+    if (isDungeonRegion(regionAt(p.x, p.z))) { const g = gatePos('erlik'); p.x = g.x; p.z = g.z + 3.5; }
     p.d.loggedOutAt = this.now; p.d.outInHub = zoneAt(p.x, p.z) === 'safe';
     p.d.x = p.x; p.d.z = p.z; p.d.hp = p.deadUntil ? 0 : p.hp;
     this.flushGold(p);
@@ -356,6 +363,9 @@ export class World {
     this.ctx.broadcastSys('sys.boss_down.' + m.bossId, { who: top?.name ?? '?' });
   }
 
+  /** Zindan ödülüne eklenen kostüm malzemeleri (kostüm sistemi) */
+  dungeonLoot(p: Player, d: string) { void p; void d; }
+
   /** Kilometre taşı armağanı (Kut Armağanı) */
   milestone(p: Player) {
     const g = milestoneGift(p.d.level); const d = p.d; const rng = this.ctx.rng;
@@ -369,6 +379,7 @@ export class World {
     m.dead = true; m.hp = 0; m.target = 0;
     this.emit({ k: 'die', id: m.id }, m.x, m.z);
     const boss = m.type === 'bekci';
+    if (m.bossId && m.dun) { dungeonBossDown(this, m); return; }
     if (m.bossId) { this.fieldBossDown(m); return; }
     const total = [...m.contrib.values()].reduce((a, b) => a + b, 0) || 1;
     for (const [pid, dmg] of m.contrib) {
@@ -388,6 +399,8 @@ export class World {
       const r = this.rifts.get(m.riftId);
       if (r) r.mobs.delete(m.id);
       this.mobs.delete(m.id);
+    } else if (m.dun) {
+      this.dungeons.get(m.dun)?.mobs.delete(m.id); this.mobs.delete(m.id);
     } else {
       let near = 0; if (m.campId >= 0) { const c = this.camps[m.campId]; for (const q of this.players.values()) if (q.deadUntil === 0 && (q.x - c.x) ** 2 + (q.z - c.z) ** 2 < 35 * 35) near++; }
       m.respawnAt = this.now + range(this.ctx.rng, MOB_RESPAWN[0], MOB_RESPAWN[1]) * 1000 * campRespawnMult(near);
@@ -417,7 +430,7 @@ export class World {
         this.spawnDrop(killer, 'item', p.x, p.z, { item: it, t: it.tier, m: it.slot });
         this.sys(p, 'sys.item_lost'); this.ledger(p, 'pvp.item_drop', { item: it.id, to: killer.dbId });
       }
-    } else if (zoneAt(p.x, p.z) === 'risky') {
+    } else if (zoneAt(p.x, p.z) === 'risky' && !isDungeonRegion(regionAt(p.x, p.z))) {   // zindanda (günlük hak + ücret zaten var) deneyim kaybı yok
       const loss = Math.min(p.d.xp, Math.round(xpToNext(p.d.level) * deathXpLoss(p.d.level)));
       p.d.xp -= loss; if (loss > 0) this.sys(p, 'sys.xp_lost', { xp: loss });
     }
@@ -442,7 +455,8 @@ export class World {
   /** Yeni oyuncu bölgesinde ve Erlik Diyarı'nda kendi güvenli kampında doğar; zindanda yurda döner */
   respawnPoint(p: Player): { x: number; z: number } {
     const g = regionAt(p.x, p.z);
-    if (g && g.id !== 'bozkir' && !isDungeonRegion(g)) return { x: g.cx + (this.ctx.rng() - 0.5) * 4, z: g.cz + 3 + this.ctx.rng() * 2 };
+    if (isDungeonRegion(g)) return { x: gatePos('erlik').x, z: gatePos('erlik').z + 3.5 };
+    if (g && g.id !== 'bozkir') return { x: g.cx + (this.ctx.rng() - 0.5) * 4, z: g.cz + 3 + this.ctx.rng() * 2 };
     return HUB.spawn[p.boy];
   }
 
@@ -613,6 +627,7 @@ export class World {
         return null;
       }
       case 'respawn': this.respawn(p); return null;
+      case 'dungeon.enter': case 'dungeon.leave': return dungeonRpc(this, p, op, a as Record<string, unknown>);
       case 'pvp': {
         this.alive(p); const on = !!a.on; if (on === !!d.pvp) return null;
         const g = regionAt(p.x, p.z);
@@ -801,7 +816,7 @@ export class World {
     this.tickCount++;
     this.updatePlayers(dt, now);
     this.updateMobs(dt, now);
-    this.updateRifts(now);
+    this.updateRifts(now); updateDungeons(this, now);
     this.updateDrops(now);
     this.updateGuards(now);
     this.marketTick(now);
@@ -909,7 +924,7 @@ export class World {
       let tgt = m.target ? this.players.get(m.target) : undefined;
       if (tgt && (tgt.deadUntil > 0 || zoneAt(tgt.x, tgt.z) === 'safe' || dist(tgt, { x: m.hx, z: m.hz }) > m.leash + 8)) { tgt = undefined; m.target = 0; }
       if (!tgt) {
-        const aggro = m.bossId ? FIELD_BOSS.aggro : def.aggro; let bd = aggro * aggro; let b: Player | undefined;
+        const aggro = m.dun ? 120 : m.bossId ? FIELD_BOSS.aggro : def.aggro; let bd = aggro * aggro; let b: Player | undefined;
         for (const p of this.players.values()) {
           if (p.deadUntil > 0 || zoneAt(p.x, p.z) === 'safe') continue;
           const d = dist2(p, m); if (d < bd) { bd = d; b = p; }
@@ -1093,7 +1108,7 @@ export class World {
     return {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
-      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
+      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },

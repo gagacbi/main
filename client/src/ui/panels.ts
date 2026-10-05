@@ -7,7 +7,8 @@ import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
 import { MAPS, regionAt, type MapId } from '@shared/maps';
-import { GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
+import { DUNGEONS } from '@shared/dungeon';
+import { GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -271,7 +272,17 @@ export class Panels {
         <div class="ln"><span>${t('map.pvp')}</span><b>${t('map.pvp.' + d.pvp)}</b></div><div class="ln"><span>${t('map.entry')}</span><b>${d.minLv}–${d.maxLv > 90 ? '∞' : d.maxLv}</b></div>
         <button class="btn ${why ? '' : 'primary'}" data-act="travel" data-v="${id}" ${why ? 'disabled' : ''}>${why || t('map.go')}</button></div>`;
     };
-    return this.shell(t('npc.gate'), 'stele', `<div class="muted" style="margin-bottom:8px">${t('map.gate.hint')}</div>${links.map((l) => card(l)).join('')}`);
+    const dun = reg ? GATE_DUNGEONS[reg.id] ?? [] : []; const now = this.g.net.now(); const dn = m.dun;
+    const dcard = (id: MapId) => {
+      const def = DUNGEONS[id]!; const left = dn.left[id] ?? 0; const low = m.level < def.minLv; const open = dn.open[id]; const mine = dn.lobby?.d === id;
+      const why = low ? t('err.level_low', { lvl: def.minLv }) : left <= 0 ? t('err.dun_daily') : m.gold < def.fee ? t('err.no_gold') : dn.lobby ? t('err.dun_in_lobby') : '';
+      return `<div class="card gatecard" data-dun="${id}"><div class="gt"><b>${t('map.' + id)}</b> <span class="muted">${t('map.lv', { a: MAPS[id].lv[0], b: MAPS[id].lv[1] })}</span></div><div class="muted">${t('map.' + id + '.d')}</div>
+        <div class="ln"><span>${t('dun.fee')}</span><b>${num(def.fee)}</b></div><div class="ln"><span>${t('dun.today')}</span><b>${left}/${def.daily}</b></div><div class="ln"><span>${t('dun.clears')}</span><b>${dn.clears[id] ?? 0}</b></div>
+        <div class="ln"><span>${t('dun.limit')}</span><b>${Math.round(def.limitSec / 60)} ${t('dun.min')} · ${t('dun.party.max', { n: def.partyMax })}</b></div>
+        ${open ? `<div class="dl">${t('dun.open', { n: open.n, s: Math.max(0, Math.ceil((open.at - now) / 1000)) })}</div>` : ''}
+        <div class="row2">${mine ? `<button class="btn" data-act="dunleave">${t('dun.cancel')}</button>` : open ? `<button class="btn ${why ? '' : 'primary'}" data-act="dunenter" data-v="${id}" ${why ? 'disabled' : ''}>${why || t('dun.join')}</button>` : `<button class="btn ${why ? '' : 'primary'}" data-act="dunenter" data-v="${id}" ${why ? 'disabled' : ''}>${why || t('dun.party.open', { s: def.lobbySec })}</button><button class="btn" data-act="dunenter" data-v="${id}" data-solo="1" ${why ? 'disabled' : ''}>${t('dun.solo')}</button>`}</div></div>`;
+    };
+    return this.shell(t('npc.gate'), 'stele', `<div class="muted" style="margin-bottom:8px">${t('map.gate.hint')}</div>${links.map((l) => card(l)).join('')}${dun.length ? `<div class="sub">${t('dun.title')}</div>${dun.map((l) => dcard(l)).join('')}` : ''}`);
   }
 
   // ─── yazıtlar ───
@@ -337,6 +348,8 @@ export class Panels {
     const d = el.dataset;
     switch (act) {
       case 'close': this.close(); break;
+      case 'dunenter': { const r = await this.g.net.rpc('dungeon.enter', { d: d.v, solo: !!d.solo }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else { this.close(); } break; }
+      case 'dunleave': { await this.g.net.rpc('dungeon.leave'); this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
       case 'cx': this.codexTab = d.v as Thread; break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;

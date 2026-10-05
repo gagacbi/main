@@ -7,7 +7,7 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp'
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave'
   | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
@@ -24,10 +24,14 @@ export interface ObaInfo {
   share: number; points: number; rank: number; slots: number;
   nextCost: Partial<Record<BuildingKey, { gold: number; ore: number; hide: number; wood: number; sec: number } | null>>;
 }
+export interface DunInfo {
+  left: Record<string, number>; clears: Record<string, number>; lobby: { d: string; at: number; n: number } | null; open: Record<string, { n: number; at: number }>;
+  run: { d: string; wave: number; waves: number; state: string; endAt: number; exitAt: number } | null;
+}
 export interface Me {
   name: string; boy: Boy; level: number; xp: number; xpNext: number; kut: number; gold: number; spec: Spec;
   hp: number; stats: Stats; skillRanks: number[]; skillPts: number; bag: Bag; items: Item[]; equip: Partial<Record<Slot, Item>>;
-  rested: number; restedCap: number; pvp: boolean; rank: number; points: number; oymakId: number; oymakName: string;
+  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
   role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;

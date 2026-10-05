@@ -68,6 +68,8 @@ export function gatePos(regionId: string): { x: number; z: number } {
 }
 /** Kapı taşından gidilebilecek hedefler (zindanlar ayrı RPC ile). */
 export const GATE_LINKS: Record<string, MapId[]> = { bozkir: ['otlak', 'erlik'], otlak: ['bozkir'], erlik: ['bozkir'] };
+/** Kapı taşında ayrıca listelenen zindanlar */
+export const GATE_DUNGEONS: Record<string, MapId[]> = { erlik: ['demir', 'golge'] };
 /** Pazar, demirci, oba vb. yalnızca Bozkır yurdunda (merkez yerleşim) */
 export const inHubTown = (x: number, z: number) => x * x + z * z < HUB_R * HUB_R;
 
@@ -339,9 +341,9 @@ export const FIELD_BOSS = {
   respawnSec: 900, aggro: 13, hpMult: 1.3, scaleView: 2.1, xpMult: 40, goldMult: 25, slamEverySec: 11, slamTelegraphSec: 1.4, hpPerExtra: 0.3, maxScale: 8, slamRadius: 7, slamMult: 2.4, enrageBelow: 0.3, enrageAtkSpeed: 1.35,
   /** [seviye, hasar türü, ad anahtarı] */
   list: [[9, 'cift', 'boss.1'], [19, 'buyu', 'boss.2'], [29, 'bicak', 'boss.3'], [39, 'buyu', 'boss.4'], [48, 'cift', 'boss.5'],
-    [7, 'bicak', 'boss.6'], [44, 'bicak', 'boss.7'], [50, 'buyu', 'boss.8'], [53, 'cift', 'boss.9']] as [number, DmgKind, string][],
+    [7, 'bicak', 'boss.6'], [44, 'bicak', 'boss.7'], [50, 'buyu', 'boss.8'], [53, 'cift', 'boss.9'], [46, 'bicak', 'boss.10'], [51, 'buyu', 'boss.11']] as [number, DmgKind, string][],
   /** list ile paralel: bossun yaşadığı harita (ilk 5 Bozkır) */
-  maps: ['bozkir', 'bozkir', 'bozkir', 'bozkir', 'bozkir', 'otlak', 'erlik', 'erlik', 'erlik'] as MapId[],
+  maps: ['bozkir', 'bozkir', 'bozkir', 'bozkir', 'bozkir', 'otlak', 'erlik', 'erlik', 'erlik', 'demir', 'golge'] as MapId[],
 };
 /** İsteğe bağlı PvP: yalnızca iki taraf da bayraklıysa vurulabilir; bayraklı alp yaratıklardan biraz fazla kazanır, kapatmak için PvP'den bu kadar süre uzak durulur */
 export const PVP_FLAG = { bonus: 0.1, offAfterSec: 30 };

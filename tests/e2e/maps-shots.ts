@@ -26,4 +26,6 @@ console.log(await pg.evaluate(`(() => { const g = window.__game; return JSON.str
 ap.x = 900 + 40; ap.z = 20; await sleep(2500); await shot('otlak-saha');
 await gm('tp erlik'); await sleep(2500); await shot('erlik-kamp');
 ap.x = -900 + 50; ap.z = 30; await sleep(2500); await shot('erlik-saha');
+await gm('level 46'); await gm('gold 5000'); await gm('tp erlik'); await sleep(1500); await pg.keyboard.press('e'); await sleep(900); await shot('erlik-kapi-paneli'); await pg.keyboard.press('Escape'); await sleep(300);
+w.rpcRun(ap, 'dungeon.enter', { d: 'demir', solo: true }); await sleep(9000); await shot('zindan-demir-1'); await sleep(8000); await shot('zindan-demir-2');
 console.log('errors', errs.slice(0, 5)); await browser.close(); await srv.close?.(); process.exit(0);
