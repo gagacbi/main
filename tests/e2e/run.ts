@@ -377,7 +377,7 @@ if (want('harita')) {
   const gp = await pg3.textContent('.panel');
   check('H12.kapi-paneli', /Kapı Taşı/.test(prompt ?? '') && /Kutlu Otlak/.test(gp ?? '') && /Erlik Diyarı/.test(gp ?? '') && /İsteğe bağlı/.test(gp ?? ''), 'Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür');
   await pg3.click('.gatecard[data-map="otlak"] button[data-act="travel"]'); await sleep(2500);
-  const zone1 = await pg3.textContent('#zone'); await sh3('36-kutlu-otlak');
+  const zone1 = await pg3.textContent('#zone', { timeout: 8000 }).catch(async () => { console.log('ZONE-YOK', (await pg3.evaluate(() => document.body.innerText)).slice(0, 200)); return ''; }); await sh3('36-kutlu-otlak');
   check('H12.otlak', (await reg()) === 'otlak' && /Otlak Kampı/.test(zone1 ?? ''), `Kapıdan geçince Kutlu Otlak'ta (bölge=${await reg()}); bölge etiketi: ${(zone1 ?? '').replace(/\s+/g, ' ').slice(0, 40)}`);
   // kuralı giriş anında oku: PvP düğmesi Otlak'ta kapalı/pasif
   const pvpOtlak = await pg3.textContent('#pvpbtn');
