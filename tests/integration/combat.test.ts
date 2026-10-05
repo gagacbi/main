@@ -166,10 +166,13 @@ describe('B7 ölüm cezası ve bölge kuralları', () => {
 });
 
 describe('C2/C3/C4 PvP, derece, muhafız, düello', () => {
-  test('riskli bölgede farklı boyun oyuncusu alan yeteneğiyle vurulur; aynı boy vurulmaz (açık hedef olmadan)', async () => {
+  test('PvP bilinçli başlar: alan becerisi, hedef seçilmemiş/çatışmaya girmemiş oyuncuya zarar vermez; hedef seçilince farklı boy vurulur, aynı boy vurulmaz', async () => {
     const a = await fresh('gok', 'PA'); const e = await fresh('yer', 'PE'); const f = await fresh('gok', 'PF');
     for (const b of [e, f]) tp(s, b, FAR.x + 2, FAR.z);
     const hpE = playerOf(s, e).hp, hpF = playerOf(s, f).hp;
+    a.send('sk', 0); await a.sleep(500);                               // yan hasar: kimse hedef değil
+    expect(playerOf(s, e).hp).toBe(hpE); expect(playerOf(s, f).hp).toBe(hpF);
+    const pa = playerOf(s, a); pa.focus = playerOf(s, e).id; pa.cds = [0, 0, 0, 0, 0, 0];        // karşı boydan oyuncu bilinçli hedef
     a.send('sk', 0); await a.sleep(500);
     expect(playerOf(s, e).hp).toBeLessThan(hpE); expect(playerOf(s, f).hp).toBe(hpF);
     await a.leave(); await e.leave(); await f.leave();

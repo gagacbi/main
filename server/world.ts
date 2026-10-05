@@ -272,6 +272,11 @@ export class World {
     return this.damage(p, tgt, dmg, { crit });
   }
 
+  /** PvP bilinçli başlar: alan becerisi yalnızca hedef seçtiğin, sana saldırmış ya da düello yaptığın oyuncuya işler (kalabalık kampta yan hasarla toplu savaş çıkmasın). */
+  pvpEngaged(att: Player, q: Player) {
+    if (att.duelWith === q.id || att.focus === q.id) return true;
+    const now = this.now; return (q.lastDamager === att.id && now - q.lastCombat < 10000) || (att.lastDamager === q.id && now - att.lastCombat < 10000);
+  }
   canHitPlayer(att: Player, tgt: Player, explicit: boolean) {
     if (tgt === att || tgt.deadUntil > 0) return false;
     if (att.duelWith === tgt.id) return true;
@@ -500,7 +505,7 @@ export class World {
       }
     }
     for (const q of this.players.values()) {
-      if (!this.canHitPlayer(p, q, false) || Math.sqrt(dist2(p, q)) > r + 0.6) continue;
+      if (!this.canHitPlayer(p, q, false) || !this.pvpEngaged(p, q) || Math.sqrt(dist2(p, q)) > r + 0.6) continue;
       const dealtQ = sk.mult > 0 ? this.playerHit(p, q, sk.mult * sp, 1, { skill: true, dk: sk.dk }) : 1;
       if (dealtQ === 0) continue; // bloklanan beceri durum etkisi de uygulamaz
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {

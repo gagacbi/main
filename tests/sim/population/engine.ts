@@ -25,7 +25,7 @@ export class Engine {
   econ: { day: number; supply: number; sources: Record<string, number>; sinks: Record<string, number>; mkt: { sales: number; volume: number; tax: number; fees: number; listed: number; avgRatio: number }; gini: number }[] = [];
   private bossStart = new Map<number, number>(); private bossDeaths = new Map<number, number>(); private riftOpen = 0; private riftDone = 0; private riftFail = 0;
   constructor(public seed: number, public n: number, public W = 10) {
-    this.rng = mulberry32(seed ^ 0x51ed); this.rig = makeRig(seed, { headless: true, spawnCamps: true }); this.market = new MarketModel(this); this.seedAgents(); this.instrument();
+    this.rng = mulberry32(seed ^ 0x51ed); this.rig = makeRig(seed, { headless: true, spawnCamps: true, riftEvery: [150, 300] }); this.market = new MarketModel(this); this.seedAgents(); this.instrument();
   }
   // ───────────── kuruluş ─────────────
   private pickArch(): Arch { let t = this.rng() * ARCHS.reduce((s, a) => s + a.weight, 0); for (const a of ARCHS) if ((t -= a.weight) < 0) return a; return ARCHS[0]; }
@@ -80,7 +80,7 @@ export class Engine {
       if (ev.k === 'dmg' && ev.pl) { const a = self.byPid.get(ev.id); if (a) { if (ev.blk) a.tot.blocked++; else { const src = ev.src ? w.mobs.get(ev.src) : undefined; const kind = src ? (src.bossId ? self.bossKind(src.bossId) : MOBS[src.type].kind) : ev.src ? 'pl' : 'dot'; a.dmgByKind[kind] = (a.dmgByKind[kind] ?? 0) + ev.v; } } }
       emit0(ev, x, z);
     };
-    const give0 = w.giveItem.bind(w); w.giveItem = (p, it) => { const ok = give0(p, it); const a = self.byPid.get(p.id); if (a && ok && it.tier >= 2) a.reward('rare'); return ok; };
+    const give0 = w.giveItem.bind(w); w.giveItem = (p, it) => { const ok = give0(p, it); const a = self.byPid.get(p.id); if (a && ok && it.tier >= 2) { a.reward('rare'); a.tot.rare++; } return ok; };
     const lvl0 = w.addXp.bind(w); w.addXp = (p, xp, c) => { const before = p.d.level; const r = lvl0(p, xp, c); const a = self.byPid.get(p.id); if (a && p.d.level > before) a.reward('level'); return r; };
   }
   bossKind(id: number) { return ['cift', 'buyu', 'bicak', 'buyu', 'cift'][id - 1]; }
@@ -102,7 +102,7 @@ export class Engine {
   private runSlice(si: number, online: { a: Agent; mins: number[] }[]) {
     const w = this.rig.world; const t0 = performance.now();
     if (!online.length) { return; }
-    this.riftOpen = this.riftDone = this.riftFail = 0; const bossKills0 = this.bossFights.length;
+    this.riftOpen = this.riftDone = this.riftFail = 0; const bossKills0 = this.bossFights.length; this.bossStart.clear(); this.bossDeaths.clear();
     // giriş (gerçek join: dinlenmiş XP, rüya, posta teslimi)
     for (const { a } of online) { const row = this.rig.db.playerById(a.dbId)!; a.p = w.join(row, () => {}, () => {}); this.byPid.set(a.p.id, a); a.sliceFarmTicks = a.sliceFarmKills = a.sliceFarmDeaths = 0; a.sliceStartKills = a.tot.kills; a.sliceStartDeaths = a.tot.deaths; }
     this.market.invalidate();
@@ -151,7 +151,7 @@ export class Engine {
       a.tot.extraKills += n;
       deathsLeft -= deathPerKill * n; while (deathsLeft >= 1 || (deathsLeft > 0 && this.rng() < deathsLeft)) { deathsLeft -= 1; const loss = Math.min(p.d.xp, Math.round(xpToNext(p.d.level) * DEATH_XP_LOSS)); p.d.xp -= loss; a.tot.extraDeaths++; a.frustration += 1; a.deathBy['farm'] = (a.deathBy['farm'] ?? 0) + 1; if (deathsLeft <= 0) break; }
       this.collectDrops(a);
-      if (p.d.items.length >= 26) a.town();
+      if (p.d.items.length >= 20) a.town();
     }
     w.flushGold(p); p.d.hp = p.stats.maxHp;
   }

@@ -19,7 +19,7 @@ const ins: Ins[] = agents.map((a) => {
   const equip = a.def as Record<string, Item>; const st = computeStats({ level: a.final.level, boy: a.boy, spec: a.final.spec, equip, kut: a.final.kut });
   const tot = sum(DMG_KINDS.map((k) => a.dmgByKind[k] ?? 0)) + (a.dmgByKind.pl ?? 0) + (a.dmgByKind.dot ?? 0); let main = 'kilic', mv = -1; for (const k of DMG_KINDS) if ((a.dmgByKind[k] ?? 0) > mv) { mv = a.dmgByKind[k] ?? 0; main = k; }
   const income = sum(dr.map((d: any) => sum(Object.values(d.income) as number[]))); const spent = sum(dr.map((d: any) => sum(Object.values(d.expense) as number[])));
-  const rewards = a.tot.upgradesOk + a.tot.bossKills + a.tot.riftCloses + (a.final.level - a.seedLevel) + a.tot.mktSold; const rph = hours > 0 ? rewards / hours : 0;
+  const rewards = a.tot.rare + a.tot.upgradesOk + a.tot.bossKills + a.tot.riftCloses + (a.final.level - a.seedLevel) + a.tot.mktSold; const rph = hours > 0 ? rewards / hours : 0;
   let stagn = 0, run = 0; for (let i = 1; i < dr.length; i++) { const dp = dr[i].prog - dr[i - 1].prog; if (dr[i].minutes >= 45 && dp < 0.15 && a.final.level < 50) { run++; stagn = Math.max(stagn, run); } else run = 0; }
   const reasons: string[] = []; let churn = 0;
   if (stagn >= 4) { churn += 2; reasons.push(`${stagn} gün üst üste ilerleme yok`); }

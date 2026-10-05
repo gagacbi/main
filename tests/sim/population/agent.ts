@@ -20,7 +20,7 @@ export class Agent {
   victim: number | null = null; bossTarget: Mob | null = null; fightBackUntil = 0; fightBackId = 0;
   // ölçümler
   days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0 };
-  tot = { kills: 0, extraKills: 0, deaths: 0, extraDeaths: 0, bossKills: 0, riftCloses: 0, pvpKills: 0, pvpDeaths: 0, minutes: 0, upgradesOk: 0, upgradesFail: 0, destroyed: 0, lostBagFull: 0, mktListed: 0, mktSold: 0, mktBought: 0, mktProfit: 0, blocked: 0, pierced: 0 };
+  tot = { kills: 0, extraKills: 0, deaths: 0, extraDeaths: 0, bossKills: 0, riftCloses: 0, pvpKills: 0, pvpDeaths: 0, minutes: 0, upgradesOk: 0, upgradesFail: 0, destroyed: 0, lostBagFull: 0, rare: 0, mktListed: 0, mktSold: 0, mktBought: 0, mktProfit: 0, blocked: 0, pierced: 0 };
   dmgByKind: Record<string, number> = { kilic: 0, cift: 0, bicak: 0, yay: 0, buyu: 0, pl: 0, dot: 0 }; deathBy: Record<string, number> = {};
   lastRewardMin = 0; maxRewardGap = 0; sinceReward = 0; frustration = 0; failStreak = 0; maxFailStreak = 0; levelAtDay: number[] = []; farmMin = 0; farmKills = 0; farmDeaths = 0; rate = 18; deathRate = 0.01;
   sliceFarmTicks = 0; sliceFarmKills = 0; sliceFarmDeaths = 0; sliceStartKills = 0; sliceStartDeaths = 0; listings = 0;
