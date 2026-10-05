@@ -3,6 +3,7 @@ import {
 } from '@babylonjs/core';
 import { BOYS, BOY_COLORS, HUB, HUB_R, WORLD_R, type Boy } from '@shared/game';
 import { MAPS, REGIONS, regionAt, type MapId } from '@shared/maps';
+import { LOOM_POS } from '@shared/costume';
 import { mulberry32 } from '@shared/rng';
 import { genStones, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
@@ -156,7 +157,7 @@ export class World3D {
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRegions();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRegions(); this.makeLoom();
   }
   isGround(m: { name?: string } | null | undefined) { return !!m && (m === (this.ground as unknown) || this.grounds.includes(m as Mesh)); }
 
@@ -405,6 +406,20 @@ export class World3D {
     ring.material = gm; ring.position.set(x, 0, z); ring.rotation.y = rot; ring.metadata = { gate: true, ph: x }; this.gates.push(ring);
   }
   gates: Mesh[] = [];
+  /** Dokuma Tezgâhı: kostüm üretimi (yurdun kuzeydoğusu) */
+  private makeLoom() {
+    const sc = this.scene; const { x, z } = LOOM_POS; const rot = Math.atan2(-x, -z);
+    const specs: PartSpec[] = [
+      { k: 'box', w: 5.0, h: 0.25, dp: 3.0, p: [0, 0.12, 0], c: '#a07a50', c2: '#c9a070' },
+      { k: 'box', w: 0.3, h: 3.6, dp: 0.3, p: [-2.0, 2.0, 0], c: '#7a4f2e', c2: '#a06a3e' }, { k: 'box', w: 0.3, h: 3.6, dp: 0.3, p: [2.0, 2.0, 0], c: '#7a4f2e', c2: '#a06a3e' },
+      { k: 'box', w: 4.4, h: 0.3, dp: 0.3, p: [0, 3.7, 0], c: '#7a4f2e', c2: '#a06a3e' }, { k: 'box', w: 4.0, h: 0.2, dp: 0.2, p: [0, 0.6, 0.9], c: '#8a5a32' },
+      { k: 'box', w: 3.6, h: 2.5, dp: 0.06, p: [0, 2.15, 0.1], c: '#f2d9a8', c2: '#e0b878' },
+      { k: 'sphere', d: 0.8, p: [1.5, 0.8, 1.6], s: [1, 0.7, 1], c: '#d63a3a', c2: '#ff8a5a' }, { k: 'sphere', d: 0.7, p: [-1.4, 0.75, 1.7], s: [1, 0.7, 1], c: '#2f6fd6', c2: '#7fb0ff' },
+      { k: 'cyl', d: 0.8, h: 0.5, p: [0, 0.4, 2.3], c: '#7a4f2e', c2: '#a06a3e' },
+    ];
+    for (let i = 0; i < 9; i++) specs.push({ k: 'box', w: 0.1, h: 2.5, dp: 0.05, p: [-1.6 + i * 0.4, 2.15, 0.16], c: ['#d63a3a', '#f2c14e', '#2f6fd6', '#4fae5a'][i % 4] });
+    const m = build(sc, 'loom', specs); m.material = this.mat; m.position.set(x, 0, z); m.rotation.y = rot; addOutline(m, sc).parent = m; this.root.addChild(m);
+  }
   private makeCampFire(x: number, z: number) {
     const fm = toonMaterial(this.scene, { vertexColors: true, emissive: new Color3(0.9, 0.5, 0.1), rim: 0 });
     const base = build(this.scene, 'campbase', [{ k: 'cyl', db: 2.4, dt: 2.0, h: 0.5, p: [0, 0.25, 0], c: '#6a5a4a', c2: '#8a7a6a', seg: 10 }]); base.material = this.mat; base.position.set(x, 0, z); this.root.addChild(base);

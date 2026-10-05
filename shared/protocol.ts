@@ -1,3 +1,4 @@
+import type { CostumeState } from './costume';
 import type { Boy, Bag, Companion, Expedition, Item, Slot, Spec, StatusKey, Stats, MobType, BuildingKey } from './game';
 
 // ───────── İstemci → Sunucu ─────────
@@ -7,7 +8,7 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave'
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos'
   | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
@@ -31,7 +32,7 @@ export interface DunInfo {
 export interface Me {
   name: string; boy: Boy; level: number; xp: number; xpNext: number; kut: number; gold: number; spec: Spec;
   hp: number; stats: Stats; skillRanks: number[]; skillPts: number; bag: Bag; items: Item[]; equip: Partial<Record<Slot, Item>>;
-  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; rank: number; points: number; oymakId: number; oymakName: string;
+  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
   role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
@@ -40,7 +41,7 @@ export interface Me {
 export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024, PVP: 2048 } as const;
 export const STATUS_FLAG: Record<StatusKey, number> = { stun: F.STUN, slow: F.SLOW, poison: F.POISON, curse: F.CURSE, shield: F.SHIELD };
 
-export interface SnapPlayer { i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
+export interface SnapPlayer { /** kostüm kodu (0 yok) */ cs: number; i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
 export interface SnapMob { i: number; t: MobType; l: number; x: number; z: number; r: number; h: number; H: number; f: number; /** saha bossu kimliği */ b?: number }
 export interface SnapRift { i: number; x: number; z: number; w: number; st: number; h: number; H: number }
 export interface SnapDrop { i: number; k: 'gold' | 'mat' | 'item' | 'book' | 'charm' | 'frag'; x: number; z: number; t: number; a: number; m?: string; o: number }

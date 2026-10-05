@@ -8,6 +8,8 @@ import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
 import { MAPS, regionAt, type MapId } from '@shared/maps';
 import { DUNGEONS } from '@shared/dungeon';
+import { LOOM_POS } from '@shared/costume';
+import { COSTUME, COS_MATS, DAY, LOOKS, LUCK_KEYS, addLineCost, baseLine, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, rerollLineCost, type Costume, type CostumeTier } from '@shared/costume';
 import { GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
@@ -21,7 +23,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate';
+export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -42,6 +44,7 @@ export function itemTip(it: Item, cmp?: Item): string {
 export class Panels {
   open: PanelName | null = null; el: HTMLElement; tipEl: HTMLElement;
   mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'deal' | 'price' | 'new' = 'deal'; mkMine2 = true; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
+  lmTier = 1; lmLook = 0; lmBoncuk = 0; lmDugum = false; lmNazar = false;
   selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
@@ -70,6 +73,7 @@ export class Panels {
     if (n === 'oba') await this.refreshOba();
     if (n === 'elder') await this.g.net.rpc('elder');
     if (n === 'market') await this.loadMarket();
+    clearInterval(this.obaTimer); if (n === 'loom') this.obaTimer = window.setInterval(() => { if (this.open !== 'loom') return; const now = this.g.net.now(); let again = false; this.el.querySelectorAll<HTMLElement>('[data-cd]').forEach((x) => { const left = Number(x.dataset.cd) - now; x.textContent = fmtDur(left); if (left <= 0) again = true; }); if (again) this.render(true); }, 500);
     this.render();
     if (n === 'oba') { clearInterval(this.obaTimer); this.obaTimer = window.setInterval(() => { if (this.open === 'oba') this.tickOba(); }, 500); }
   }
@@ -94,7 +98,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -262,6 +266,47 @@ export class Panels {
       ${m.clues.some((c) => c.startsWith('elder.')) ? `<div class="sub">${t('thread.elder')}</div>${m.clues.filter((c) => c.startsWith('elder.')).sort().map((c) => `<div class="card" style="margin-bottom:6px;font-style:italic">${t(c)}</div>`).join('')}` : ''}</div></div>`);
   }
 
+  // ─── Dokuma Tezgâhı (kostüm) ───
+  private cosName(c: Costume) { return `${t('cos.look.' + LOOKS[c.look].key)} · ${t('cos.tier.' + c.tier)}`; }
+  private cosCard(c: Costume, worn: boolean) {
+    const m = this.me; const now = this.g.net.now(); const L = m.level; const exp = isExpired(c, now); const grace = inGrace(c, now); const left = c.expiresAt - now;
+    const lines = [baseLine(c), ...c.ench]; const nz = this.lmNazar ? 1 : 0;
+    const days = Math.max(0, left / DAY); const remAfter = (exp ? 0 : left) + COSTUME.extendDays * DAY; const maxed = remAfter > COSTUME.maxDays * DAY;
+    const btn = (act: string, label: string, cost: number | null, extra = '', dis = false) => `<button class="btn ${dis ? '' : 'sm'}" data-act="cos" data-op="${act}" data-id="${c.id}" ${extra} ${dis || (cost !== null && m.gold < cost) ? 'disabled' : ''}>${label}${cost !== null ? ` <i class="gp">${num(cost)}</i>` : ''}</button>`;
+    return `<div class="card costume ${worn ? 'worn' : ''} ${exp ? 'expired' : ''}" data-cos="${c.id}">
+      <div class="gt"><b>${this.cosName(c)}</b> ${worn ? `<span class="chip">${t('cos.worn')}</span>` : ''}</div>
+      <div class="muted ${days < 2 ? 'warn' : ''}">${exp ? (grace ? t('cos.grace', { t: fmtDur(c.expiresAt + COSTUME.graceDays * DAY - now) }) : t('cos.lost')) : t('cos.left', { t: fmtDur(left) })}</div>
+      ${lines.map((e, i) => `<div class="en ${i === 0 ? 'base' : ''}">${i === 0 ? '◆' : '✦'} ${t('ench.' + e.k)} +${e.v}%${i > 0 && !exp ? ` <button class="btn xs" data-act="cos" data-op="ench.line" data-id="${c.id}" data-line="${i - 1}" data-nazar="${nz}" ${m.gold < rerollLineCost(c, L) ? 'disabled' : ''}>↻ <i class="gp">${num(rerollLineCost(c, L))}</i></button>` : ''}</div>`).join('')}
+      <div class="row2">${exp ? btn('extend', t('cos.restore'), extendCost(c, L, true), '', !grace) : `${worn ? btn('wear', t('cos.takeoff'), null, 'data-none="1"') : btn('wear', t('cos.wear'), null)}${btn('extend', t('cos.extend'), extendCost(c, L, false), '', maxed)}`}
+        ${exp ? '' : `${c.ench.length < COSTUME.maxLines ? btn('ench.add', t('cos.addline'), addLineCost(c, L), `data-nazar="${nz}"`) : ''}${c.ench.length ? btn('ench.reroll', t('cos.rerollall'), rerollAllCost(c, L), `data-nazar="${nz}"`) : ''}`}
+        ${worn ? '' : btn('discard', '🗑', null)}</div>
+      ${exp ? '' : `<div class="row2 looks">${LOOKS.map((l, i) => `<button class="look ${i === c.look ? 'cur' : ''}" title="${t('cos.look.' + l.key)}" style="--lc:${l.pal.main}" data-act="cos" data-op="look" data-id="${c.id}" data-look="${i}" ${i === c.look || m.gold < gold(L, COSTUME.lookChange) ? 'disabled' : ''}></button>`).join('')}<span class="muted">${t('cos.lookcost', { g: num(gold(L, COSTUME.lookChange)) })}</span></div>`}
+    </div>`;
+  }
+  loomPanel() {
+    const m = this.me; const s = m.cos; const L = m.level; const now = this.g.net.now(); const near = Math.hypot(this.g.pos.x - LOOM_POS.x, this.g.pos.z - LOOM_POS.z) < LOOM_POS.interact + 1;
+    const chips = `<div class="mats">${COS_MATS.map((k) => `<span class="chip" title="${t('cos.mat.' + k)}">${icon(k)}${num(s.mats[k])}</span>`).join('')}${LUCK_KEYS.map((k) => `<span class="chip" title="${t('cos.luck.' + k + '.d')}">${icon(k)}${num(s.luck[k])}</span>`).join('')}<span class="chip">${icon('akce')}${num(m.gold)}</span></div>`;
+    let loom = '';
+    if (s.loom) { const ready = now >= s.loom.endAt; loom = `<div class="card"><div class="gt"><b>${t('cos.loom.' + s.loom.kind)}</b></div>${ready ? `<button class="btn primary" data-act="cos" data-op="loom.collect">${t('cos.collect')}</button>` : `<div class="muted">${t('cos.loom.wait', { t: `<b data-cd="${s.loom.endAt}">${fmtDur(s.loom.endAt - now)}</b>` })}</div>`}</div>`; }
+    else loom = `<div class="card"><div class="muted">${t('cos.loom.d')}</div><div class="row2"><button class="btn primary" data-act="cos" data-op="loom.start" data-kind="daily" ${m.gold < gold(L, COSTUME.loomDaily) ? 'disabled' : ''}>${t('cos.loom.daily')} <i class="gp">${num(gold(L, COSTUME.loomDaily))}</i></button><button class="btn primary" data-act="cos" data-op="loom.start" data-kind="weekly" ${m.gold < gold(L, COSTUME.loomWeekly) ? 'disabled' : ''}>${t('cos.loom.weekly')} <i class="gp">${num(gold(L, COSTUME.loomWeekly))}</i></button></div></div>`;
+    const list = [...(s.worn ? [[s.worn, true] as const] : []), ...s.bag.map((c) => [c, false] as const)];
+    const tier = this.lmTier as CostumeTier; const need = COSTUME.craftMats[tier]; const have = COS_MATS.every((k) => s.mats[k] >= need[k]); const lvlOk = L >= COSTUME.tierLevel[tier];
+    const chance = craftChance(tier, s.pity, this.lmBoncuk); const cg = gold(L, COSTUME.craftGold[tier]);
+    const craft = `<div class="card"><div class="row2">${[0, 1, 2, 3].map((i) => `<button class="btn ${i === tier ? 'primary' : ''}" data-act="lm" data-k="tier" data-v="${i}">${t('cos.tier.' + i)}</button>`).join('')}</div>
+      <div class="row2 looks">${LOOKS.map((l, i) => `<button class="look ${i === this.lmLook ? 'cur' : ''}" title="${t('cos.look.' + l.key)}" style="--lc:${l.pal.main}" data-act="lm" data-k="look" data-v="${i}"></button>`).join('')}<span class="muted">${t('cos.look.' + LOOKS[this.lmLook].key)} — ${t('ench.' + LOOKS[this.lmLook].base)}</span></div>
+      <div class="ln"><span>${t('cos.need')}</span><b>${COS_MATS.filter((k) => need[k] > 0).map((k) => `<span class="${s.mats[k] >= need[k] ? '' : 'bad'}">${icon(k)}${s.mats[k]}/${need[k]}</span>`).join(' ')}</b></div>
+      <div class="ln"><span>${t('cos.gold')}</span><b>${num(cg)}</b></div><div class="ln"><span>${t('cos.chance')}</span><b>${Math.round(chance * 100)}%${s.pity ? ` <span class="muted">(${t('cos.pity', { n: s.pity })})</span>` : ''}</b></div>
+      <div class="row2"><button class="btn sm" data-act="lm" data-k="boncuk" data-v="${(this.lmBoncuk + 1) % (Math.min(COSTUME.boncukMax, s.luck.boncuk) + 1)}">${icon('boncuk')} ${t('cos.luck.boncuk')} ×${this.lmBoncuk}</button><button class="btn sm ${this.lmDugum ? 'primary' : ''}" data-act="lm" data-k="dugum" data-v="${this.lmDugum ? 0 : 1}" ${s.luck.dugum < 1 ? 'disabled' : ''}>${icon('dugum')} ${t('cos.luck.dugum')}</button></div>
+      <button class="btn primary" data-act="cos" data-op="craft" data-tier="${tier}" data-look="${this.lmLook}" data-boncuk="${this.lmBoncuk}" data-dugum="${this.lmDugum ? 1 : 0}" ${have && lvlOk && m.gold >= cg ? '' : 'disabled'}>${lvlOk ? t('cos.try') : t('err.level_low', { lvl: COSTUME.tierLevel[tier] })}</button></div>`;
+    const shop = `<div class="row2">${LUCK_KEYS.map((k) => `<button class="btn sm" data-act="cos" data-op="buy" data-item="${k}" ${m.gold < gold(L, COSTUME.shop[k]) ? 'disabled' : ''}>${icon(k)} ${t('cos.luck.' + k)} <i class="gp">${num(gold(L, COSTUME.shop[k]))}</i></button>`).join('')}</div><div class="muted">${LUCK_KEYS.map((k) => `${t('cos.luck.' + k)}: ${t('cos.luck.' + k + '.d')}`).join(' · ')}</div>`;
+    return this.shell(t('npc.loom'), 'loom', `${!near ? `<div class="result bad">${t('err.too_far')}</div>` : ''}${chips}
+      <div class="muted" style="margin:6px 0">${t('cos.intro')}</div>
+      <div class="sub">${t('cos.sec.loom')}</div>${loom}
+      <div class="sub">${t('cos.sec.mine')} <label class="muted"><input type="checkbox" data-act="lmnazar" ${this.lmNazar ? 'checked' : ''} ${s.luck.nazar < 1 ? 'disabled' : ''}> ${icon('nazar')} ${t('cos.luck.nazar')}</label></div>${list.length ? list.map(([c, w]) => this.cosCard(c, w)).join('') : `<div class="muted">${t('cos.none')}</div>`}
+      <div class="sub">${t('cos.sec.craft')}</div>${craft}${this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : ''}
+      <div class="sub">${t('cos.sec.shop')}</div>${shop}`, 'wide');
+  }
+
   // ─── kapı taşı ───
   gatePanel() {
     const m = this.me; const reg = regionAt(this.g.pos.x, this.g.pos.z); const links = reg ? GATE_LINKS[reg.id] ?? [] : [];
@@ -350,6 +395,18 @@ export class Panels {
       case 'close': this.close(); break;
       case 'dunenter': { const r = await this.g.net.rpc('dungeon.enter', { d: d.v, solo: !!d.solo }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else { this.close(); } break; }
       case 'dunleave': { await this.g.net.rpc('dungeon.leave'); this.render(true); break; }
+      case 'cos': {
+        const a: Record<string, unknown> = { op: d.op, id: d.id, kind: d.kind, line: d.line == null ? undefined : Number(d.line), look: d.look == null ? undefined : Number(d.look), tier: d.tier == null ? undefined : Number(d.tier), boncuk: Number(d.boncuk ?? 0), dugum: d.dugum === '1', nazar: d.nazar === '1', item: d.item };
+        if (d.op === 'wear' && d.none) a.id = null;
+        const r = await this.g.net.rpc('cos', a);
+        if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); this.render(true); break; }
+        const x = r.data as { ok?: boolean; chance?: number } | null; this.lastResult = null;
+        if (d.op === 'craft' && x) { this.lastResult = x.ok ? { cls: 'good', text: t('cos.made', { c: Math.round((x.chance ?? 0) * 100) }) } : { cls: 'bad', text: t('cos.failed', { c: Math.round((x.chance ?? 0) * 100) }) }; this.lmBoncuk = 0; this.lmDugum = false; this.g.ui.sfx(x.ok ? 'rare' : 'err'); }
+        else if (d.op === 'loom.collect' && x) { this.lastResult = { cls: 'good', text: t('cos.collected', { l: Object.entries(x as Record<string, number>).map(([k, v]) => `${t('cos.mat.' + k)} +${v}`).join(', ') }) }; this.g.ui.sfx('loot'); }
+        else this.g.ui.sfx('ui');
+        this.render(true); break;
+      }
+      case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
       case 'cx': this.codexTab = d.v as Thread; break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
@@ -401,7 +458,7 @@ export class Panels {
     this.render(true);
   }
   onChange(e: Event) {
-    const el = e.target as HTMLInputElement; if (el.dataset.chk === 'book') this.useBook = el.checked; if (el.dataset.chk === 'charm') this.useCharm = el.checked; this.render(true);
+    const el = e.target as HTMLInputElement; if (el.dataset.chk === 'book') this.useBook = el.checked; if (el.dataset.chk === 'charm') this.useCharm = el.checked; if (el.dataset.act === 'lmnazar') this.lmNazar = el.checked; this.render(true);
   }
 
   // ─── ipucu kutusu ───

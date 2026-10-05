@@ -12,7 +12,8 @@ import { IDLE, buildHuman, type Rig } from './models';
 import { Predictor } from './predict';
 import { genStones } from '@shared/world';
 import { GATE_LINKS, gatePos } from '@shared/game';
-import { regionAt, regionById } from '@shared/maps';
+import { regionAt } from '@shared/maps';
+import { LOOM_POS, costumeCode } from '@shared/costume';
 import { GameScene, type Quality } from './scene';
 import { World3D } from './world';
 
@@ -94,7 +95,7 @@ export class Game {
     this.net.on('close', (code) => this.ui.disconnected(code));
     await new Promise<void>((res) => { const iv = setInterval(() => { if (this.me && this.snap) { clearInterval(iv); res(); } }, 30); });
     this.myBoy = this.me.boy; this.pos.x = this.snap!.you.x; this.pos.z = this.snap!.you.z; this.serverYou = { ...this.pos };
-    this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level });
+    this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level, cs: this.myCostume(this.me) });
     this.selfView.self = true; this.vs.self = this.selfView; this.selfView.refreshName();
     this.world.setInscriptions(this.me.inscr.unlocked); this.world.setStonesSeen(new Set(this.me.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
     this.camYaw = Math.PI / 2 + 0.25; this.camPitch = 1.06; this.camDist = 17; this.rot = Math.PI; this.camTarget.set(this.pos.x, 1.7, this.pos.z);
@@ -111,17 +112,19 @@ export class Game {
       }
       const had = new Set(prev.items.map((i) => i.id));
       for (const it of m.items) if (!had.has(it.id)) { this.fx.popup(itemName(it), this.pos.x, 3.8, this.pos.z, 'item t' + it.tier); this.audio.sfx(it.tier >= 2 ? 'rare' : 'loot'); }
-      if (m.spec !== prev.spec) this.respecView();
+      if (m.spec !== prev.spec || this.myCostume(m) !== this.selfView.cs) this.respecView();
       if (m.inscr.unlocked !== prev.inscr.unlocked) this.world.setInscriptions(m.inscr.unlocked);
       if (m.clues.length !== prev.clues.length) this.world.setStonesSeen(new Set(m.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
       if (m.level !== prev.level && this.selfView) { this.selfView.level = m.level; this.selfView.refreshName(); }
     }
     this.ui?.onMe(m, prev);
   }
+  /** giyili ve süresi dolmamış kostümün kodu */
+  myCostume(m: Me) { const w = m.cos?.worn; return w && this.net.now() < w.expiresAt ? costumeCode(w) : 0; }
   private respecView() {
     if (!this.selfView) return; const old = this.selfView; const f = old.flags;
     this.vs.remove(old);
-    this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level });
+    this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level, cs: this.myCostume(this.me) });
     this.selfView.self = true; this.vs.self = this.selfView; this.selfView.flags = f; this.selfView.refreshName();
   }
   onChat(c: ChatMsg) { this.ui.chat(c); }
@@ -135,8 +138,8 @@ export class Game {
     for (const p of s.players) {
       seen.add(p.i); const spec: Spec = p.sp === 1 ? 'kalkan' : p.sp === 2 ? 'kilic' : 'none';
       let v = this.vs.get(p.i);
-      if (v && v.spec !== spec) { this.vs.remove(v); v = undefined; }
-      v = v ?? this.vs.ensure({ kind: 'player', id: p.i, boy: BOYS[p.b], spec, name: p.n, level: p.l });
+      if (v && (v.spec !== spec || v.cs !== (p.cs ?? 0))) { this.vs.remove(v); v = undefined; }
+      v = v ?? this.vs.ensure({ kind: 'player', id: p.i, boy: BOYS[p.b], spec, name: p.n, level: p.l, cs: p.cs ?? 0 });
       const first = v.buf.length === 0; v.push(p.x, p.z, p.r, now); if (first) { v.x = p.x; v.z = p.z; v.r = p.r; }
       v.hp = p.h; v.H = p.H; const nf = p.f; if ((nf & (F.RED | F.PVP)) !== (v.flags & (F.RED | F.PVP)) || v.level !== p.l) { v.flags = nf; v.level = p.l; v.refreshName(BOYS[p.b] === this.myBoy); } v.flags = nf;
     }
@@ -261,7 +264,7 @@ export class Game {
   interact(force?: string) {
     const key = force ?? this.nearby?.key; if (!key) return;
     if (key.startsWith('stone:')) { void this.readStone(Number(key.slice(6))); return; }
-    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate');
+    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate'); else if (key === 'loom') this.ui.open('loom');
     this.audio.sfx('ui');
   }
 
@@ -343,7 +346,7 @@ export class Game {
     // kamera
     this.updateCamera(dt);
     // etkileşim ipucu
-    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5])];
+    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ['loom', LOOM_POS.x, LOOM_POS.z, LOOM_POS.interact], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5])];
     const reg = regionAt(this.pos.x, this.pos.z); if (reg && MAPS_GATES.has(reg.id)) { const gp = gatePos(reg.id); cand.push(['gate', gp.x, gp.z, HUB.interactGate]); }
     if (reg && reg.id !== this.regionId) { this.regionId = reg.id; this.world.setAtmosphere(reg.map); this.ui.regionChanged(reg.id); }
     for (const [k, x, z, r] of cand) { const d = Math.hypot(x - this.pos.x, z - this.pos.z); if (d < r && (!this.nearby || d < this.nearby.dist)) this.nearby = { key: k, dist: d }; }

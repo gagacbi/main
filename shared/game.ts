@@ -217,7 +217,7 @@ export function makeItem(r: Rng, slot: Slot, ilvl: number, tier: Tier, wk?: DmgK
 export const randomSlot = (r: Rng): Slot => SLOTS[Math.floor(r() * SLOTS.length)];
 
 // ───────────────────────── Oyuncu istatistikleri ─────────────────────────
-export interface StatInput { level: number; boy: Boy; spec: Spec; equip: Partial<Record<Slot, Item>>; kut: number }
+export interface StatInput { level: number; boy: Boy; spec: Spec; equip: Partial<Record<Slot, Item>>; kut: number; /** etkin kostüm satırları (temel + efsunlar) */ costume?: Ench[] }
 export interface Stats {
   maxHp: number; atk: number; def: number; crit: number; critMult: number; atkInterval: number;
   moveSpeed: number; leech: number; xpPct: number; spell: number; heal: number; aoe: number; shieldMult: number; dmgTaken: number;
@@ -252,6 +252,7 @@ export function computeStats(p: StatInput): Stats {
     if (it.base) apply(it.base);
     for (const e of it.ench) apply(e);
   }
+  for (const e of p.costume ?? []) apply(e);
   const wk = weaponKindOf(p.equip.weapon); const wm = WEAPON_MODS[wk];
   const b = BOY_BONUS[p.boy]; const sp = SPEC_MODS[p.spec];
   hp *= 1 + hpPct + b.hp + sp.hp;

@@ -1,3 +1,4 @@
+import type { CostumeState } from '../shared/costume';
 import type { Bag, Companion, Expedition, Item, Slot, Spec } from '../shared/game';
 import type { Rng } from '../shared/rng';
 import type { Clock } from './clock';
@@ -15,6 +16,8 @@ export interface PlayerData {
   clues: string[]; dreams: number; shards: number; pendingDream: number;
   /** isteğe bağlı PvP bayrağı (eski kayıtlarda yok = kapalı) */
   pvp?: boolean;
+  /** kostüm sistemi (eski kayıtlarda yok) */
+  cos?: CostumeState;
   /** günlük zindan hakkı ve toplam bitirme sayısı */
   dun?: { day: number; n: Record<string, number>; clears: Record<string, number> };
 }

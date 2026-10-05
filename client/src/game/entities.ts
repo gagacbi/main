@@ -1,6 +1,7 @@
 import { Color3, Mesh, MeshBuilder, type InstancedMesh, type Scene } from '@babylonjs/core';
 import { FIELD_BOSS, MOBS, type Boy, type MobType, type Spec } from '@shared/game';
 import { F } from '@shared/protocol';
+import { decodeCostume } from '@shared/costume';
 import { t } from '../i18n';
 import { buildHuman, buildMob, type AnimState, type Rig } from './models';
 import { build } from './meshkit';
@@ -12,12 +13,12 @@ const INTERP_MS = 110;
 
 export class View {
   kind: 'player' | 'mob'; id: number; rig: Rig; buf: Sample[] = []; x = 0; z = 0; r = 0; speed = 0; hp = 1; H = 1; flags = 0; name = ''; level = 1;
-  boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false; bossId = 0; auraT = Math.random();
+  cs = 0; boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false; bossId = 0; auraT = Math.random();
   attackT = -1; hit = 0; dyingT = -1; castT = -1; t = Math.random() * 10; removeAt = 0; shadow: InstancedMesh; shield: Mesh | null = null; stars: Mesh | null = null;
   plate: HTMLElement; barFill: HTMLElement; nameEl: HTMLElement; stEl: HTMLElement; lastFlags = 0; boss = false; baseY = 0; lastAtkDur = 0.55;
-  constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number; bossId?: number }) {
+  constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number; bossId?: number; cs?: number }) {
     this.kind = o.kind; this.id = o.id; this.name = o.name; this.level = o.level;
-    if (o.kind === 'player') { this.boy = o.boy ?? 'gok'; this.spec = o.spec ?? 'none'; this.rig = buildHuman(scene, { boy: this.boy, spec: this.spec }); }
+    if (o.kind === 'player') { this.boy = o.boy ?? 'gok'; this.spec = o.spec ?? 'none'; this.cs = o.cs ?? 0; this.rig = buildHuman(scene, { boy: this.boy, spec: this.spec, costume: decodeCostume(this.cs) }); }
     else { this.mobType = o.mob!; this.boss = o.mob === 'bekci'; this.bossId = o.bossId ?? 0; this.rig = buildMob(scene, o.mob!); const sc = this.bossId ? FIELD_BOSS.scaleView : ({ tepegoz: 1.15, albasti: 1.0, erlik: 1.0, cakal: 1.0, bekci: 1.6 } as Record<MobType, number>)[o.mob!]; this.rig.setScale(sc); }
     for (const m of this.rig.meshes) if (!m.name.endsWith('_ol')) { m.isPickable = true; m.metadata = { eid: this.id }; }
     this.shadow = fx.shadowBase.createInstance('sh' + this.id); this.shadow.isPickable = false;

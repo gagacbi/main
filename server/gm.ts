@@ -4,6 +4,8 @@ import {
 } from '../shared/game';
 import { CLUE_GOLD } from '../shared/lore';
 import { genStones } from '../shared/world';
+import { LOOKS, newCostume, type CosMat, type CostumeTier, type LuckKey } from '../shared/costume';
+import { cosOf } from './costume';
 import * as oba from './oba';
 import type { Player, World } from './world';
 
@@ -58,6 +60,14 @@ export function runGm(w: World, p: Player, line: string): { ok: boolean; msg: st
     case 'rested': d.rested = restedCap(d.level); return ok(`Dinlenmiş deneyim=${d.rested}`);
     case 'tut': d.tut = { step: 5, prog: 0 }; return ok('Öğretici tamamlandı');
     case 'kill': p.god = false; w.damage(null, p, 1e9); return ok('Öldürüldün');
+    case 'cos': {
+      const s = cosOf(p); const sub = (a[1] ?? '').toLowerCase();
+      if (sub === 'mats') { for (const k of Object.keys(s.mats) as CosMat[]) s.mats[k] += 200; for (const k of Object.keys(s.luck) as LuckKey[]) s.luck[k] += 10; return ok('Kostüm malzemeleri +200, şans eşyaları +10'); }
+      if (sub === 'give') { const tier = Math.max(0, Math.min(3, Math.floor(n(2)))) as CostumeTier; const look = Math.floor(Number(a[3] ?? 0)) % LOOKS.length; const c = newCostume(w.ctx.rng, look, tier, w.now); s.bag.push(c); return ok(`Kostüm ${c.id}`); }
+      if (sub === 'expire') { const c = s.worn ?? s.bag[0]; if (!c) return bad('kostüm yok'); c.expiresAt = w.now + 3600000; w.recalc(p); return ok('Kostüm 1 saat sonra bitecek'); }
+      if (sub === 'loom') { if (!s.loom) return bad('tezgâh boş'); s.loom.endAt = w.now; return ok('Tezgâh hazır'); }
+      return bad('cos mats | cos give <0-3> [görünüm] | cos expire | cos loom');
+    }
     case 'tp': {
       const t = (a[1] ?? '').toLowerCase();
       if (t === 'hub') { p.x = HUB.spawn[p.boy].x; p.z = HUB.spawn[p.boy].z; return ok('Yurt'); }

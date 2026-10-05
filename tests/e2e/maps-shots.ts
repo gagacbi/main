@@ -28,4 +28,8 @@ await gm('tp erlik'); await sleep(2500); await shot('erlik-kamp');
 ap.x = -900 + 50; ap.z = 30; await sleep(2500); await shot('erlik-saha');
 await gm('level 46'); await gm('gold 5000'); await gm('tp erlik'); await sleep(1500); await pg.keyboard.press('e'); await sleep(900); await shot('erlik-kapi-paneli'); await pg.keyboard.press('Escape'); await sleep(300);
 w.rpcRun(ap, 'dungeon.enter', { d: 'demir', solo: true }); await sleep(9000); await shot('zindan-demir-1'); await sleep(8000); await shot('zindan-demir-2');
+await gm('tp hub'); await gm('level 45'); await gm('gold 3000000'); await gm('cos mats'); await gm('cos give 3 1'); await gm('cos give 2 0'); await gm('cos give 1 5'); await gm('cos loom');
+ap.x = 20 - 3; ap.z = -25; await sleep(2000); await pg.keyboard.press('e'); await sleep(1200); await shot('tezgah-paneli');
+w.rpcRun(ap, 'cos', { op: 'wear', id: ap.d.cos!.bag[0].id }); await sleep(1500); await pg.keyboard.press('Escape'); await sleep(600); await shot('kostum-hanlik');
+w.rpcRun(ap, 'cos', { op: 'wear', id: ap.d.cos!.bag[0].id }); await sleep(1500); await shot('kostum-sahane');
 console.log('errors', errs.slice(0, 5)); await browser.close(); await srv.close?.(); process.exit(0);

@@ -1,3 +1,4 @@
+import { LOOKS } from '@shared/costume';
 import { Color3, Mesh, TransformNode, type Scene, type ShaderMaterial } from '@babylonjs/core';
 import { BOY_COLORS, type Boy, type MobType, type Spec } from '@shared/game';
 import { build, type PartSpec, type V3 } from './meshkit';
@@ -38,16 +39,17 @@ export class Rig {
 const SKIN = '#f4c79c'; const SKIN_D = '#e0a97f'; const HAIR = '#1d1620'; const STEEL = '#cfd9e6'; const LEATHER = '#6b4326'; const GOLD = '#f2c14e';
 
 // ─────────────────────────── İNSANSI ───────────────────────────
-export interface HumanOpts { boy: Boy; spec?: Spec; kind?: 'player' | 'aksakal' | 'demirci' | 'guard'; red?: boolean }
+export interface HumanOpts { boy: Boy; spec?: Spec; kind?: 'player' | 'aksakal' | 'demirci' | 'guard'; red?: boolean; /** giyili kostüm: görünüm + basamak */ costume?: { look: number; tier: number } | null }
 
 export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   const kind = o.kind ?? 'player';
   const rig = new Rig(scene, 'human');
   const bc = BOY_COLORS[o.boy];
   const robe = kind === 'aksakal';
-  const main = kind === 'demirci' ? '#8a5a3a' : kind === 'guard' ? '#7d8a9c' : robe ? '#e9edf7' : bc.main;
-  const accent = kind === 'demirci' ? '#d9a441' : kind === 'guard' ? '#c8352f' : robe ? '#4aa8ff' : bc.accent;
-  const dark = kind === 'guard' ? '#4a5568' : kind === 'demirci' ? '#4a3020' : robe ? '#8fb8ff' : bc.dark;
+  const cp = kind === 'player' && o.costume ? LOOKS[o.costume.look]?.pal : undefined; const ctier = cp ? o.costume!.tier : -1;
+  const main = cp ? cp.main : kind === 'demirci' ? '#8a5a3a' : kind === 'guard' ? '#7d8a9c' : robe ? '#e9edf7' : bc.main;
+  const accent = cp ? cp.accent : kind === 'demirci' ? '#d9a441' : kind === 'guard' ? '#c8352f' : robe ? '#4aa8ff' : bc.accent;
+  const dark = cp ? cp.dark : kind === 'guard' ? '#4a5568' : kind === 'demirci' ? '#4a3020' : robe ? '#8fb8ff' : bc.dark;
   const stocky = kind === 'demirci' ? 1.18 : 1;
 
   // bacaklar
@@ -69,6 +71,11 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   ];
   if (kind === 'player' || kind === 'guard') body.push({ k: 'box', w: 0.78, h: 0.85, dp: 0.07, p: [0, 1.05, -0.42], r: [0.12, 0, 0], c: dark }, { k: 'disc', d: 0.34, p: [0, 1.1, -0.465], r: [0, Math.PI, 0], c: accent });
   if (kind === 'demirci') body.push({ k: 'box', w: 0.62, h: 0.78, dp: 0.06, p: [0, 1.02, 0.4], c: '#5a3a24' });
+  if (ctier >= 0) { // kostüm süsleri: basamak yükseldikçe omuzluk, kuşak/pelerin, taç
+    body.push({ k: 'torus', d: 0.9, th: 0.1, p: [0, 1.0, 0], r: [0.5, 0, 0.5], c: accent, gloss: 0.4 });
+    if (ctier >= 1) for (const sd of [-1, 1]) body.push({ k: 'sphere', d: 0.42, s: [1, 0.7, 1], p: [sd * 0.56, 1.5, 0], c: accent, gloss: 0.5 }, { k: 'cone', db: 0.2, dt: 0, h: 0.3, p: [sd * 0.62, 1.74, 0], c: dark });
+    if (ctier >= 2) body.push({ k: 'box', w: 0.92, h: 1.25, dp: 0.05, p: [0, 0.78, -0.5], r: [0.16, 0, 0], c: dark, c2: main }, { k: 'box', w: 0.96, h: 0.1, dp: 0.07, p: [0, 1.38, -0.46], r: [0.16, 0, 0], c: accent, gloss: 0.6 });
+  }
   if (robe) body.push({ k: 'cone', db: 0.5, dt: 0.0, h: 0.9, p: [0, 0.75, 0.52], c: '#ffffff', c2: '#dfe8f8' }, { k: 'sphere', d: 0.42, p: [0, 1.0, 0.4], s: [1, 1.5, 0.7], c: '#ffffff' });
   rig.part('body', body, [0, 0, 0]);
 
@@ -107,7 +114,7 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   } else if (robe) {
     hat.push({ k: 'cyl', dt: 0.62, db: 0.92, h: 0.45, p: [0, 0.34, 0], c: '#ffffff', c2: '#e6ecfa' }, { k: 'torus', d: 0.92, th: 0.12, p: [0, 0.1, 0], c: '#cfd8ea' }, { k: 'sphere', d: 0.2, p: [0, 0.62, 0], c: GOLD, gloss: 0.5 });
   } else if (o.boy === 'gok') {
-    hat.push({ k: 'cyl', dt: 0.7, db: 0.98, h: 0.42, p: [0, 0.32, 0], c: bc.main, c2: '#7fc0ff' }, { k: 'torus', d: 0.98, th: 0.14, p: [0, 0.1, 0], c: '#ffffff' }, { k: 'sphere', d: 0.72, s: [1, 0.55, 1], p: [0, 0.56, 0], c: '#9ed0ff' });
+    hat.push({ k: 'cyl', dt: 0.7, db: 0.98, h: 0.42, p: [0, 0.32, 0], c: main, c2: '#7fc0ff' }, { k: 'torus', d: 0.98, th: 0.14, p: [0, 0.1, 0], c: '#ffffff' }, { k: 'sphere', d: 0.72, s: [1, 0.55, 1], p: [0, 0.56, 0], c: '#9ed0ff' });
     for (const [x, rz, h] of [[-0.18, 0.5, 0.95], [0, 0.0, 1.2], [0.18, -0.5, 0.95]] as [number, number, number][]) hat.push({ k: 'cone', db: 0.14, dt: 0.02, h, p: [x * 1.5, 0.95 + h * 0.25 - Math.abs(x) * 0.6, -0.12], r: [-0.35, 0, rz], c: '#ffffff', c2: '#4aa8ff' });
   } else if (o.boy === 'yer') {
     hat.push({ k: 'sphere', d: 1.12, s: [1, 0.62, 1.05], p: [0, 0.2, 0], c: '#7a5a3a', c2: '#a0794d' }, { k: 'torus', d: 1.0, th: 0.2, p: [0, 0.08, 0], c: '#a0794d' }, { k: 'sphere', d: 0.7, s: [1, 0.55, 1], p: [0, 0.5, 0], c: '#4fae5a' });
@@ -121,6 +128,8 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
       hat.push({ k: 'sphere', d: 0.07, p: [sd * 0.62, 1.24, 0], c: '#fff4d8' });
     }
   }
+  if (ctier >= 0) { hat.push({ k: 'torus', d: 0.96, th: 0.1, p: [0, 0.16, 0], c: accent, gloss: 0.5 }); if (ctier >= 2) hat.push({ k: 'sphere', d: 0.22, p: [0, 0.62, 0.12], c: accent, gloss: 0.7 });
+    if (ctier >= 3) for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; hat.push({ k: 'cone', db: 0.16, dt: 0, h: 0.4, p: [Math.cos(a) * 0.42, 0.9, Math.sin(a) * 0.42], c: GOLD, gloss: 0.8 }); } }
   rig.part('hat', hat, [0, 0.27, 0], 'head');
 
   // kollar + eller

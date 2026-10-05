@@ -11,6 +11,8 @@ import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shar
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
 import { runGm } from './gm';
+import { cosOf, costumeRpc, tickCostumes } from './costume';
+import { costumeCode, costumeLines } from '../shared/costume';
 import { cancelLobby, dungeonBossDown, dungeonRpc, dunInfo, updateDungeons, type DungeonRun, type Lobby } from './dungeon';
 import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
@@ -24,7 +26,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
+  cosWarnAt = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -123,7 +125,7 @@ export class World {
       // Kurdun rüyası: uzun süre sonra dönen oyuncu sıradaki rüyayı görür
       if (hours >= DREAM_MIN_HOURS && d.dreams < THREAD_SIZE.dream && !d.pendingDream) { d.dreams++; d.pendingDream = d.dreams; }
     }
-    p.stats = computeStats({ level: d.level, boy: p.boy, spec: d.spec, equip: d.equip, kut: d.kut });
+    p.stats = computeStats({ level: d.level, boy: p.boy, spec: d.spec, equip: d.equip, kut: d.kut, costume: costumeLines(d.cos?.worn, this.now) });
     p.x = d.x; p.z = d.z;
     p.hp = d.hp > 0 ? Math.min(d.hp, p.stats.maxHp) : p.stats.maxHp;
     p.lastCombat = 0;
@@ -132,6 +134,7 @@ export class World {
     const o = oba.loadOymak(this.ctx, p.oymakId);
     oba.ensureCompanions(this.ctx, p, o.lv.otag);
     this.players.set(p.id, p);
+    tickCostumes(this, p);
     claimMail(this, p);
     this.sendMe(p);
     return p;
@@ -162,7 +165,7 @@ export class World {
 
   recalc(p: Player) {
     const frac = p.stats ? p.hp / p.stats.maxHp : 1;
-    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut });
+    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut, costume: costumeLines(p.d.cos?.worn, this.now) });
     p.hp = Math.max(1, Math.round(p.stats.maxHp * Math.min(1, frac)));
     p.meDirty = true;
   }
@@ -364,7 +367,15 @@ export class World {
   }
 
   /** Zindan ödülüne eklenen kostüm malzemeleri (kostüm sistemi) */
-  dungeonLoot(p: Player, d: string) { void p; void d; }
+  dungeonLoot(p: Player, d: string) {
+    const s = cosOf(p); const rng = this.ctx.rng; const golge = d === 'golge'; const got: string[] = [];
+    const a = irange(rng, 8, 12); s.mats.lif += a; got.push(`lif ${a}`);
+    const b = irange(rng, 1, 2); s.mats.boya += b; got.push(`boya ${b}`);
+    if (rng() < 0.5) { s.mats.ipek++; got.push('ipek 1'); }
+    if (rng() < (golge ? 0.45 : 0.25)) { s.mats.nakis++; got.push('nakis 1'); }
+    if (rng() < 0.4) { s.luck.boncuk++; got.push('boncuk'); } if (rng() < 0.2) { s.luck.nazar++; got.push('nazar'); } if (rng() < 0.15) { s.luck.dugum++; got.push('dugum'); }
+    this.ledger(p, 'cos.loot', { d, got }); this.sys(p, 'sys.cos_loot'); p.meDirty = true;
+  }
 
   /** Kilometre taşı armağanı (Kut Armağanı) */
   milestone(p: Player) {
@@ -628,6 +639,7 @@ export class World {
       }
       case 'respawn': this.respawn(p); return null;
       case 'dungeon.enter': case 'dungeon.leave': return dungeonRpc(this, p, op, a as Record<string, unknown>);
+      case 'cos': return costumeRpc(this, p, a as Record<string, unknown>);
       case 'pvp': {
         this.alive(p); const on = !!a.on; if (on === !!d.pvp) return null;
         const g = regionAt(p.x, p.z);
@@ -817,6 +829,7 @@ export class World {
     this.updatePlayers(dt, now);
     this.updateMobs(dt, now);
     this.updateRifts(now); updateDungeons(this, now);
+    if (this.tickCount % 100 === 0) for (const q of this.players.values()) tickCostumes(this, q);
     this.updateDrops(now);
     this.updateGuards(now);
     this.marketTick(now);
@@ -1108,7 +1121,7 @@ export class World {
     return {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
-      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
+      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
@@ -1125,7 +1138,7 @@ export class World {
       for (const q of this.players.values()) {
         if (q === p || dist2(p, q) > AOI_R * AOI_R) continue;
         let f = this.flags(q); if (q.deadUntil > 0) f |= F.DEAD; if (q.atk) f |= F.ATK; if (q.d.rank < 0) f |= F.RED; if (q.duelWith) f |= F.DUEL; if (this.pvpActive(q)) f |= F.PVP;
-        players.push({ i: q.id, n: q.name, b: BOY_ID[q.boy], l: q.d.level, x: r2(q.x), z: r2(q.z), r: r2(q.rot), h: Math.round(q.hp), H: q.stats.maxHp, f, sp: q.d.spec === 'kalkan' ? 1 : q.d.spec === 'kilic' ? 2 : 0, oy: '' });
+        players.push({ cs: costumeCode(q.d.cos?.worn && this.now < q.d.cos.worn.expiresAt ? q.d.cos.worn : null), i: q.id, n: q.name, b: BOY_ID[q.boy], l: q.d.level, x: r2(q.x), z: r2(q.z), r: r2(q.rot), h: Math.round(q.hp), H: q.stats.maxHp, f, sp: q.d.spec === 'kalkan' ? 1 : q.d.spec === 'kilic' ? 2 : 0, oy: '' });
       }
       const mobs: Snapshot['mobs'] = [];
       for (const m of this.mobs.values()) {

@@ -232,3 +232,9 @@ button { font-family: var(--f-head); cursor: pointer; }
 .dunbar .btn { position: absolute; right: -10px; top: -10px; padding: 0 8px; pointer-events: auto; font-size: 14px; line-height: 20px; }
 .gatecard .row2 { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; } .gatecard .dl { font-size: 12px; color: #d8c49a; }
 .gatecard .ln { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 1px 0; } .gatecard .gt { font-size: 16px; margin-bottom: 2px; } .gatecard .btn { margin-top: 6px; }
+
+.costume { margin-bottom: 8px; } .costume.worn { border-color: var(--gold); } .costume.expired { opacity: .75; } .costume .en.base { color: #7a5a2a; } .costume .warn { color: #b0402a; font-weight: 600; }
+.panel .row2 { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; } .btn.sm { padding: 4px 10px; font-size: 13px; } .btn.xs { padding: 0 6px; font-size: 11px; margin-left: 6px; }
+.gp { font-style: normal; font-size: 11px; opacity: .85; margin-left: 3px; } .gp::after { content: ' ¤'; }
+.look { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #1a1230; background: var(--lc); cursor: pointer; padding: 0; } .look.cur { outline: 3px solid var(--gold); } .look:disabled { opacity: .5; cursor: default; }
+.bad { color: #b0402a; }

@@ -2,6 +2,7 @@ import { BOY_COLORS, HUB, HUB_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTO
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
 import { MAPS, regionAt } from '@shared/maps';
+import { LOOM_POS } from '@shared/costume';
 import type { Game } from '../game/game';
 import { getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
@@ -82,7 +83,7 @@ export class UI {
     if (map[k]) { e.preventDefault(); this.open(map[k], true); }
     if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
   }
-  open(p: PanelName | 'elder' | 'smith' | 'oba' | 'inscr', toggle = false) {
+  open(p: PanelName | 'elder' | 'smith' | 'oba' | 'inscr' | 'loom', toggle = false) {
     if (p === 'oba' || p === 'smith' || p === 'elder' || p === 'inscr') {
       // etkileşimli paneller NPC/binaya yakınlık ister; uzaktaysa yalnızca bilgi gösterilir
     }
@@ -127,7 +128,7 @@ export class UI {
     this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
     if (c.ch === 'sys' && c.key && hasKey(c.key)) {
       if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
-      else if (['sys.pvp_on', 'sys.pvp_off', 'sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
+      else if (['sys.pvp_on', 'sys.pvp_off', 'sys.cos_soon', 'sys.cos_expired', 'sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
     }
   }
   renderChat() {
@@ -269,7 +270,7 @@ export class UI {
     const icon2 = (x: number, z: number, col: string, r = 5, sq = false) => { const [a, b] = P(x, z); ctx.fillStyle = col; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2; ctx.beginPath(); if (sq) ctx.rect(a - r, b - r, r * 2, r * 2); else ctx.arc(a, b, r, 0, 6.3); ctx.fill(); ctx.stroke(); };
     { const gp = gatePos(reg.id); if (reg.safeR > 0) icon2(gp.x, gp.z, '#7fe0ff', 6, true); }
     if (hub) icon2(HUB.otag.x, HUB.otag.z, '#d63a3a', 7, true)
-    if (hub) { icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true); }
+    if (hub) { icon2(LOOM_POS.x, LOOM_POS.z, '#e86aa8', 6, true); icon2(HUB.demirhane.x, HUB.demirhane.z, '#e08a3a', 6, true); icon2(HUB.akSakal.x, HUB.akSakal.z, '#ffe27a', 5); icon2(HUB.stele.x, HUB.stele.z, '#7fe0ff', 5, true); }
     // kamp halkaları: oyuncunun seviyesine göre tehlike rengi (lamba: yeni oyuncu nereye gideceğini haritada okur) + saha bosları
     for (const c of this.campList) { const [x, y] = P(c.x, c.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; const d = c.level - g.me.level; const col = d <= -4 ? '#7ad07a' : d <= 0 ? '#e6f06a' : d <= 3 ? '#ffb23a' : '#ff4a3a';
       ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, 8 * k, 0, 6.3); ctx.stroke(); ctx.fillStyle = col; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(c.level), x, y + 3.5); const n = g.campOcc[c.id] ?? 0; if (n > 0) { ctx.fillStyle = n >= 8 ? '#ff5a4a' : '#ffffff'; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 3; ctx.font = 'bold 9px sans-serif'; ctx.strokeText('👥' + n, x, y - 8 * k - 3); ctx.fillText('👥' + n, x, y - 8 * k - 3); } }
