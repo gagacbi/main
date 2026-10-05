@@ -331,8 +331,9 @@ if (want('icerik')) {
   check('H5.temel-efsun', /Temel efsun/.test(tip ?? '') && /Silah türü/.test(tip ?? '') || /Temel efsun/.test(tip ?? ''), `Eşya ipucunda temel efsun gösteriliyor: “${(tip ?? '').replace(/\s+/g, ' ').slice(0, 90)}”`);
   await pg2.keyboard.press('Escape'); await sleep(300);
   // saha bossu: ışınlan, adı ve can çubuğu, alan darbesi uyarısı, aura
-  await gmr('level 30'); await gmr('god'); await gmr('tp boss 3'); await sleep(3500);
-  const gb = await import('../../shared/world'); const boss = [...W.mobs.values()].find((m) => m.bossId === 3) ?? W.spawnBoss(gb.genBosses()[2]); // önceki bölümler yaratıkları temizlemiş olabilir boss.slamAt = W.now; boss.target = me2.id; await sleep(900);
+  await gmr('level 30'); await gmr('god');
+  const gb = await import('../../shared/world'); const boss = [...W.mobs.values()].find((m) => m.bossId === 3) ?? W.spawnBoss(gb.genBosses()[2]); // önceki bölümler yaratıkları temizlemiş olabilir
+  await gmr('tp boss 3'); await sleep(3500); boss.slamAt = W.now; boss.target = me2.id; await sleep(900);
   await pg2.evaluate(([x, z]) => { const g = (window as any).__game; g.camYaw = Math.atan2(-(z - g.pos.z), -(x - g.pos.x)); g.camPitch = 0.75; g.camDist = 17; }, [boss.x, boss.z]); await sleep(900);
   await sh('27-saha-bossu'); const plate = await pg2.$$eval('.plate.boss .nm', (els) => els.map((e) => e.textContent));
   check('H5.saha-bossu', plate.some((x) => /Demir Dişli Börü/.test(x ?? '')), `Saha bossu adıyla görünüyor: ${plate.join(' | ')}; sv${boss.lvl}, can ${boss.maxHp}`);
