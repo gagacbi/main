@@ -6,7 +6,7 @@ import type { MarketListing, MarketMail, ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
-import { INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, marketRef, marketPriceBounds } from '@shared/game';
+import { INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -40,7 +40,7 @@ export function itemTip(it: Item, cmp?: Item): string {
 export class Panels {
   open: PanelName | null = null; el: HTMLElement; tipEl: HTMLElement;
   mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'price' | 'new' = 'price'; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
-  selUp = ''; smithTab: 'up' | 'craft' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
+  selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
@@ -198,6 +198,16 @@ export class Panels {
           <div class="gap"></div><button class="btn primary" style="font-size:19px;padding:10px 30px;width:100%" data-act="upgrade" ${can ? '' : 'disabled'}>${icon('weapon')} ${t('ui.upgrade')} +${target}</button>`}
           ${this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : ''}`;
       }
+    } else if (this.smithTab === 'reroll') {
+      if (!sel) right = `<div class="card muted">${t('ui.chooseItem')}</div>`;
+      else {
+        const lines = [...(sel.base ? [{ k: sel.base.k, v: sel.base.v, line: 'base' as const }] : []), ...sel.ench.map((e, i) => ({ k: e.k, v: e.v, line: i as number | 'base' }))];
+        const keysFor = (line: number | 'base') => (line === 'base' ? BASE_ENCH_POOL[sel!.slot] : ENCH_KEYS).filter((k) => ![sel!.base?.k, ...sel!.ench.map((e) => e.k)].includes(k));
+        right = `<div class="bigitem">${itemCell(sel)}<div class="grow"><div class="nm" style="color:${TIER_COLORS[sel.tier]}">${esc(itemName(sel))} ${sel.up ? '+' + sel.up : ''}</div><div class="muted">${t('rr.n', { n: sel.rr ?? 0 })}</div></div></div><div class="card hint-card">${t('rr.help')}</div>`
+          + lines.map((l) => { const rc = rerollCost(sel!, l.line === 'base', false), tc = rerollCost(sel!, l.line === 'base', true); const opts = keysFor(l.line).map((k) => `<option value="${k}">${t('ench.' + k)}</option>`).join('');
+            return `<div class="card rr-row"><div class="grow">${l.line === 'base' ? '◆ ' + t('ui.baseEnch') + ': ' : '✦ '}<b>${t('ench.' + l.k)} +${l.v}%</b></div><button class="btn small" data-act="rr" data-line="${l.line}" ${m.gold >= rc ? '' : 'disabled'}>${t('rr.random')} ${icon('akce')}${num(rc)}</button><select class="rrsel" data-sel="${l.line}">${opts}</select><button class="btn small primary" data-act="rrt" data-line="${l.line}" ${m.gold >= tc ? '' : 'disabled'}>${t('rr.pick')} ${icon('akce')}${num(tc)}</button></div>`; }).join('')
+          + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
+      }
     } else {
       const rec = [
         { k: 'book', ic: 'book', need: { ore: CRAFT.book.ore }, gold: CRAFT.book.gold }, { k: 'charm', ic: 'charm', need: { ore: CRAFT.charm.ore, hide: CRAFT.charm.hide }, gold: CRAFT.charm.gold },
@@ -209,7 +219,7 @@ export class Panels {
         return `<div class="recipe card"><div class="cell">${icon(r.ic)}</div><div><b>${nm}</b><div class="row" style="flex-wrap:wrap;margin-top:4px"><span class="chip ${m.gold >= r.gold ? 'need-ok' : 'need-no'}">${icon('akce')}${num(r.gold)}</span>${Object.entries(r.need).map(([k, v]) => `<span class="chip ${m.bag[k as MatKey] >= v ? 'need-ok' : 'need-no'}">${icon(k)}${v}</span>`).join('')}${r.k === 'charm' ? `<span class="chip">${t('bld.demir')} 2</span>` : ''}</div></div><button class="btn small green" data-act="craft" data-k="${r.k}" ${ok ? '' : 'disabled'}>${t('ui.craft')}</button></div>`;
       }).join('') + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
     }
-    return this.shell(t('npc.demirci'), 'weapon', `<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div></div>
+    return this.shell(t('npc.demirci'), 'weapon', `<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div></div>
       <div class="smith"><div>${this.smithTab === 'up' ? `<div class="sub">${t('ui.bag')}</div><div class="itemlist">${list}</div>${this.matChips()}` : this.matChips()}</div><div>${right}</div></div>`);
   }
 
@@ -329,7 +339,8 @@ export class Panels {
       case 'toUp': this.selUp = d.id!; this.smithTab = 'up'; await this.show('smith'); break;
       case 'spec': { const r = await this.act('spec', { choice: d.v }); if (r.ok) { this.g.audio.sfx('levelup'); } break; }
       case 'rank': { const r = await this.act('rankSkill', { slot: Number(d.i) }); if (r.ok) this.g.audio.sfx('upok'); break; }
-      case 'tab': this.smithTab = d.v as 'up' | 'craft'; this.lastResult = null; break;
+      case 'tab': this.smithTab = d.v as 'up' | 'craft' | 'reroll'; this.lastResult = null; break;
+      case 'rr': case 'rrt': { const line = d.line === 'base' ? 'base' : Number(d.line); const key = act === 'rrt' ? (this.el.querySelector<HTMLSelectElement>(`select[data-sel="${d.line}"]`)?.value ?? '') : undefined; const r = await this.act('reroll', { id: this.selUp, line, key }); if (r.ok) { const x = r.data as { line: { k: string; v: number }; cost: number }; this.lastResult = { cls: 'ok', text: `${t('ench.' + x.line.k)} +${x.line.v}%` }; this.g.audio.sfx('upok'); } break; }
       case 'pickUp': this.selUp = d.id!; this.lastResult = null; break;
       case 'upgrade': {
         const sel = this.allItems().find((i) => i.id === this.selUp); if (!sel || this.busy) return; this.busy = true; this.render(true);

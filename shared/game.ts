@@ -17,6 +17,8 @@ export const DEF_ENCH: Record<DmgKind, EnchKey> = { kilic: 'defKilic', cift: 'de
 
 export interface Ench { k: EnchKey; v: number }
 export interface Item {
+  /** efsun yenileme sayısı (maliyeti artırır) */
+  rr?: number;
   id: string; slot: Slot; band: number; ilvl: number; tier: Tier; up: number; ench: Ench[]; lvlReq: number;
   /** silah türü (yalnızca silah; eski kayıtlarda yok = kılıç) */
   wk?: DmgKind;
@@ -265,6 +267,10 @@ export function applyDefense(stats: Pick<Stats, 'defKind' | 'blockHit' | 'blockS
 
 /** Hasar formülü (savunma azaltımı). pvp = PvP katsayısı ayrı ayarlanır (PRD §5 denge). */
 export const PVE_COEF = 1.0;
+/** Düşük seviye koruması: saldırgandan bu kadar seviye aşağıdaki hedef (ve çatışmayı başlatmamışsa) PvP'de hasar azaltması alır; 20+ farkta dokunulmazdır. */
+export const pvpGapMult = (attLevel: number, tgtLevel: number) => { const gap = attLevel - tgtLevel; return gap >= 20 ? 0 : gap >= 10 ? 0.25 : gap >= 6 ? 0.6 : 1; };
+/** Kalabalık kampta yeniden doğuş süresi çarpanı: oyuncu sayısı arttıkça kısalır (taban 0,25) */
+export const campRespawnMult = (playersNear: number) => Math.max(0.25, 1 / (1 + 0.3 * Math.max(0, playersNear - 1)));
 export const PVP_COEF = 0.35;
 export const CURSE_DMG_MULT = 0.75;
 export const defReduction = (def: number) => 100 / (100 + def);
@@ -293,7 +299,9 @@ export const MOBS: Record<MobType, MobDef> = {
 export const mobHp = (lvl: number) => (20 + 14 * lvl + 0.5 * lvl * lvl) * (2.3 + 1.5 / (1 + lvl / 12));
 export const mobAtk = (lvl: number) => 4 + 2.4 * lvl + 0.045 * lvl * lvl;
 export const mobDef = (lvl: number) => 1 + 1.4 * lvl;
-export const mobGold = (lvl: number) => 3 + 2 * lvl;
+/** Altın girişi dengesi: nüfus simülasyonu günlük girişin sink'in 11 katı olduğunu gösterdi (BALANS_RAPORU/POPULASYON_RAPORU) */
+export const GOLD_MULT = 0.45;
+export const mobGold = (lvl: number) => Math.max(1, Math.round((3 + 2 * lvl) * GOLD_MULT * 10) / 10);
 export const MOB_RESPAWN: [number, number] = [10, 18];
 export const MAX_CAMP_LEVEL = 48;
 export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + (dist - 40) / 2.5)));
@@ -364,6 +372,11 @@ export const RESPAWN_SEC = 3;
 export const COMBAT_FLAG_SEC = 15;
 export const RANK_RECOVER_KILLS = 20;
 export const NEW_ACCOUNT_NOTE = 48; // saat: yeni hesap ilan veremez (bot / gerçek para ticareti önlemi)
+
+// ───────────────────────── Efsun yenileme (altın sinki + oyuncuya savunma/yapı üzerinde söz hakkı) ─────────────────────────
+export const REROLL = { base: 40, ilvlAdd: 10, perRepeat: 0.12, baseLineMult: 2.5, targetedMult: 6 };
+/** rastgele yenileme: temel × (1 + 0,12 × önceki yenileme); temel efsun ×2,5; istediğin efsunu seçmek ×6 */
+export const rerollCost = (it: Pick<Item, 'ilvl' | 'rr'>, isBase: boolean, targeted: boolean) => Math.round(REROLL.base * (it.ilvl + REROLL.ilvlAdd) * (1 + REROLL.perRepeat * Math.min(40, it.rr ?? 0)) * (isBase ? REROLL.baseLineMult : 1) * (targeted ? REROLL.targetedMult : 1));
 
 // ───────────────────────── Pazar ─────────────────────────
 /** Oyuncular arası pazar. Vergi ve ilan ücreti akçe sinkidir; yeni hesap kısıtı ve fiyat tavanı bot/RMT önlemidir. */

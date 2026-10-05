@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { makeRig } from '../sim/rig';
-import { BAG_SIZE, CRAFT, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
+import { BAG_SIZE, CRAFT, campRespawnMult, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
 import { newPlayerData } from '../../server/types';
 import { mulberry32 } from '../../shared/rng';
 import { startTestServer, Bot, type TestServer } from './helpers';
@@ -134,5 +134,22 @@ describe('av 5: sayı uçları (özellik tabanlı)', () => {
   });
   test('yeni hesap verisi her zaman eşyasız geçerli: hp>0 ve silah türü kılıç', () => {
     const d = newPlayerData(0, { x: 0, z: 0 }, 'tr'); const st = computeStats({ level: d.level, boy: 'gok', spec: 'none', equip: d.equip, kut: 0 }); expect(st.weaponKind).toBe('kilic'); expect(st.maxHp).toBeGreaterThan(100);
+  });
+});
+
+describe('av 6: kalabalık ve zorbalık (nüfus simülasyonu bulgusu)', () => {
+  test('düşük seviye koruması: 10+ seviye aşağıdaki oyuncu PvP’de azalan, 20+ aşağıdaki dokunulmaz hasar alır; düello ve karşılık koruma dışıdır', () => {
+    const rig = makeRig(31, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const v = rig.add('yer');
+    a.d.level = 40; v.d.level = 40; for (const p of [a, v]) { p.x = 80; p.z = 0; w.recalc(p); } v.x = 82;
+    const mean = (n = 400) => { let s = 0; for (let i = 0; i < n; i++) { v.hp = v.stats.maxHp; s += w.playerHit(a, v, 1); } return s / n; };
+    const same = mean();
+    v.d.level = 28; w.recalc(v); const gap12 = mean(); v.d.level = 15; w.recalc(v); const gap25 = mean();
+    expect(gap12 / same).toBeLessThan(0.5);       // 0,25 çarpanı (savunma farkı hariç gevşek sınır)
+    expect(gap25).toBe(0);
+    a.duelWith = v.id; v.duelWith = a.id; const duel = mean(); expect(duel).toBeGreaterThan(0); a.duelWith = v.duelWith = 0;
+    v.lastDamager = 0; a.lastDamager = v.id; a.lastCombat = w.now; expect(mean()).toBeGreaterThan(0);   // hedef sana saldırdı: karşılık serbest
+  });
+  test('kalabalık kamp: yakındaki oyuncu sayısı arttıkça yaratıkların yeniden doğuşu hızlanır (taban %25); tek oyuncuda değişmez', () => {
+    expect(campRespawnMult(1)).toBe(1); expect(campRespawnMult(5)).toBeLessThan(0.5); expect(campRespawnMult(40)).toBe(0.25);
   });
 });

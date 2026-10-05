@@ -8,7 +8,7 @@ export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
   | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen'
-  | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
+  | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
 export interface Welcome {

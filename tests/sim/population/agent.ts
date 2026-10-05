@@ -1,5 +1,5 @@
 import {
-  BAG_SIZE, CRAFT, DMG_KINDS, FIELD_BOSS, HUB, HUB_R, MARKET, MOBS, RANGED_MIN_RANGE, SKILLS, WEAPON_MODS, computeStats, marketPriceBounds, marketRef, upgradeCost, vendorPrice, xpToNext, zoneAt,
+  BAG_SIZE, CRAFT, DMG_KINDS, FIELD_BOSS, HUB, HUB_R, MARKET, MOBS, RANGED_MIN_RANGE, SKILLS, WEAPON_MODS, computeStats, marketPriceBounds, marketRef, rerollCost, upgradeCost, vendorPrice, xpToNext, zoneAt,
   type DmgKind, type Item, type Slot, type Spec,
 } from '../../../shared/game';
 import { dist2, type Camp } from '../../../shared/world';
@@ -23,7 +23,7 @@ export class Agent {
   tot = { kills: 0, extraKills: 0, deaths: 0, extraDeaths: 0, bossKills: 0, riftCloses: 0, pvpKills: 0, pvpDeaths: 0, minutes: 0, upgradesOk: 0, upgradesFail: 0, destroyed: 0, lostBagFull: 0, rare: 0, mktListed: 0, mktSold: 0, mktBought: 0, mktProfit: 0, blocked: 0, pierced: 0 };
   dmgByKind: Record<string, number> = { kilic: 0, cift: 0, bicak: 0, yay: 0, buyu: 0, pl: 0, dot: 0 }; deathBy: Record<string, number> = {};
   lastRewardMin = 0; maxRewardGap = 0; sinceReward = 0; frustration = 0; failStreak = 0; maxFailStreak = 0; levelAtDay: number[] = []; farmMin = 0; farmKills = 0; farmDeaths = 0; rate = 18; deathRate = 0.01;
-  sliceFarmTicks = 0; sliceFarmKills = 0; sliceFarmDeaths = 0; sliceStartKills = 0; sliceStartDeaths = 0; listings = 0;
+  sliceFarmTicks = 0; sliceFarmWall = 0; sliceFarmKills = 0; sliceFarmDeaths = 0; sliceStartKills = 0; sliceStartDeaths = 0; listings = 0;
   constructor(public eng: Engine, public idx: number, public name: string, public arch: Arch, public par: Params, public boy: 'gok' | 'yer' | 'ay', public dbId: number, public seedLevel: number) {}
   get w() { return this.eng.rig.world; }
   get d() { return this.p.d; }
@@ -85,6 +85,8 @@ export class Agent {
     if (this.par.buyP > r()) this.marketBuy();
     // kuşan
     for (const s of SLOTS) { const b = this.par.defAware || this.par.smartWeapon ? this.bestFor(s, d.items) : this.naiveBest(s, d.items); const cur = d.equip[s]; if (b && b !== cur) this.rpc('equip', { id: b.id }); }
+    // efsun yenile: savunma bilinçli oyuncu, aldığı hasarın ana türüne karşı savunma kurar
+    if (this.par.defAware) this.rerollDefense();
     // artı bas
     this.upgradeAll();
     // üretim
@@ -94,6 +96,22 @@ export class Agent {
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
+  }
+  /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
+  mainThreat(): DmgKind {
+    let best: DmgKind | null = null; let bv = 0; for (const k of DMG_KINDS) if ((this.dmgByKind[k] ?? 0) > bv) { bv = this.dmgByKind[k]; best = k; }
+    if (best && bv > 800) return best; const th = this.threat(); let b: DmgKind = 'kilic', v = -1; for (const k of DMG_KINDS) if (th[k] > v) { v = th[k]; b = k; } return b;
+  }
+  private rerollDefense() {
+    const d = this.d; const kind = this.mainThreat(); const key = `def${kind[0].toUpperCase()}${kind.slice(1)}` as 'defKilic';
+    const st = () => computeStats({ level: d.level, boy: this.boy, spec: d.spec, equip: d.equip, kut: d.kut }); if (st().defKind[kind] >= 0.18) return;
+    const overwrite = ['xpPct', 'mspd', 'leech', 'aspd', 'crit', 'defPct', 'hpPct', 'atkPct']; const budget = d.gold * 0.4; let spent = 0;
+    for (const slot of ['armor', 'helmet', 'amulet', 'weapon'] as Slot[]) {
+      const it = d.equip[slot]; if (!it || it.ench.some((e) => e.k === key) || it.base?.k === key) continue;
+      let li = -1, pr = 99; it.ench.forEach((e, i) => { const q = overwrite.indexOf(e.k); const rank = q < 0 ? 50 : q; if (rank < pr && !e.k.startsWith('def') && !e.k.startsWith('block') && e.k !== 'pierce') { pr = rank; li = i; } });
+      if (li < 0) continue; const c = rerollCost(it, false, true); if (spent + c > budget || d.gold < c + 500) continue;
+      const res = this.rpc('reroll', { id: it.id, line: li, key }); if (res.ok) { spent += c; this.eng.stats.rerolls++; this.eng.stats.rerollGold += c; this.reward('savunma kuruldu'); if (st().defKind[kind] >= 0.18) break; }
+    }
   }
   private upgradeAll() {
     const d = this.d; const pol = this.par;
@@ -195,6 +213,7 @@ export class Agent {
   }
   /** her tick: hangi etkinlik varsa onu yürüt */
   step(ix: { campMobs: Map<number, Mob[]>; bosses: Mob[]; riftMobs: Map<number, Mob[]> }) {
+    if (this.activity === 'farm') this.sliceFarmWall++;
     const p = this.p; const w = this.w; const risky = zoneAt(p.x, p.z) === 'risky';
     if (p.deadUntil > 0) { try { w.respawn(p); } catch { /* erken */ } this.resting = true; return; }
     if (this.resting) { if (risky) { this.go(0, 0); w.onAttack(p, { on: false }); this.actTicks.rest++; return; } this.stop(); w.onAttack(p, { on: false }); this.actTicks.rest++; if (p.hp >= p.stats.maxHp * 0.95) this.resting = false; return; }
@@ -226,7 +245,7 @@ export class Agent {
   }
   private doBoss(ix: { bosses: Mob[] }) {
     this.actTicks.boss++; const b = this.bossTarget; if (!b || b.dead) { this.activity = 'farm'; return; }
-    const near = [b]; const d = Math.sqrt(dist2(this.p, b)); if (d > 40) { this.go(b.x, b.z); this.w.onAttack(this.p, { on: false }); return; }
+    const near = [b]; const d = Math.sqrt(dist2(this.p, b)); if (d > Math.max(3, this.p.stats.range * 0.85 - 0.3) + 2) { this.go(b.x, b.z); this.w.onAttack(this.p, { on: false }); this.skills(ix.bosses.filter((m) => dist2(this.p, m) < 400), null); return; }
     this.fightMobs(ix.bosses.filter((m) => dist2(this.p, m) < 400).concat(near).slice(0, 3));
   }
   private doRift(ix: { riftMobs: Map<number, Mob[]> }) {

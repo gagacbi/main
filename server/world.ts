@@ -2,9 +2,9 @@ import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
-  type Boy, type DmgKind, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
+  type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
 import { dist, dist2, genBosses, genCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
@@ -267,7 +267,10 @@ export class World {
     if (tgt.kind === 'player') {
       const df = applyDefense(tgt.stats, o.dk ?? p.stats.weaponKind, !!o.skill, p.stats.pierce, this.ctx.rng(), this.ctx.rng());
       if (tgt.deadUntil === 0 && !tgt.god && df.blocked) { tgt.lastCombat = this.now; this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
-      dmg = Math.max(1, Math.round(dmg * df.mult * (1 + SPEC_MODS[tgt.d.spec].pvpTaken)));
+      // düşük seviye koruması: düello ya da hedefin az önce sana saldırmış olması (karşılık) dışında, çok aşağıdaki oyuncuya hasar azalır
+      const retaliation = p.lastDamager === tgt.id && this.now - p.lastCombat < 10000; const gapM = p.duelWith === tgt.id || retaliation ? 1 : pvpGapMult(p.d.level, tgt.d.level);
+      dmg = gapM === 0 ? 0 : Math.max(1, Math.round(dmg * df.mult * (1 + SPEC_MODS[tgt.d.spec].pvpTaken) * gapM));
+      if (dmg === 0) { this.emit({ k: 'dmg', id: tgt.id, v: 0, blk: true, src: p.id, pl: true }, tgt.x, tgt.z); return 0; }
     }
     return this.damage(p, tgt, dmg, { crit });
   }
@@ -371,7 +374,8 @@ export class World {
       if (r) r.mobs.delete(m.id);
       this.mobs.delete(m.id);
     } else {
-      m.respawnAt = this.now + range(this.ctx.rng, MOB_RESPAWN[0], MOB_RESPAWN[1]) * 1000;
+      let near = 0; if (m.campId >= 0) { const c = this.camps[m.campId]; for (const q of this.players.values()) if (q.deadUntil === 0 && (q.x - c.x) ** 2 + (q.z - c.z) ** 2 < 35 * 35) near++; }
+      m.respawnAt = this.now + range(this.ctx.rng, MOB_RESPAWN[0], MOB_RESPAWN[1]) * 1000 * campRespawnMult(near);
     }
   }
 
@@ -628,6 +632,21 @@ export class World {
       }
       case 'inscription': return { frags: this.ctx.db.worldGet('frags', 0), thresholds: INSCRIPTIONS };
       case 'lang': d.lang = a.lang === 'en' ? 'en' : 'tr'; return null;
+      case 'reroll': {
+        this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci);
+        const f = this.findItem(p, a.id); if (!f) throw new GameError('no_item'); const it = f.it;
+        const isBase = a.line === 'base'; const li = isBase ? -1 : Math.floor(Number(a.line));
+        if (isBase ? !it.base : !(li >= 0 && li < it.ench.length)) throw new GameError('bad_line');
+        const targeted = typeof a.key === 'string' && a.key.length > 0; const cost = rerollCost(it, isBase, targeted);
+        if (d.gold < cost) throw new GameError('no_gold');
+        const taken = new Set<string>([...(it.base && !isBase ? [it.base.k] : []), ...it.ench.filter((_, i) => i !== li).map((e) => e.k)]);
+        const pool = (isBase ? BASE_ENCH_POOL[it.slot] : ENCH_KEYS).filter((k) => !taken.has(k) && (isBase ? k !== it.base!.k : k !== it.ench[li].k));
+        let key: EnchKey; if (targeted) { if (!pool.includes(a.key)) throw new GameError('bad_key'); key = a.key; } else { if (!pool.length) throw new GameError('bad_line'); key = pool[Math.floor(this.ctx.rng() * pool.length)]; }
+        const [lo, hi] = ENCH_TABLE[key]; const line = { k: key, v: Math.round((lo + (hi - lo) * this.ctx.rng()) * 10) / 10 };
+        d.gold -= cost; if (isBase) it.base = line; else it.ench[li] = line; it.rr = (it.rr ?? 0) + 1;
+        this.ledger(p, 'reroll', { item: it.id, line: a.line, key, v: line.v, gold: cost, targeted, n: it.rr });
+        this.recalc(p); p.meDirty = true; this.save(p); return { line, cost, rr: it.rr };
+      }
       case 'market.browse': case 'market.mine': case 'market.claim': case 'market.list': case 'market.cancel': case 'market.buy': return marketRpc(this, p, op, a);
       case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }
       case 'stone': {

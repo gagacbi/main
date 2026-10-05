@@ -21,7 +21,7 @@ export interface SliceLog { day: number; slice: number; online: number; riftsOpe
 export class Engine {
   rig: Rig; rng: () => number; day = 0; agents: Agent[] = []; occupancy = new Map<number, number>(); market: MarketModel;
   byPid = new Map<number, Agent>(); byDb = new Map<number, Agent>(); sliceLogs: SliceLog[] = []; ledgerMark = 0;
-  stats = { crafted: 0, craftGold: 0, lostBagFull: 0 }; bossFights: { day: number; boss: number; sec: number; deaths: number; participants: number }[] = []; pvpLog: { day: number; k: number; v: number; dl: number }[] = [];
+  stats = { crafted: 0, craftGold: 0, lostBagFull: 0, rerolls: 0, rerollGold: 0 }; bossFights: { day: number; boss: number; sec: number; deaths: number; participants: number }[] = []; pvpLog: { day: number; k: number; v: number; dl: number }[] = [];
   econ: { day: number; supply: number; sources: Record<string, number>; sinks: Record<string, number>; mkt: { sales: number; volume: number; tax: number; fees: number; listed: number; avgRatio: number }; gini: number }[] = [];
   private bossStart = new Map<number, number>(); private bossDeaths = new Map<number, number>(); private riftOpen = 0; private riftDone = 0; private riftFail = 0;
   constructor(public seed: number, public n: number, public W = 10) {
@@ -104,9 +104,9 @@ export class Engine {
     if (!online.length) { return; }
     this.riftOpen = this.riftDone = this.riftFail = 0; const bossKills0 = this.bossFights.length; this.bossStart.clear(); this.bossDeaths.clear();
     // giriş (gerçek join: dinlenmiş XP, rüya, posta teslimi)
-    for (const { a } of online) { const row = this.rig.db.playerById(a.dbId)!; a.p = w.join(row, () => {}, () => {}); this.byPid.set(a.p.id, a); a.sliceFarmTicks = a.sliceFarmKills = a.sliceFarmDeaths = 0; a.sliceStartKills = a.tot.kills; a.sliceStartDeaths = a.tot.deaths; }
+    for (const { a } of online) { const row = this.rig.db.playerById(a.dbId)!; a.p = w.join(row, () => {}, () => {}); this.byPid.set(a.p.id, a); a.sliceFarmTicks = a.sliceFarmWall = a.sliceFarmKills = a.sliceFarmDeaths = 0; a.sliceStartKills = a.tot.kills; a.sliceStartDeaths = a.tot.deaths; }
     this.market.invalidate();
-    for (const { a } of online) { a.town(); a.pickActivity(); if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
+    for (const { a } of online) { a.pickActivity(); a.town(); if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
     // dünya zaten giriş yapanlarla başlar: gerçek tick'ler
     const ticks = this.W * 600; const occStat: Record<number, { sum: number; n: number }> = {}; const campUse: Record<number, number> = {}; const bossTouch = new Set<number>();
     for (let t = 0; t < ticks; t++) {
@@ -120,7 +120,9 @@ export class Engine {
     for (const { a, mins } of online) {
       a.tot.minutes += mins[si]; const farmMin = a.sliceFarmTicks / 600;
       const extraMin = Math.max(0, mins[si] - this.W);
-      if (farmMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / farmMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / farmMin) * 0.5; }
+      // oranlar, farm evresinin TOPLAM süresine (ölü/dinlenme dahil) göre ölçülür: sık ölen oyuncunun gerçek verimi budur
+      const wallMin = a.sliceFarmWall / 600;
+      if (wallMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / wallMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / wallMin) * 0.5; }
       const o = occStat[a.idx]; if (o && farmMin >= 1) { const avg = o.sum / Math.max(1, o.n); const b = avg <= 1.5 ? '1' : avg <= 3.5 ? '2-3' : avg <= 6.5 ? '4-6' : avg <= 10.5 ? '7-10' : '11+'; const e = (log.occBuckets[b] ??= { n: 0, rate: 0 }); e.n++; e.rate += a.sliceFarmKills / farmMin; }
       if (extraMin > 0) this.extrapolate(a, extraMin);
       a.town(); a.farmMin += farmMin;
@@ -176,7 +178,7 @@ export class Engine {
       case 'mob.gold': add(income, 'yaratık', x.gold); break; case 'sell': add(income, 'NPC satış', x.price); break; case 'clue': add(income, 'gizem', x.gold); break; case 'milestone': add(income, 'kilometre taşı', x.gold); break;
       case 'boss.reward': add(income, 'boss', x.gold); break; case 'rift.reward': add(income, 'çatlak', x.gold); break; case 'exp.collect': add(income, 'sefer', x.gold); break; case 'tutorial': add(income, 'öğretici', x.gold ?? 0); break;
       case 'market.sale': add(income, 'pazar satış', x.proceeds); net += x.proceeds; break; case 'market.buy': add(expense, 'pazar alış', x.price); net -= x.price; break;
-      case 'market.list': add(expense, 'ilan ücreti', x.fee); net -= x.fee; break; case 'upgrade': add(expense, 'artı basma', x.gold); break; case 'craft': add(expense, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(expense, 'beceri', x.gold ?? 0); break; case 'oba.build': add(expense, 'oba', x.gold ?? 0); break; } }
+      case 'market.list': add(expense, 'ilan ücreti', x.fee); net -= x.fee; break; case 'upgrade': add(expense, 'artı basma', x.gold); break; case 'reroll': add(expense, 'efsun yenileme', x.gold); break; case 'craft': add(expense, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(expense, 'beceri', x.gold ?? 0); break; case 'oba.build': add(expense, 'oba', x.gold ?? 0); break; } }
     const prog = d.level + (d.level >= 50 ? 0 : d.xp / xpToNext(d.level));
     let worth = d.gold; for (const it of d.items) worth += vendorOfItem(it); for (const it of Object.values(d.equip)) if (it) worth += vendorOfItem(it as Item);
     return { day: this.day, level: d.level, prog: +prog.toFixed(2), gold: d.gold, worth, kills: a.tot.kills + a.tot.extraKills - m.kills0, deaths: a.tot.deaths + a.tot.extraDeaths - m.deaths0, minutes: Math.round(a.tot.minutes - m.min0), bossKills: a.tot.bossKills - m.boss0, riftCloses: a.tot.riftCloses - m.rift0, pvpKills: a.tot.pvpKills - m.pk0, pvpDeaths: a.tot.pvpDeaths - m.pd0, marketNet: net, upgrades: a.tot.upgradesOk - m.up0, destroyed: a.tot.destroyed - m.ds0, income, expense };
@@ -188,7 +190,7 @@ export class Engine {
     const add = (o: Record<string, number>, k: string, v: number) => { o[k] = (o[k] ?? 0) + Math.round(v); };
     for (const l of rows) { const x = JSON.parse(l.detail); switch (l.kind) {
       case 'mob.gold': add(sources, 'yaratık', x.gold); break; case 'sell': add(sources, 'NPC satış', x.price); break; case 'clue': add(sources, 'gizem', x.gold); break; case 'milestone': add(sources, 'kilometre taşı', x.gold); break; case 'boss.reward': add(sources, 'boss (altın yağmuru dahil)', 0); break; case 'exp.collect': add(sources, 'sefer', x.gold); break;
-      case 'upgrade': add(sinks, 'artı basma', x.gold); break; case 'craft': add(sinks, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(sinks, 'beceri', x.gold ?? 0); break; case 'oba.build': add(sinks, 'oba', x.gold ?? 0); break;
+      case 'upgrade': add(sinks, 'artı basma', x.gold); break; case 'reroll': add(sinks, 'efsun yenileme', x.gold); break; case 'craft': add(sinks, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(sinks, 'beceri', x.gold ?? 0); break; case 'oba.build': add(sinks, 'oba', x.gold ?? 0); break;
       case 'market.list': add(sinks, 'pazar ilan ücreti', x.fee); fees += x.fee; listed++; break; case 'market.sale': add(sinks, 'pazar vergisi', x.tax); tax += x.tax; sales++; vol += x.price; ratioSum += x.price / Math.max(1, marketRefFromVendor(x.vendor)); break; } }
     const row = db.prepare("SELECT COALESCE(SUM(gold),0) g FROM mail WHERE kind='gold'").get() as unknown as { g: number };
     const golds = this.agents.map((a) => (JSON.parse(this.rig.db.playerById(a.dbId)!.data).gold as number)); const supply = golds.reduce((s, g) => s + g, 0) + row.g;
