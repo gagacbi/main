@@ -11,6 +11,7 @@ import { newPlayerData } from '../server/types';
  *   npm run admin -- create <ad> [parola] → belirli ad/parola
  *   npm run admin -- promote <ad>         → var olan hesabı yönetici yapar
  *   npm run admin -- demote <ad>          → yetkiyi alır
+ *   npm run admin -- passwd <ad> <parola> → parolayı değiştirir
  *   npm run admin -- list                 → yöneticileri listeler
  * Oyun içinden yönetici yapılamaz: rol yalnızca bu betikle verilir ve sunucu her GM komutunda rolü doğrular.
  */
@@ -31,8 +32,12 @@ if (cmd === 'create') {
 } else if (cmd === 'promote' || cmd === 'demote') {
   const name = rest[0]; if (!name || !db.setRole(name, cmd === 'promote' ? 'admin' : 'player')) { tag('Hesap bulunamadı.'); process.exit(1); }
   tag(`${name}: ${cmd === 'promote' ? 'artık yönetici' : 'yetkisi alındı'}`);
+} else if (cmd === 'passwd') {
+  const name = rest[0]; const pw = rest[1]; if (!name || !pw || pw.length < 4) { tag('kullanım: passwd <ad> <parola (en az 4)>'); process.exit(1); }
+  if (!db.playerByName(name)) { tag('Hesap bulunamadı.'); process.exit(1); }
+  const { salt, hash } = hashPassword(pw); db.db.prepare('UPDATE players SET salt = ?, hash = ? WHERE name = ? COLLATE NOCASE').run(salt, hash, name); tag(`${name}: parola güncellendi`);
 } else if (cmd === 'list') {
   const rows = db.db.prepare("SELECT name FROM players WHERE role = 'admin'").all() as unknown as { name: string }[];
   tag(rows.length ? rows.map((r) => '  ' + r.name).join('\n') : 'Yönetici yok.');
-} else { tag('Komutlar: create [ad] [parola] | promote <ad> | demote <ad> | list'); process.exit(1); }
+} else { tag('Komutlar: create [ad] [parola] | passwd <ad> <parola> | promote <ad> | demote <ad> | list'); process.exit(1); }
 db.close();

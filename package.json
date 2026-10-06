@@ -11,6 +11,7 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "start": "tsx server/index.ts",
     "play": "node scripts/play.mjs",
+    "play:share": "node scripts/play.mjs --share",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",

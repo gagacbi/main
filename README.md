@@ -11,7 +11,7 @@ Gereken: [Node.js 22.5+](https://nodejs.org). Sonrası otomatik (kurulum → der
 | Linux | `./oyna.sh` |
 | Hepsi | `npm run play` |
 
-Yönetici hesabı: ad `Yonetici`, parola `oyna123` (seviye 50, 100.000 akçe; sohbete `/gm help`, F2 yönetici paneli). Kapatmak için pencerede Ctrl+C. Port doluysa `PORT=2600 npm run play`.
+Yönetici hesabı: ad `Yonetici`, parola **ilk çalıştırmada rastgele üretilir**, pencerede yazılır ve yalnız bu bilgisayarda `.data/yonetici-parola.txt` dosyasında durur (seviye 50, 100.000 akçe; sohbete `/gm help`, F2 yönetici paneli). Kapatmak için pencerede Ctrl+C. Port doluysa `PORT=2600 npm run play`.
 
 
 Türk ve Orta Asya mitolojisinden esinlenen, neşeli ve renkli, **tarayıcıda kurulumsuz** oynanan 3D MMORPG.
@@ -20,6 +20,15 @@ tek bölge, Alp sınıfı, Metin2 tarzı savaş ve yaratık toplama, ganimet, ar
 Erlik çatlakları, boylar/PvP/derece, veritabanı kaydı ve çok oyunculu sunucu.
 
 > Teslim raporu: [`docs/TESLIM_RAPORU.md`](docs/TESLIM_RAPORU.md) · Kabul kriterleri: [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) · Kanıtlar: [`docs/evidence/`](docs/evidence)
+
+
+### Arkadaşlarla oyna (ücretsiz, hesap/kart gerekmez)
+
+`OYNA-ARKADASLA.bat` (Windows) · `OYNA-ARKADASLA.command` (macOS) · `npm run play:share` (hepsi). Normal başlatıcının yaptığına ek olarak Cloudflare Tunnel ile **genel bir adres** açar; pencerede `ARKADAŞLARA VER → https://….trycloudflare.com` yazar. Arkadaşlar adresi açıp **Kayıt ol** der.
+- Sunucu senin bilgisayarında çalışır: bilgisayar ve pencere açık olduğu sürece oynanır; veriler (hesaplar, karakterler) bilgisayarında kalır.
+- Adres her çalıştırmada değişir. Aynı Wi-Fi'deki arkadaşlar için yerel adres de yazılır (`http://192.168.x.x:2567`).
+- Ekonomi ölçümü sonra: `npx tsx scripts/economy-report.ts .data/kut.db 7`
+- Diğer barındırma seçenekleri ve ödünleşimleri: `docs/BARINDIRMA.md`
 
 ## Hızlı başlangıç
 
