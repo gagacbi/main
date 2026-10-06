@@ -16,7 +16,7 @@ import type { Engine } from './engine';
 export const SPEND_MODEL: 'flexible_proportional' | 'baseline_heavy' = process.env.POP_SPEND === 'baseline_heavy' ? 'baseline_heavy' : 'flexible_proportional';
 export type Activity = 'farm' | 'boss' | 'rift' | 'pvp' | 'dun';
 export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
-export interface DayRec { day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
+export interface DayRec { kzUsed?: number; kzShort?: number; kzBought?: number; day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
 
 const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
 const DEFAULT_ORDER = [0, 1, 5, 4, 3, 2];
