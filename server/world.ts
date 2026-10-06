@@ -1,3 +1,4 @@
+import { dungeonDay } from '../shared/dungeon';
 import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
@@ -770,11 +771,15 @@ export class World {
     if (d.gold < cost.gold) throw new GameError('no_gold');
     if (d.bag.ore < cost.ore) throw new GameError('no_ore');
     if (a.book && d.bag.book < 1) throw new GameError('no_book');
-    if (a.charm) { if (d.bag.charm < 1) throw new GameError('no_charm'); if (target < (ENH.v11 && target > 9 ? ENH.v11.charmFrom : UPGRADE_DESTROYS_FROM)) throw new GameError('charm_useless'); }
     const e11 = ENH.v11 && target > 9 ? ENH.v11 : null;
-    const rate = Math.min(100, (e11 ? e11.rate[target] : UPGRADE_RATE[target]) + (a.book ? BOOK_BONUS : 0));
-    d.gold -= cost.gold; d.bag.ore -= cost.ore;
-    if (a.book) d.bag.book--; if (a.charm) d.bag.charm--;
+    const charmN = a.charm ? (e11?.charmN?.(target) ?? 1) : 0;
+    if (a.charm) { if (d.bag.charm < charmN) throw new GameError('no_charm'); if (target < (e11 ? e11.charmFrom : UPGRADE_DESTROYS_FROM)) throw new GameError('charm_useless'); }
+    if (e11?.dailyCap && target >= e11.dailyCap.from) { const day = dungeonDay(this.now); const cur = d.enh && d.enh.day === day ? d.enh : (d.enh = { day, n: 0 }); if (cur.n >= e11.dailyCap.n) throw new GameError('enh_cap'); cur.n++; }
+    const rate = Math.min(100, (e11 ? e11.rate[target] : UPGRADE_RATE[target]) + (a.book ? (e11?.bookBonus ?? BOOK_BONUS) : 0));
+    const fee = a.charm && e11?.protectFee ? Math.round(cost.gold * e11.protectFee) : 0;
+    if (d.gold < cost.gold + fee) throw new GameError('no_gold');
+    d.gold -= cost.gold + fee; d.bag.ore -= cost.ore; cost.gold += fee;   // ledger'a koruma bedeli dahil yazılır
+    if (a.book) d.bag.book--; if (a.charm) d.bag.charm -= charmN;
     const roll = this.ctx.rng() * 100;
     const success = roll < rate;
     let destroyed = false; let dropped = false;

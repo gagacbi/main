@@ -148,7 +148,7 @@ export const weaponKindOf = (it: Pick<Item, 'wk'> | undefined | null): DmgKind =
 export const TIER_COLORS = ['#c9c2b0', '#4aa8ff', '#b46bff', '#ffb02e'];
 export const UP_PCT = [0, 10, 20, 30, 40, 60, 80, 105, 130, 160]; // +n → temel değere % ek
 /** DENEY KANCASI (yalnızca simülasyon): null iken oyun davranışı değişmez. Endgame Enhancement Economy v1.1 (+10…+15) burayı doldurur. */
-export interface EnhOverride { max: number; pct: number[]; rate: number[]; cost: (target: number, ilvl: number) => { gold: number; ore: number }; /** başarısızlıkta: 'keep' | 'drop' (−1 seviye) | 'destroy'; tılsım 'drop'/'destroy'u engeller */ fail: (target: number) => 'keep' | 'drop' | 'destroy'; charmFrom: number }
+export interface EnhOverride { max: number; pct: number[]; rate: number[]; cost: (target: number, ilvl: number) => { gold: number; ore: number }; /** başarısızlıkta: 'keep' | 'drop' (−1 seviye) | 'destroy'; tılsım 'drop'/'destroy'u engeller */ fail: (target: number) => 'keep' | 'drop' | 'destroy'; charmFrom: number; /** v1.2: +10…+15 kitap bonusu (yoksa BOOK_BONUS) */ bookBonus?: number; /** v1.2: hedef başına gereken Tılsım adedi (yoksa 1) */ charmN?: (target: number) => number; /** v1.2: günlük (UTC+3) deneme sınırı, hedef ≥ from için */ dailyCap?: { from: number; n: number }; /** v1.2: koruma (Tılsım) kullanılırken ek akçe bedeli = deneme akçesi × oran */ protectFee?: number }
 export const ENH: { v11: EnhOverride | null } = { v11: null };
 export const upMax = () => ENH.v11?.max ?? 9;
 export const upMult = (up: number) => ENH.v11 ? 1 + ENH.v11.pct[Math.min(ENH.v11.max, up)] / 100 : 1 + UP_PCT[Math.min(9, up)] / 100;

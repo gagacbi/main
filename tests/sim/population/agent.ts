@@ -143,18 +143,19 @@ export class Agent {
     for (const slot of SLOTS) for (let g = 0; g < 6; g++) {
       const it = d.equip[slot]; if (!it || it.up < 9 || it.up >= ENH.v11.max) break; if (this.enhTries >= 3 || this.enhFails >= 3) return;
       const target = it.up + 1; const cost = upCost(target, it.ilvl);
-      if (this.enhSpent + cost.gold > this.enhBudget || d.gold < cost.gold + 5000 || d.bag.ore < cost.ore) { const why = d.bag.ore < cost.ore ? 'Ore' : d.gold < cost.gold + 5000 ? 'Gold' : 'Budget'; this.ext['enhBlock' + why] = (this.ext['enhBlock' + why] ?? 0) + 1; break; }
+      const nCharm = ENH.v11.charmN?.(target) ?? 1; const wantCharm = target >= ENH.v11.charmFrom && par.charm && d.bag.charm >= nCharm; const fee = wantCharm && ENH.v11.protectFee ? Math.round(cost.gold * ENH.v11.protectFee) : 0; const total = cost.gold + fee;
+      if (this.enhSpent + total > this.enhBudget || d.gold < total + 5000 || d.bag.ore < cost.ore) { const why = d.bag.ore < cost.ore ? 'Ore' : d.gold < cost.gold + 5000 ? 'Gold' : 'Budget'; this.ext['enhBlock' + why] = (this.ext['enhBlock' + why] ?? 0) + 1; break; }
       if (ENH.v11.fail(target) !== 'keep' && U(2) > (par.riskAppetite ?? 0.5)) { this.ext.enhSkippedRisk = (this.ext.enhSkippedRisk ?? 0) + 1; break; }
-      const useCharm = target >= ENH.v11.charmFrom && par.charm && d.bag.charm > 0; const useBook = par.book && d.bag.book > 0;
-      const res = this.rpc('upgrade', { id: it.id, book: useBook, charm: useCharm }); if (!res.ok) break;
-      this.enhTries++; this.enhSpent += cost.gold; const k = 't' + target; const inc = (n: string, v = 1) => { this.ext[n] = (this.ext[n] ?? 0) + v; };
-      inc('enhTry_' + k); inc('enhGold', cost.gold); inc('enhOre', cost.ore); if (useCharm) inc('enhCharm'); if (useBook) inc('enhBook');
+      const useCharm = wantCharm; const useBook = par.book && d.bag.book > 0;
+      const res = this.rpc('upgrade', { id: it.id, book: useBook, charm: useCharm }); if (!res.ok) { this.ext.enhRejected = (this.ext.enhRejected ?? 0) + 1; break; }
+      this.enhTries++; this.enhSpent += total; const k = 't' + target; const inc = (n: string, v = 1) => { this.ext[n] = (this.ext[n] ?? 0) + v; };
+      inc('enhTry_' + k); inc('enhGold', total); if (fee && useCharm) inc('enhFee', fee); inc('enhOre', cost.ore); if (useCharm) inc('enhCharm', nCharm); if (useBook) inc('enhBook');
       if (res.data.success) { inc('enhOk_' + k); this.enhFails = 0; this.reward(`+${res.data.target} başarılı`); } else { this.enhFails++; inc('enhFail_' + k); if (res.data.dropped) { inc('enhDrop_' + k); this.frustration += 1; } }
     }
   }
   private craftStuff() {
     const d = this.d; const r = this.eng.rng; const m = this.eng.market;
-    if (this.par.charm) while (d.bag.charm < 4 && this.rpc('craft', { kind: 'charm' }).ok) { /* demir 2+ gerekir */ }
+    if (this.par.charm) while (d.bag.charm < (ENH.v11?.charmN ? 8 : 4) && this.rpc('craft', { kind: 'charm' }).ok) { /* demir 2+ gerekir */ }
     if (this.par.book) while (d.bag.book < 6 && d.bag.ore > 30 && this.rpc('craft', { kind: 'book' }).ok) { /* */ }
     if (this.arch.market.craft && m.craftBudget(this) && d.items.length < 22 && d.bag.ore >= CRAFT.gear.ore + 20 && d.bag.hide >= CRAFT.gear.hide && d.bag.wood >= CRAFT.gear.wood) {
       const slot = SLOTS[Math.floor(r() * 4)]; const gold0 = d.gold; const res = this.rpc('craft', { kind: 'gear', slot });

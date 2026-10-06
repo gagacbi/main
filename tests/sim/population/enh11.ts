@@ -17,3 +17,19 @@ export const ENH11: EnhOverride = {
   cost: (t, ilvl) => ({ gold: Math.round(60 * t * t * (1 + ilvl / 6)), ore: 2 + t * 2 }),
   fail: (t) => (t >= 13 ? 'drop' : 'keep'), charmFrom: 13,
 };
+
+/**
+ * v1.2 — v1.1'in 30 günlük sonucuna (docs/balans/ENH11_30GUN.md) karşı tasarım düzeltmesi. YALNIZCA SİMÜLASYON.
+ * Bulgu: Tılsım ve kitap mob drop'u olarak birikiyor (olgun oyuncuda gün sonu ≈750 Tılsım, ≈1400 kitap); adet artırmak kısıtlamaz.
+ * Aynı: başarı oranları 40/32/25/18/12/8, başarısızlık kuralı (+13…+15 düşme, Tılsım korur), güç eğrisi.
+ * Değişen:
+ *   1. Demirci kitabı +10…+15'te bonus VERMEZ (v1.1: +10 puan) → tablo oranları gerçek oran olur.
+ *   2. Koruma (Tılsım) +13…+15'te ek akçe bedeli ister: deneme akçesinin %60'ı (Tılsım tek başına kısıt değil).
+ *   3. Akçe maliyet çarpanı: +10 ×1,0 · +11 ×1,15 · +12 ×1,3 · +13 ×1,6 · +14 ×2,1 · +15 ×3,0.
+ *   4. Günlük sınır: hedef ≥ +12 olan denemeler oyuncu başına günde 2 (sunucu doğrulamalı, UTC+3 günü).
+ */
+const MULT: Record<number, number> = { 10: 1, 11: 1.15, 12: 1.3, 13: 1.6, 14: 2.1, 15: 3.0 };
+export const ENH12: EnhOverride = {
+  ...ENH11, bookBonus: 0, protectFee: 0.6, dailyCap: { from: 12, n: 2 },
+  cost: (t, ilvl) => ({ gold: Math.round(60 * t * t * (1 + ilvl / 6) * (MULT[t] ?? 1)), ore: 2 + t * 2 }),
+};
