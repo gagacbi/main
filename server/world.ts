@@ -6,7 +6,7 @@ import {
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { GATE_LINKS, KIMIZ, NPC_SELL_MULT, PVP_FLAG, gatePos } from '../shared/game';
+import { ECON, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos } from '../shared/game';
 import { kimizPrice } from '../shared/goods';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
@@ -480,7 +480,7 @@ export class World {
   }
   rollDrops(p: Player, m: Mob, share: number) {
     const r = this.ctx.rng;
-    const gold = Math.round(mobGold(m.lvl) * (0.7 + r() * 0.6) * (1 + (share - 0.15) * 0.0) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1));
+    const gold = Math.round(mobGold(m.lvl) * ECON.mobGold * (0.7 + r() * 0.6) * (1 + (share - 0.15) * 0.0) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1));
     this.spawnDrop(p, 'gold', m.x, m.z, { amount: gold });
     if (r() < 0.12) this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * 0.6) });
     const dm = dropLevelMult(m.lvl - p.d.level) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1);   // bayraklı: eşya/kaynak düşüşü de artar
@@ -617,7 +617,7 @@ export class World {
       case 'sell': {
         this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci + 4);
         const i = d.items.findIndex((x) => x.id === a.id); if (i < 0) throw new GameError('no_item');
-        const it = d.items[i]; const price = Math.max(1, Math.round(vendorPrice(it) * NPC_SELL_MULT));
+        const it = d.items[i]; const price = Math.max(1, Math.round(vendorPrice(it) * ECON.npcSell));
         d.items.splice(i, 1); d.gold += price; this.ledger(p, 'sell', { item: it.id, tier: it.tier, up: it.up, price }); p.meDirty = true;
         return { price };
       }

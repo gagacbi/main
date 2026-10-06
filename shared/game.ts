@@ -352,6 +352,8 @@ export const FIELD_BOSS = {
 /** İsteğe bağlı PvP: yalnızca iki taraf da bayraklıysa vurulabilir; bayraklı alp yaratıklardan biraz fazla kazanır, kapatmak için PvP'den bu kadar süre uzak durulur */
 export const PVP_FLAG = { bonus: 0.15, offAfterSec: 30 };
 /** NPC'ye satış çarpanı: nüfus simülasyonunda akçe kaynağının %28'i NPC satışı; sink/kaynak %50 → daha sağlıklı oran için kaynak kısıldı */
+/** Ekonomi ayar noktaları (simülasyonla açılıp kapatılabilir): NPC'ye satış çarpanı ve yaratık akçesi çarpanı */
+export const ECON = { npcSell: 0.7, mobGold: 1.0 };
 export const NPC_SELL_MULT = 0.7;
 /**
  * Kımız (şifa içeceği): KONTROLLÜ savaş sink'i. Stat vermez, kalıcı güç eklemez; yalnızca zamana yayılmış can yeniler.
