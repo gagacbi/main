@@ -10,6 +10,7 @@
     "dev:client": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "start": "tsx server/index.ts",
+    "play": "node scripts/play.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",

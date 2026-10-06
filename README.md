@@ -1,5 +1,19 @@
 # KUT — Tengri'nin Kutu
 
+## Tek tıkla oyna
+
+Gereken: [Node.js 22.5+](https://nodejs.org). Sonrası otomatik (kurulum → derleme → yönetici hesabı → sunucu → tarayıcı):
+
+| Sistem | Nasıl |
+|---|---|
+| Windows | `OYNA.bat` dosyasına çift tıkla |
+| macOS | `OYNA.command` dosyasına çift tıkla (ilk seferde sağ tık → Aç) |
+| Linux | `./oyna.sh` |
+| Hepsi | `npm run play` |
+
+Yönetici hesabı: ad `Yonetici`, parola `oyna123` (seviye 50, 100.000 akçe; sohbete `/gm help`, F2 yönetici paneli). Kapatmak için pencerede Ctrl+C. Port doluysa `PORT=2600 npm run play`.
+
+
 Türk ve Orta Asya mitolojisinden esinlenen, neşeli ve renkli, **tarayıcıda kurulumsuz** oynanan 3D MMORPG.
 Bu depo, [PRD](docs/ACCEPTANCE.md)'nin **Prototip aşaması (Aşama 2)** kapısını sağlayan oynanabilir oyunu içerir:
 tek bölge, Alp sınıfı, Metin2 tarzı savaş ve yaratık toplama, ganimet, artı basma, oba (2 bina + yoldaş seferi),
