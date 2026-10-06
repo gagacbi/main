@@ -147,12 +147,16 @@ export const WEAPON_DROP: [DmgKind, number][] = [['kilic', 0.4], ['cift', 0.2], 
 export const weaponKindOf = (it: Pick<Item, 'wk'> | undefined | null): DmgKind => it?.wk ?? 'kilic';
 export const TIER_COLORS = ['#c9c2b0', '#4aa8ff', '#b46bff', '#ffb02e'];
 export const UP_PCT = [0, 10, 20, 30, 40, 60, 80, 105, 130, 160]; // +n → temel değere % ek
-export const upMult = (up: number) => 1 + UP_PCT[Math.min(9, up)] / 100;
+/** DENEY KANCASI (yalnızca simülasyon): null iken oyun davranışı değişmez. Endgame Enhancement Economy v1.1 (+10…+15) burayı doldurur. */
+export interface EnhOverride { max: number; pct: number[]; rate: number[]; cost: (target: number, ilvl: number) => { gold: number; ore: number }; /** başarısızlıkta: 'keep' | 'drop' (−1 seviye) | 'destroy'; tılsım 'drop'/'destroy'u engeller */ fail: (target: number) => 'keep' | 'drop' | 'destroy'; charmFrom: number }
+export const ENH: { v11: EnhOverride | null } = { v11: null };
+export const upMax = () => ENH.v11?.max ?? 9;
+export const upMult = (up: number) => ENH.v11 ? 1 + ENH.v11.pct[Math.min(ENH.v11.max, up)] / 100 : 1 + UP_PCT[Math.min(9, up)] / 100;
 /** hedef seviye (+1…+9) → başarı şansı %. PRD §7 taslak tablosu. */
 export const UPGRADE_RATE = [0, 100, 90, 85, 80, 65, 50, 35, 20, 10];
 export const UPGRADE_DESTROYS_FROM = 5; // hedef +5 ve üstü başarısızlıkta eşya yok olur
 export const BOOK_BONUS = 10; // demirci el kitabı: +10 puan
-export const upgradeCost = (target: number, ilvl: number) => ({
+export const upgradeCost = (target: number, ilvl: number) => ENH.v11 && target > 9 ? ENH.v11.cost(target, ilvl) : ({
   gold: Math.round(60 * target * target * (1 + ilvl / 6)),
   ore: 2 + target * 2,
 });

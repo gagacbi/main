@@ -1,7 +1,7 @@
 import {
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
-  UPGRADE_DESTROYS_FROM, UPGRADE_RATE, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
+  ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
   CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
@@ -763,21 +763,27 @@ export class World {
     this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci);
     const f = this.findItem(p, a.id); if (!f) throw new GameError('no_item');
     const it = f.it;
-    if (it.up >= 9) throw new GameError('max_up');
+    if (it.up >= upMax()) throw new GameError('max_up');
     const target = it.up + 1;
     const cost = upgradeCost(target, it.ilvl);
     const d = p.d;
     if (d.gold < cost.gold) throw new GameError('no_gold');
     if (d.bag.ore < cost.ore) throw new GameError('no_ore');
     if (a.book && d.bag.book < 1) throw new GameError('no_book');
-    if (a.charm) { if (d.bag.charm < 1) throw new GameError('no_charm'); if (target < UPGRADE_DESTROYS_FROM) throw new GameError('charm_useless'); }
-    const rate = Math.min(100, UPGRADE_RATE[target] + (a.book ? BOOK_BONUS : 0));
+    if (a.charm) { if (d.bag.charm < 1) throw new GameError('no_charm'); if (target < (ENH.v11 && target > 9 ? ENH.v11.charmFrom : UPGRADE_DESTROYS_FROM)) throw new GameError('charm_useless'); }
+    const e11 = ENH.v11 && target > 9 ? ENH.v11 : null;
+    const rate = Math.min(100, (e11 ? e11.rate[target] : UPGRADE_RATE[target]) + (a.book ? BOOK_BONUS : 0));
     d.gold -= cost.gold; d.bag.ore -= cost.ore;
     if (a.book) d.bag.book--; if (a.charm) d.bag.charm--;
     const roll = this.ctx.rng() * 100;
     const success = roll < rate;
-    let destroyed = false;
+    let destroyed = false; let dropped = false;
     if (success) { it.up = target; d.counters.upgrades++; this.tutorial(p, 'upgrade'); }
+    else if (e11) {   // deney: +10…+15 başarısızlık kuralı
+      const fm = e11.fail(target);
+      if (fm === 'drop' && !a.charm) { it.up = target - 2; dropped = true; }
+      else if (fm === 'destroy' && !a.charm) { destroyed = true; d.counters.destroyed++; if (f.where === 'bag') d.items.splice(d.items.indexOf(it), 1); else delete d.equip[it.slot]; }
+    }
     else if (target >= UPGRADE_DESTROYS_FROM && !a.charm) {
       destroyed = true; d.counters.destroyed++;
       if (f.where === 'bag') d.items.splice(d.items.indexOf(it), 1); else delete d.equip[it.slot];
@@ -785,7 +791,7 @@ export class World {
     this.ledger(p, 'upgrade', { item: it.id, target, rate, success, destroyed, gold: cost.gold, ore: cost.ore, book: !!a.book, charm: !!a.charm });
     this.recalc(p);
     this.save(p); // kritik ekonomi işlemi: hemen yaz
-    return { success, destroyed, rate, target, protectedByCharm: !success && !destroyed && target >= UPGRADE_DESTROYS_FROM };
+    return { success, destroyed, dropped, rate, target, protectedByCharm: !success && !destroyed && !dropped && target >= (e11 ? e11.charmFrom : UPGRADE_DESTROYS_FROM) };
   }
 
   craft(p: Player, a: { kind: string; slot?: Slot }) {

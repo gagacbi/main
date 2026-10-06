@@ -5,7 +5,8 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Engine } from './engine';
-import { ECON, KIMIZ, PVP_FLAG } from '../../../shared/game';
+import { ECON, ENH, KIMIZ, PVP_FLAG } from '../../../shared/game';
+import { ENH11 } from './enh11';
 if (process.env.POP_BONUS) PVP_FLAG.bonus = Number(process.env.POP_BONUS);   // A/B: bayrak bonusu
 if (process.env.POP_INCOME) { const k = Number(process.env.POP_INCOME); ECON.mobGold = k; ECON.npcSell = 0.7 * k; ECON.expedition = k; }   // gelir ölçeği (elastikiyet testi)
 if (process.env.POP_NPC_SELL) ECON.npcSell = Number(process.env.POP_NPC_SELL);   // kaynak tarafı deneyleri
@@ -14,6 +15,7 @@ if (process.env.POP_KIMIZ_PRICE) KIMIZ.priceUnits = Number(process.env.POP_KIMIZ
 
 const N = Number(process.env.POP_N ?? 150), DAYS = Number(process.env.POP_DAYS ?? 14), W = Number(process.env.POP_W ?? 10), SEED = Number(process.env.POP_SEED ?? 7);
 const OUT = process.env.POP_OUT ?? 'docs/balans/populasyon'; mkdirSync(OUT, { recursive: true });
+if (process.env.POP_ENH11) ENH.v11 = ENH11;   // Endgame Enhancement Economy v1.1 (yalnızca simülasyon)
 const eng = new Engine(SEED, N, W); const t0 = Date.now();
 console.log(`nüfus=${N} gün=${DAYS} dilim=${W}dk tohum=${SEED}`);
 for (let d = 1; d <= DAYS; d++) {

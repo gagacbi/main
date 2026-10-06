@@ -6,7 +6,7 @@ import { dist2, type Camp } from '../../../shared/world';
 import { MAPS, regionAt, type MapId } from '../../../shared/maps';
 import { DUNGEONS } from '../../../shared/dungeon';
 import { costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
-import { KIMIZ, gatePos } from '../../../shared/game';
+import { ENH, KIMIZ, gatePos, upgradeCost as upCost } from '../../../shared/game';
 import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '../../../shared/goods';
 import type { Mob, Player } from '../../../server/world';
 import type { Arch } from './archetypes';
@@ -15,7 +15,7 @@ import type { Engine } from './engine';
 /** harcama modeli: flexible_proportional (bakiye/gelirle orantılı) | baseline_heavy (önce aktivitenin zorunlu giderleri, kalan üzerinden isteğe bağlı) */
 export const SPEND_MODEL: 'flexible_proportional' | 'baseline_heavy' = process.env.POP_SPEND === 'baseline_heavy' ? 'baseline_heavy' : 'flexible_proportional';
 export type Activity = 'farm' | 'boss' | 'rift' | 'pvp' | 'dun';
-export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
+export interface Params { /** v1.1 deney: risk iştahı (0–1), yükseltme bütçe oranı (0.05–0.30, günlük akçenin payı), ilerleme isteği (0–1, günlük deneme olasılığı) */ riskAppetite?: number; upBudget?: number; progDesire?: number; skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
 export interface DayRec { kzUsed?: number; kzShort?: number; kzBought?: number; day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
 
 const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
@@ -96,7 +96,7 @@ export class Agent {
     // efsun yenile: savunma bilinçli oyuncu, aldığı hasarın ana türüne karşı savunma kurar
     if (this.par.defAware) this.rerollDefense();
     // artı bas
-    this.upgradeAll();
+    this.upgradeAll(); this.enhance11();
     // üretim
     this.craftStuff();
     // satış: pazara ya da satıcıya
@@ -132,6 +132,24 @@ export class Agent {
       const cost = upgradeCost(target, it.ilvl); if (d.gold < cost.gold + 200 || d.bag.ore < cost.ore) break;
       const res = this.rpc('upgrade', { id: it.id, book: useBook, charm: useCharm }); if (!res.ok) break;
       if (res.data.success) { this.tot.upgradesOk++; this.failStreak = 0; this.reward(`+${res.data.target} başarılı`); } else { this.tot.upgradesFail++; this.failStreak++; this.maxFailStreak = Math.max(this.maxFailStreak, this.failStreak); if (res.data.destroyed) { this.tot.destroyed++; this.frustration += 3; this.events.push(`gün ${this.eng.day}: ${itemLabel(it)} +${target} denemesinde YOK OLDU`); break; } else this.frustration += 0.5; }
+    }
+  }
+  /** v1.1 (yalnızca deney): +9 üstü. Günlük kapı = ilerleme isteği; bütçe = oran × akçe; riskli (düşme) kademelerde risk iştahı. Deneme sınırı 3/gün, 3 üst üste başarısızlıkta durur. */
+  private enhDay = -1; private enhBudget = 0; private enhSpent = 0; private enhGate = false; private enhTries = 0; private enhFails = 0;
+  private enhance11() {
+    if (!ENH.v11) return; const d = this.d; const par = this.par; const e = this.eng; const U = (k: number) => { let x = (e.seed * 2654435761 + this.idx * 40503 + this.enhTries * 977 + e.day * 131 + k * 7) >>> 0; x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0; x = Math.imul(x ^ (x >>> 13), 3266489909) >>> 0; return ((x ^ (x >>> 16)) >>> 0) / 4294967296; };
+    if (this.enhDay !== e.day) { this.enhDay = e.day; this.enhSpent = 0; this.enhTries = 0; this.enhFails = 0; this.enhBudget = (par.upBudget ?? 0.1) * d.gold; this.enhGate = U(1) < (par.progDesire ?? 0.5); }
+    if (!this.enhGate) return;
+    for (const slot of SLOTS) for (let g = 0; g < 6; g++) {
+      const it = d.equip[slot]; if (!it || it.up < 9 || it.up >= ENH.v11.max) break; if (this.enhTries >= 3 || this.enhFails >= 3) return;
+      const target = it.up + 1; const cost = upCost(target, it.ilvl);
+      if (this.enhSpent + cost.gold > this.enhBudget || d.gold < cost.gold + 5000 || d.bag.ore < cost.ore) { const why = d.bag.ore < cost.ore ? 'Ore' : d.gold < cost.gold + 5000 ? 'Gold' : 'Budget'; this.ext['enhBlock' + why] = (this.ext['enhBlock' + why] ?? 0) + 1; break; }
+      if (ENH.v11.fail(target) !== 'keep' && U(2) > (par.riskAppetite ?? 0.5)) { this.ext.enhSkippedRisk = (this.ext.enhSkippedRisk ?? 0) + 1; break; }
+      const useCharm = target >= ENH.v11.charmFrom && par.charm && d.bag.charm > 0; const useBook = par.book && d.bag.book > 0;
+      const res = this.rpc('upgrade', { id: it.id, book: useBook, charm: useCharm }); if (!res.ok) break;
+      this.enhTries++; this.enhSpent += cost.gold; const k = 't' + target; const inc = (n: string, v = 1) => { this.ext[n] = (this.ext[n] ?? 0) + v; };
+      inc('enhTry_' + k); inc('enhGold', cost.gold); inc('enhOre', cost.ore); if (useCharm) inc('enhCharm'); if (useBook) inc('enhBook');
+      if (res.data.success) { inc('enhOk_' + k); this.enhFails = 0; this.reward(`+${res.data.target} başarılı`); } else { this.enhFails++; inc('enhFail_' + k); if (res.data.dropped) { inc('enhDrop_' + k); this.frustration += 1; } }
     }
   }
   private craftStuff() {
