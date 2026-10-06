@@ -12,7 +12,7 @@ import { genBosses, type Camp } from '../../../shared/world';
 import { MAPS, regionAt } from '../../../shared/maps';
 import type { Mob, Player } from '../../../server/world';
 import { makeRig, type Rig } from '../rig';
-import { Agent, DEFAULT_ORDER, type DayRec, type Params } from './agent';
+import { Agent, DEFAULT_ORDER, SPEND_MODEL, type DayRec, type Params } from './agent';
 import { ARCHS, specOf, type Arch } from './archetypes';
 import { MarketModel } from './market-model';
 
@@ -108,7 +108,7 @@ export class Engine {
     // giriş (gerçek join: dinlenmiş XP, rüya, posta teslimi)
     for (const { a } of online) { const row = this.rig.db.playerById(a.dbId)!; a.p = w.join(row, () => {}, () => {}); this.byPid.set(a.p.id, a); a.sliceFarmTicks = a.sliceFarmWall = a.sliceFarmKills = a.sliceFarmDeaths = 0; a.sliceStartKills = a.tot.kills; a.sliceStartDeaths = a.tot.deaths; }
     this.market.invalidate();
-    for (const { a } of online) { a.pickMap(); a.pickActivity(); a.town(); a.enterMap(); if (a.map !== 'bozkir' && a.activity !== 'farm' && !['dun'].includes(a.activity)) { if (a.activity === 'boss' && !a.pickBoss()) a.activity = 'farm'; } if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
+    for (const { a, mins } of online) { a.pickMap(); a.pickActivity(); a.plannedMin = mins[si]; a.town(); a.enterMap(); if (a.map !== 'bozkir' && a.activity !== 'farm' && !['dun'].includes(a.activity)) { if (a.activity === 'boss' && !a.pickBoss()) a.activity = 'farm'; } if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
     // dünya zaten giriş yapanlarla başlar: gerçek tick'ler
     const ticks = this.W * 600; const occStat: Record<number, { sum: number; n: number }> = {}; const campUse: Record<number, number> = {}; const bossTouch = new Set<number>();
     for (let t = 0; t < ticks; t++) {
@@ -133,7 +133,8 @@ export class Engine {
       const wallMin = a.sliceFarmWall / 600;
       if (wallMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / wallMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / wallMin) * 0.5; }
       const o = occStat[a.idx]; if (o && farmMin >= 1) { const avg = o.sum / Math.max(1, o.n); const b = avg <= 1.5 ? '1' : avg <= 3.5 ? '2-3' : avg <= 6.5 ? '4-6' : avg <= 10.5 ? '7-10' : '11+'; const e = (log.occBuckets[b] ??= { n: 0, rate: 0 }); e.n++; e.rate += a.sliceFarmKills / farmMin; }
-      if (extraMin > 0) this.extrapolate(a, extraMin);
+      if (extraMin > 0) { this.extrapolate(a, extraMin); a.extraKimiz(extraMin); }
+      if (a.kzCombatMin > 0.5) { a.kzRate = a.kzRate * 0.5 + (a.kzUsedSlice / a.kzCombatMin) * 0.5; } a.kzCombatMin = 0; a.kzUsedSlice = 0;
       a.town(); a.farmMin += farmMin;
     }
     for (const k of Object.keys(log.occBuckets)) log.occBuckets[k].rate = +(log.occBuckets[k].rate / log.occBuckets[k].n).toFixed(1);

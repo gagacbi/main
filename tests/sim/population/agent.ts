@@ -12,6 +12,8 @@ import type { Mob, Player } from '../../../server/world';
 import type { Arch } from './archetypes';
 import type { Engine } from './engine';
 
+/** harcama modeli: flexible_proportional (bakiye/gelirle orantılı) | baseline_heavy (önce aktivitenin zorunlu giderleri, kalan üzerinden isteğe bağlı) */
+export const SPEND_MODEL: 'flexible_proportional' | 'baseline_heavy' = process.env.POP_SPEND === 'baseline_heavy' ? 'baseline_heavy' : 'flexible_proportional';
 export type Activity = 'farm' | 'boss' | 'rift' | 'pvp' | 'dun';
 export interface Params { skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
 export interface DayRec { day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
@@ -22,7 +24,7 @@ const DEFAULT_ORDER = [0, 1, 5, 4, 3, 2];
 /** Bir oyuncunun kararlarını ve ölçümlerini taşıyan ajan. */
 export class Agent {
   p!: Player; activity: Activity = 'farm'; camp: Camp | null = null; resting = false; noticeAt: number[] = [0, 0, 0, 0, 0, 0];
-  map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
+  plannedMin = 20; kzRate = 0.12; kzCombatMin = 0; kzUsedSlice = 0; shortage = 0; map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
   victim: number | null = null; bossTarget: Mob | null = null; fightBackUntil = 0; fightBackId = 0;
   // ölçümler
   days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0, dun: 0 };
@@ -101,7 +103,7 @@ export class Agent {
     this.sellJunk();
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
-    this.buyKimiz(); this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
+    this.buyKimiz(this.plannedMin); this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
   }
   /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
@@ -310,24 +312,41 @@ export class Agent {
     void w;
   }
 
-  /** kımız stoğu: etkinliğe göre hedef; yalnızca kasası rahatsa alır (zorunlu harcama hissi yaratmasın) */
-  private buyKimiz() {
-    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; const now = (d.kimiz ?? 0);
+  /** kımız stoğu. flexible: etkinliğe göre sabit hedef, yalnızca kasa rahatsa. baseline_heavy: aktivitenin ZORUNLU gideri — beklenen savaş dakikası × ölçülen tüketim hızı (bakiyeye bağlı değil); yetmezse eksik loglanır ve ajan daha temkinli oynar */
+  buyKimiz(plannedMin = 20) {
+    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; const have = (d.kimiz ?? 0); const price = kimizPrice(d.level);
+    if (SPEND_MODEL === 'baseline_heavy') {
+      const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const expect = Math.ceil(this.kzRate * plannedMin * (heavy ? 1.3 : 1) * 1.15 + 0.5);
+      const want = Math.min(KIMIZ.maxStack - have, expect - have); if (want <= 0) { this.shortage = Math.max(0, this.shortage - 1); return; }
+      const afford = Math.min(want, Math.floor(d.gold / price)); let n = Math.min(afford, KIMIZ.buyMax);
+      while (n > 0 && want - n > 0 && false) n--; if (n < want) { this.ext.kimizShort = (this.ext.kimizShort ?? 0) + (want - n); this.shortage = Math.min(3, this.shortage + 1); } else this.shortage = Math.max(0, this.shortage - 1);
+      let left = Math.min(want, afford); while (left > 0) { const k = Math.min(left, KIMIZ.buyMax); const r = this.rpc('kimiz.buy', { n: k }); if (!r.ok) break; this.ext.kimizBought = (this.ext.kimizBought ?? 0) + k; this.ext.kimizSpend = (this.ext.kimizSpend ?? 0) + r.data.cost; left -= k; }
+      return;
+    }
     const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const target = heavy ? 10 : d.level >= 30 ? 6 : 3;
-    const n = Math.min(KIMIZ.buyMax, target - now); if (n <= 0) return; const price = kimizPrice(d.level);
+    const n = Math.min(KIMIZ.buyMax, target - have); if (n <= 0) return;
     if (d.gold < price * n * 4) return; const r = this.rpc('kimiz.buy', { n }); if (r.ok) { this.ext.kimizBought = (this.ext.kimizBought ?? 0) + n; this.ext.kimizSpend = (this.ext.kimizSpend ?? 0) + r.data.cost; }
+  }
+  /** dilim dışı (ölçeklenen) dakikaların kımız tüketimi: ölçülen tüketim hızı × dakika. baseline_heavy: stok yetmezse kasası elveriyorsa alır (zorunlu gider), yoksa eksik loglanır */
+  extraKimiz(minutes: number) {
+    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; let n = Math.round(this.kzRate * minutes * (0.85 + 0.3 * this.eng.rng())); const price = kimizPrice(d.level);
+    while (n-- > 0) {
+      if ((d.kimiz ?? 0) < 1) { if (SPEND_MODEL === 'baseline_heavy' && d.gold >= price) { this.at(HUB.demirci.x - 2, HUB.demirci.z); const r = this.rpc('kimiz.buy', { n: 1 }); if (r.ok) { this.ext.kimizBought = (this.ext.kimizBought ?? 0) + 1; this.ext.kimizSpend = (this.ext.kimizSpend ?? 0) + r.data.cost; } }
+        if ((d.kimiz ?? 0) < 1) { this.ext.kimizShort = (this.ext.kimizShort ?? 0) + n + 1; this.shortage = Math.min(3, this.shortage + 1); break; } }
+      d.kimiz = (d.kimiz ?? 1) - 1; this.ext.kimizUsed = (this.ext.kimizUsed ?? 0) + 1;
+    }
   }
   /** savaşta can düşünce kımız içer (bilinçli oyuncu daha erken); bekleme süresi sunucuda doğrulanır */
   private useKimiz(): boolean {
     const p = this.p; const w = this.w; if ((this.d.kimiz ?? 0) < 1 || w.now < p.kimizAt) return false;
     const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const thr = (heavy ? 0.5 : 0.38) * (0.7 + 0.3 * this.par.skill);
-    if (p.hp >= p.stats.maxHp * thr) return false; const r = this.rpc('kimiz.use'); if (r.ok) { this.ext.kimizUsed = (this.ext.kimizUsed ?? 0) + 1; return true; } return false;
+    if (p.hp >= p.stats.maxHp * thr) return false; const r = this.rpc('kimiz.use'); if (r.ok) { this.ext.kimizUsed = (this.ext.kimizUsed ?? 0) + 1; this.kzUsedSlice++; return true; } return false;
   }
   /** günlük kostüm rutini: tezgâh, üretim, giyme, efsunlama, uzatma. Harcama oyuncunun kasasıyla sınırlıdır. */
   costumeRoutine() {
     if (!this.par.cos || process.env.POP_NOCOS) return; const d = this.d; const w = this.w; const L = d.level; const u = costUnit(L); const now = w.now; const r = this.eng.rng;
     this.at(LOOM_POS.x - 3, LOOM_POS.z); const cos = (a: Record<string, unknown>) => this.rpc('cos', a); const st = () => d.cos ?? (cos({ op: 'wear', id: null }), d.cos!);
-    const s = st(); const reserve = 4 * u;
+    const s = st(); const reserve = 4 * u + (SPEND_MODEL === 'baseline_heavy' ? kimizPrice(L) * Math.ceil(this.kzRate * 60 * 3) : 0);   // baseline_heavy: önce zorunlu giderler (3 saatlik kımız) ayrılır
     if (s.loom && now >= s.loom.endAt) { cos({ op: 'loom.collect' }); this.ext.loomCollects = (this.ext.loomCollects ?? 0) + 1; }
     if (!s.loom && d.gold >= reserve + 6 * u) { const weekly = this.par.cosWeekly && d.gold > reserve + 14 * u; if (cos({ op: 'loom.start', kind: weekly ? 'weekly' : 'daily' }).ok) this.ext.loomRuns = (this.ext.loomRuns ?? 0) + 1; }
     // shop: zengin ve hedefi yüksek basamak ise şans eşyası alır
@@ -377,12 +396,12 @@ export class Agent {
     if (p.deadUntil > 0) { try { w.respawn(p); } catch { /* erken */ } this.resting = true; return; }
     if (this.resting) { if (risky) { const rg = regionAt(p.x, p.z); this.go(rg ? rg.cx : 0, rg ? rg.cz : 0); w.onAttack(p, { on: false }); this.actTicks.rest++; return; } this.stop(); w.onAttack(p, { on: false }); this.actTicks.rest++; if (p.hp >= p.stats.maxHp * 0.95) this.resting = false; return; }
     this.useKimiz();
-    if (p.hp < p.stats.maxHp * this.par.retreat && !(p.hotUntil > w.now)) { this.resting = true; return; }
+    if (p.hp < p.stats.maxHp * (this.par.retreat + (SPEND_MODEL === 'baseline_heavy' ? 0.05 * this.shortage : 0)) && !(p.hotUntil > w.now)) { this.resting = true; return; }
     // saldırıya karşılık
     if (p.lastDamager && w.now - p.lastCombat < 4000 && this.par.fightBack && w.players.get(p.lastDamager) && p.lastDamager !== this.fightBackId) { this.fightBackId = p.lastDamager; this.fightBackUntil = w.now + 12000; }
     const fb = this.fightBackUntil > w.now ? w.players.get(this.fightBackId) : undefined;
     if (fb && fb.deadUntil === 0 && zoneAt(fb.x, fb.z) === 'risky' && w.canHitPlayer(p, fb, true)) return this.attackPlayer(fb, ix, false);
-    this.mapTicks[this.map] = (this.mapTicks[this.map] ?? 0) + 1;
+    this.mapTicks[this.map] = (this.mapTicks[this.map] ?? 0) + 1; this.kzCombatMin += 1 / 600;
     switch (this.activity) {
       case 'dun': return this.doDun(ix as never);
       case 'boss': return this.doBoss(ix);

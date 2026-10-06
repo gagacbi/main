@@ -1,3 +1,4 @@
+import { ECON } from '../shared/game';
 import {
   BUILDINGS, COMPANION_NAMES, EXPEDITION_HOURS, NOVICE_MAX_LEVEL, OBA, TRAITS, makeItem, randomSlot, rollTier, type BuildingKey, type Boy, type Companion, type Expedition, type ExpeditionResult, type MatKey, type Trait,
 } from '../shared/game';
@@ -159,7 +160,7 @@ export function collect(ctx: Ctx, a: Actor, expId: string): ExpeditionResult {
   const e = a.d.expeditions[i];
   if (ctx.clock.now() < e.endAt) throw new GameError('exp_not_done', { left: e.endAt - ctx.clock.now() });
   const c = a.d.companions.find((x) => x.id === e.compId)!;
-  const res = rollExpedition(e, c, a.d.level);
+  const res = rollExpedition(e, c, a.d.level); res.gold = Math.round(res.gold * ECON.expedition);
   a.d.expeditions.splice(i, 1);
   a.d.gold += res.gold;
   for (const k of ['ore', 'hide', 'wood'] as MatKey[]) a.d.bag[k] += res.mats[k] ?? 0;
