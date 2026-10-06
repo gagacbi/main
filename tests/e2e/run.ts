@@ -151,7 +151,7 @@ if (want('savas')) {
 if (want('paneller')) {
   const me = pl(NAME); const w = world(); const r = mulberry32(5);
   for (let i = 0; i < 7; i++) me.d.items.push(makeItem(r, (['weapon', 'armor', 'helmet', 'amulet'] as const)[i % 4], 8 + i, (i % 4) as 0 | 1 | 2 | 3));
-  me.d.level = 11; me.d.skillPts = 4; w.recalc(me); me.meDirty = true; await sleep(800);
+  me.d.level = 11; me.d.skillPts = 4; me.d.gold = Math.max(me.d.gold, 5000); w.recalc(me); me.meDirty = true; await sleep(800);
   await page.keyboard.press('i'); await sleep(900); await shot('08-canta');
   const cells = await page.$$eval('.overlay.open .cell.item', (e) => e.length); check('D5.envanter', cells >= 7, `Çanta paneli ${cells} eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)`);
   await page.keyboard.press('Escape'); await sleep(200);
@@ -162,6 +162,9 @@ if (want('paneller')) {
   await page.keyboard.press('Escape'); await sleep(200);
   await page.keyboard.press('k'); await sleep(900); await shot('10-yetenekler');
   await page.click('[data-act="rank"][data-i="0"]'); await sleep(700); const rk = await ev<number>('g.me.skillRanks[0]'); check('B3.kademe', rk === 2, `Savurma M1→M2 (kademe=${rk}), puan + akçe harcandı`);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('y'); await sleep(900); await shot('10a-kodeks'); await page.click('.tab2[data-v="chron"]'); await sleep(900); await shot('10b-kut-yilligi');
+  const chronTxt = (await page.textContent('.overlay.open')) ?? ''; check('S1.kut-yilligi', /Çağ 0/.test(chronTxt) && /Uyanış Çağı/.test(chronTxt), 'Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür');
   await page.keyboard.press('Escape');
 }
 

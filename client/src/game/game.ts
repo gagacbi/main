@@ -11,6 +11,7 @@ import { DropView, FX, RiftView } from './fx';
 import { IDLE, buildHuman, type Rig } from './models';
 import { Predictor } from './predict';
 import { genStones } from '@shared/world';
+import { genRuins } from '@shared/chronicle';
 import { GATE_LINKS, gatePos } from '@shared/game';
 import { regionAt } from '@shared/maps';
 import { LOOM_POS, costumeCode } from '@shared/costume';
@@ -104,7 +105,7 @@ export class Game {
     this.myBoy = this.me.boy; this.pos.x = this.snap!.you.x; this.pos.z = this.snap!.you.z; this.serverYou = { ...this.pos };
     this.selfView = this.vs.ensure({ kind: 'player', id: this.myId, boy: this.me.boy, spec: this.me.spec, name: this.me.name, level: this.me.level, cs: this.myCostume(this.me) });
     this.selfView.self = true; this.vs.self = this.selfView; this.selfView.refreshName();
-    this.world.setInscriptions(this.me.inscr.unlocked); this.world.setStonesSeen(new Set(this.me.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
+    this.world.setInscriptions(this.me.inscr.unlocked); this.world.setStonesSeen(new Set(this.me.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6))))); this.world.setRuinsSeen(new Set(this.me.clues.filter((c) => c.startsWith('ruin.')).map((c) => Number(c.slice(5)))));
     this.camYaw = Math.PI / 2 + 0.25; this.camPitch = 1.06; this.camDist = 17; this.rot = Math.PI; this.camTarget.set(this.pos.x, 1.7, this.pos.z);
     this.gs.engine.runRenderLoop(() => { this.frame(); this.gs.scene.render(); });
   }
@@ -121,7 +122,7 @@ export class Game {
       for (const it of m.items) if (!had.has(it.id)) { this.fx.popup(itemName(it), this.pos.x, 3.8, this.pos.z, 'item t' + it.tier); this.audio.sfx(it.tier >= 2 ? 'rare' : 'loot'); }
       if (m.spec !== prev.spec || this.myCostume(m) !== this.selfView.cs) this.respecView();
       if (m.inscr.unlocked !== prev.inscr.unlocked) this.world.setInscriptions(m.inscr.unlocked);
-      if (m.clues.length !== prev.clues.length) this.world.setStonesSeen(new Set(m.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6)))));
+      if (m.clues.length !== prev.clues.length) { this.world.setStonesSeen(new Set(m.clues.filter((c) => c.startsWith('stone.')).map((c) => Number(c.slice(6))))); this.world.setRuinsSeen(new Set(m.clues.filter((c) => c.startsWith('ruin.')).map((c) => Number(c.slice(5))))); }
       if (m.level !== prev.level && this.selfView) { this.selfView.level = m.level; this.selfView.refreshName(); }
     }
     this.ui?.onMe(m, prev);
@@ -270,11 +271,18 @@ export class Game {
   }
   interact(force?: string) {
     const key = force ?? this.nearby?.key; if (!key) return;
+    if (key.startsWith('ruin:')) { void this.readRuin(Number(key.slice(5))); return; }
     if (key.startsWith('stone:')) { void this.readStone(Number(key.slice(6))); return; }
     if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate'); else if (key === 'loom') this.ui.open('loom');
     this.audio.sfx('ui');
   }
 
+  async readRuin(n: number) {
+    const r = await this.net.rpc('ruin', { n });
+    if (!r.ok) { this.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.audio.sfx('err'); return; }
+    if (!(r.data as { isNew: boolean }).isNew) { this.ui.toast(t('stone.seen'), ''); return; }
+    this.fx.burst('holy', this.pos.x, 2, this.pos.z, 40); this.audio.sfx('rare');
+  }
   async readStone(n: number) {
     const r = await this.net.rpc('stone', { n });
     if (!r.ok) { this.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.audio.sfx('err'); return; }
@@ -354,7 +362,7 @@ export class Game {
     // kamera
     this.updateCamera(dt);
     // etkileşim ipucu
-    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ['loom', LOOM_POS.x, LOOM_POS.z, LOOM_POS.interact], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5])];
+    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ['loom', LOOM_POS.x, LOOM_POS.z, LOOM_POS.interact], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5]), ...genRuins().map((s): [string, number, number, number] => ['ruin:' + s.n, s.x, s.z, 6])];
     const reg = regionAt(this.pos.x, this.pos.z); if (reg && MAPS_GATES.has(reg.id)) { const gp = gatePos(reg.id); cand.push(['gate', gp.x, gp.z, HUB.interactGate]); }
     if (reg && reg.id !== this.regionId) { this.regionId = reg.id; this.world.setAtmosphere(reg.map); this.ui.regionChanged(reg.id); }
     for (const [k, x, z, r] of cand) { const d = Math.hypot(x - this.pos.x, z - this.pos.z); if (d < r && (!this.nearby || d < this.nearby.dist)) this.nearby = { key: k, dist: d }; }

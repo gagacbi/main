@@ -19,6 +19,8 @@ import { cancelLobby, dungeonBossDown, dungeonRpc, dunInfo, updateDungeons, type
 import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
+import { chronOf } from './chronicle';
+import { FIRST_LEVELS, genRuins, RUIN_LEVELS, type ChronKind } from '../shared/chronicle';
 import { GameError, type Ctx, type PlayerData } from './types';
 import type { PlayerRow } from './db';
 
@@ -194,9 +196,15 @@ export class World {
       this.sys(p, 'sys.levelup', { lvl: p.d.level });
       if (p.d.level === SPEC_LEVEL) this.sys(p, 'sys.spec_ready');
       if (MILESTONE_LEVELS.includes(p.d.level)) this.milestone(p);
+      if (FIRST_LEVELS.includes(p.d.level) && p.role !== 'admin') this.chron('level', p.name, p.d.level, 0, 'lvl.' + p.d.level);
     }
     p.meDirty = true;
     return xp;
+  }
+  /** Kut Yıllığı'na olay yazar; çağ değişirse herkese duyurur. `first` verilirse yalnızca o ilk ise yazılır. */
+  chron(k: ChronKind, who: string, a: number, b: number, first?: string) {
+    const c = chronOf(this.ctx.db); const era = first ? c.first(first, this.now, k, who, a, b) : c.add(this.now, k, who, a, b);
+    if (era >= 0) this.ctx.broadcastSys('sys.era', { n: era });
   }
   /** Yeni ipucu keşfeder; ödül akçe, unvan ve "Mühürün Dışı" kontrolü. Yeniyse true. */
   discoverClue(p: Player, id: string, gold = CLUE_GOLD): boolean {
@@ -367,6 +375,7 @@ export class World {
     }
     m.contrib.clear();
     this.ctx.broadcastSys('sys.boss_down.' + m.bossId, { who: top?.name ?? '?' });
+    { const c = chronOf(this.ctx.db); const fk = 'boss.' + m.bossId; const isFirst = !c.firsts[fk]; if (isFirst) c.firsts[fk] = top?.name ?? '?'; this.chron('boss', top?.name ?? '?', m.bossId, isFirst ? 1 : 0); }
   }
 
   /** Zindan ödülüne eklenen kostüm malzemeleri (kostüm sistemi) */
@@ -507,7 +516,7 @@ export class World {
     const after = before + n;
     this.ctx.db.worldSet('frags', after);
     const crossed = INSCRIPTIONS.findIndex((th) => before < th && after >= th);
-    if (crossed >= 0) this.ctx.broadcastSys('sys.inscription', { n: crossed + 1 });
+    if (crossed >= 0) { this.ctx.broadcastSys('sys.inscription', { n: crossed + 1 }); this.chron('insc', p.name, crossed + 1, 0); }
     this.ledger(p, 'frag', { n, total: after });
   }
   collectDrop(p: Player, dr: Drop): boolean {
@@ -732,6 +741,15 @@ export class World {
         for (const it of res.items) this.giveItem(p, it);
         if (res.frag > 0) { d.bag.frag -= res.frag; this.addFrag(p, res.frag); }
         p.meDirty = true; return { result: res, info: oba.obaInfo(this.ctx, p) };
+      }
+      case 'chron': { const v = chronOf(this.ctx.db).view(); return { ...v, ruins: d.clues.filter((c) => c.startsWith('ruin.')).length }; }
+      case 'ruin': {
+        const n = Math.floor(a.n); const ru = genRuins().find((q) => q.n === n); if (!ru) throw new GameError('bad_stone');
+        this.alive(p); this.near(p, ru, 6);
+        if (d.level < RUIN_LEVELS[n - 1] - 2) throw new GameError('ruin_locked', { lvl: RUIN_LEVELS[n - 1] - 2 });
+        const isNew = this.discoverClue(p, `ruin.${n}`, 80);
+        if (isNew) this.chron('ruin', p.name, n, 0);
+        return { isNew };
       }
       case 'inscription': return { frags: this.ctx.db.worldGet('frags', 0), thresholds: INSCRIPTIONS };
       case 'lang': d.lang = a.lang === 'en' ? 'en' : 'tr'; return null;
@@ -1076,6 +1094,7 @@ export class World {
     r.state = 3; r.closedAt = this.now;
     this.emit({ k: 'rift', st: 'closed', x: r.x, z: r.z }, r.x, r.z);
     const rng = this.ctx.rng;
+    { let tp: Player | undefined, td = 0; for (const [pid, dmg] of r.contrib) { const q = this.players.get(pid); if (q && dmg > td) { td = dmg; tp = q; } } if (tp) this.chron('rift', tp.name, r.lvl, 0); }
     for (const [pid, dmg] of r.contrib) {
       const p = this.players.get(pid); if (!p || dmg <= 0 || dist(p, r) > 70) continue;
       const tier = rollTier(rng, 1, 1.2);

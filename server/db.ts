@@ -97,6 +97,13 @@ export class Db {
   worldSet(key: string, v: number) {
     this.db.prepare('INSERT INTO world(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, String(v));
   }
+  worldGetStr(key: string, def = ''): string {
+    const r = this.db.prepare('SELECT value FROM world WHERE key = ?').get(key) as unknown as { value: string } | undefined;
+    return r ? r.value : def;
+  }
+  worldSetStr(key: string, v: string) {
+    this.db.prepare('INSERT INTO world(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, v);
+  }
   // ── pazar ──
   marketInsert(r: { sellerId: number; seller: string; item: string; slot: string; tier: number; ilvl: number; up: number; ref: number; price: number; created: number; expires: number }): number {
     return Number(this.db.prepare('INSERT INTO market(seller_id,seller,item,slot,tier,ilvl,up,ref,price,created,expires) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(r.sellerId, r.seller, r.item, r.slot, r.tier, r.ilvl, r.up, r.ref, r.price, r.created, r.expires).lastInsertRowid);

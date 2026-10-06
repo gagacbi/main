@@ -4,6 +4,7 @@ import {
 } from '@shared/game';
 import type { MarketListing, MarketMail, ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
+import { eraName, eraStartPts, eraText, chronAgo, chronLine, type ChronView } from '../chron';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
 import { MAPS, regionAt, type MapId } from '@shared/maps';
@@ -48,7 +49,7 @@ export class Panels {
   mkQty = '1';
   lmTier = 1; lmLook = 0; lmBoncuk = 0; lmDugum = false; lmNazar = false;
   selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
-  codexTab: Thread = 'insc'; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
+  codexTab: Thread | 'chron' = 'insc'; chron: ChronView | null = null; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
     this.tipEl = document.createElement('div'); this.tipEl.className = 'tip'; root.appendChild(this.tipEl);
@@ -353,12 +354,13 @@ export class Panels {
   // ─── yazıtlar ───
   /** Kodeks: gizemin beş ipliği + "Mühürün Dışı". Yazıt kartlarının sınıfları (.stele-card/.locked) e2e testleriyle uyumludur. */
   inscr() {
+    if (this.codexTab === 'chron') return this.chronPanel();
     const m = this.me; const i = m.inscr; const th = this.codexTab; const own = (x: Thread) => m.clues.filter((c) => c.startsWith(x + '.')).length;
     const cnt = (x: Thread) => (x === 'insc' ? i.unlocked : own(x));
     const total = THREADS.reduce((n, x) => n + THREAD_SIZE[x], 0); const found = THREADS.reduce((n, x) => n + cnt(x), 0);
-    const tabs = THREADS.map((x) => `<div class="tab2 ${x === th ? 'on' : ''}" data-act="cx" data-v="${x}">${t('thread.' + x)} <small>${cnt(x)}/${THREAD_SIZE[x]}</small></div>`).join('');
+    const tabs = `<div class="tab2" data-act="cx" data-v="chron">${t('thread.chron')}</div>` + THREADS.map((x) => `<div class="tab2 ${x === th ? 'on' : ''}" data-act="cx" data-v="${x}">${t('thread.' + x)} <small>${cnt(x)}/${THREAD_SIZE[x]}</small></div>`).join('');
     const known = (n: number) => (th === 'insc' ? n <= i.unlocked : m.clues.includes(`${th}.${n}`));
-    const rom = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+    const rom = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
     const cards = Array.from({ length: THREAD_SIZE[th] }, (_, k) => {
       const n = k + 1; const ok = known(n);
       const label = th === 'insc' ? `${t('thread.insc')} ${rom[k]} <span class="muted">(${num(INSCRIPTIONS[k])} ${icon('frag')})</span>` : `${t('thread.' + th)} ${rom[k]}`;
@@ -371,6 +373,18 @@ export class Panels {
     return this.shell(t('ui.codex'), 'stele', `<div class="insc codex"><div class="row"><div class="grow muted">${t('ui.codex.sub')}</div><span class="chip">${found}/${total} ${t('ui.clues')}</span></div>
       ${titles ? `<div class="row" style="margin:6px 0;flex-wrap:wrap"><b>${t('ui.titles')}:</b> ${titles}</div>` : ''}<div class="tabs2" style="flex-wrap:wrap;margin-top:8px">${tabs}</div>
       <div class="card hint-card">${t('thread.' + th + '.hint')}</div>${fragBar}<div style="margin-top:8px">${cards}</div></div>`);
+  }
+
+  /** Kut Yıllığı: çağ, ilerleme ve sunucunun ortak olay günlüğü */
+  chronPanel() {
+    const c = this.chron; const tabs = `<div class="tab2 on" data-act="cx" data-v="chron">${t('thread.chron')}</div>` + THREADS.map((x) => `<div class="tab2" data-act="cx" data-v="${x}">${t('thread.' + x)}</div>`).join('');
+    if (!c) return this.shell(t('ui.codex'), 'stele', `<div class="insc codex"><div class="tabs2" style="flex-wrap:wrap">${tabs}</div><div class="card hint-card">…</div></div>`);
+    const en = (n: number) => eraName(n); const next = eraStartPts(c.era + 1); const prev = eraStartPts(c.era); const pct = Math.min(100, Math.round(((c.pts - prev) / Math.max(1, next - prev)) * 100));
+    const rows = c.entries.map((e) => `<div class="card" style="padding:6px 10px;margin:4px 0"><span class="muted">${chronAgo(e.t, this.g.net.now())}</span> · ${esc(chronLine(e))}</div>`).join('') || `<div class="muted">${t('chron.empty')}</div>`;
+    return this.shell(t('ui.codex'), 'stele', `<div class="insc codex"><div class="tabs2" style="flex-wrap:wrap">${tabs}</div>
+      <div class="card hint-card"><b>${t('chron.era.t')} ${c.era}: ${esc(en(c.era))}</b><div style="margin-top:4px;font-style:italic">${esc(eraText(c.era))}</div></div>
+      <div class="sub">${t('chron.progress')}</div><div class="ratebar mid"><i style="width:${pct}%"></i><b>${num(c.pts)} / ${num(next)}</b></div>
+      <div class="sub" style="margin-top:8px">${t('chron.log')}</div>${rows}</div>`);
   }
 
   /** Yönetici paneli: yalnızca rolü admin olan hesapta açılır; her komut sunucuda yeniden doğrulanır. */
@@ -430,7 +444,7 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
-      case 'cx': this.codexTab = d.v as Thread; break;
+      case 'cx': this.codexTab = d.v as Thread | 'chron'; if (this.codexTab === 'chron') { const r = await this.g.net.rpc('chron'); if (r.ok) this.chron = r.data as ChronView; } break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
       case 'mkslot': this.mkSlot = d.v ?? ''; await this.loadMarket(); break;
       case 'mksort': this.mkSort = this.mkSort === 'deal' ? 'price' : this.mkSort === 'price' ? 'new' : 'deal'; await this.loadMarket(); break;

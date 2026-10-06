@@ -1,4 +1,6 @@
 import { COMBO, BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
+import { eraName } from '../chron';
+import { genRuins } from '@shared/chronicle';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { ROAD_HALF, ROAD_LEN, genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
 import { MAPS, regionAt } from '@shared/maps';
@@ -136,10 +138,11 @@ export class UI {
     this.g.net.chat(ch, text, to);
   }
   chat(c: ChatMsg) {
+    if (c.key === 'sys.era') c = { ...c, p: { ...c.p, name: eraName(Number(c.p?.n ?? 0)) } };
     if (c.key === 'sys.clue' && c.p?.id) this.lore(String(c.p.id));
     this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
     if (c.ch === 'sys' && c.key && hasKey(c.key)) {
-      if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
+      if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.era', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
       else if (['sys.pvp_on', 'sys.pvp_off', 'sys.cos_soon', 'sys.cos_expired', 'sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
     }
   }
@@ -226,7 +229,7 @@ export class UI {
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
     q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '');
     // etkileşim ipucu
-    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key))}`; } else this.e.prompt.style.display = 'none';
+    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
     if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.innerHTML = (left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : '') + this.deathHint(); }
@@ -292,6 +295,7 @@ export class UI {
       ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, 8 * k, 0, 6.3); ctx.stroke(); ctx.fillStyle = col; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(c.level), x, y + 3.5); const n = g.campOcc[c.id] ?? 0; if (n > 0) { ctx.fillStyle = n >= 8 ? '#ff5a4a' : '#ffffff'; ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 3; ctx.font = 'bold 9px sans-serif'; ctx.strokeText('👥' + n, x, y - 8 * k - 3); ctx.fillText('👥' + n, x, y - 8 * k - 3); } }
     for (const b of this.bossList) { const [x, y] = P(b.x, b.z); if ((x - cx) ** 2 + (y - cx) ** 2 > (cx + 14) ** 2) continue; ctx.strokeStyle = '#ff2a6a'; ctx.lineWidth = 3; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(x, y, 9 * k, 0, 6.3); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ff9ab8'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('☠' + b.level, x, y + 4); }
     for (const st of hub ? genStones() : []) { if (g.me.clues.includes('stone.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
+    for (const st of hub ? genRuins() : []) { if (g.me.clues.includes('ruin.' + st.n)) continue; const [x, y] = P(st.x, st.z); if ((x - cx) ** 2 + (y - cx) ** 2 > cx * cx) continue; ctx.strokeStyle = '#ffc15e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke(); }
     for (const r of g.riftSnap) { const [x, y] = P(r.x, r.z); const pulse = 6 + Math.sin(performance.now() / 200) * 2; ctx.fillStyle = '#d27aff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, pulse, 0, 6.3); ctx.fill(); ctx.stroke(); }
     for (const v of g.vs.views.values()) { if (v.self || v.dyingT >= 0) continue; const [x, y] = P(v.x, v.z); if (v.kind === 'mob') { ctx.fillStyle = v.boss ? '#ff2a6a' : '#e0453c'; ctx.beginPath(); ctx.arc(x, y, v.boss ? 6 : 2.8, 0, 6.3); ctx.fill(); } else { ctx.fillStyle = v.boy === g.myBoy ? '#4aa8ff' : '#ff9f43'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.3); ctx.fill(); ctx.stroke(); } }
     for (const d of g.drops.values()) { const [x, y] = P(d.root.position.x, d.root.position.z); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); }

@@ -1,5 +1,5 @@
 import { DEF_ENCH, ENCH_TABLE, FIELD_BOSS, GATE_DUNGEONS, HUB, makeItem, mobGold, mobXp, randomSlot, rollTier, gatePos, type MobType } from '../shared/game';
-import { DUNGEONS, DUNGEON_EXIT_SEC, dungeonDay, type DungeonDef } from '../shared/dungeon';
+import { DUNGEONS, DUNGEON_IDS, DUNGEON_EXIT_SEC, dungeonDay, type DungeonDef } from '../shared/dungeon';
 import { DUNGEON_SLOTS, MAPS, regionAt, regionById, type MapId, type Region } from '../shared/maps';
 import { irange } from '../shared/rng';
 import { dist } from '../shared/world';
@@ -141,6 +141,7 @@ export function dungeonBossDown(w: World, m: { id: number; lvl: number; bossId: 
   const r = w.dungeons.get(m.dun); if (!r || r.rewarded) return; r.rewarded = true; r.state = 'won'; const now = w.now; r.exitAt = now + DUNGEON_EXIT_SEC * 1000;
   const def = r.def; const rng = w.ctx.rng; const kind = FIELD_BOSS.list[m.bossId - 1][1]; const total = [...m.contrib.values()].reduce((a, b) => a + b, 0) || 1;
   r.mobs.delete(m.id); w.mobs.delete(m.id);
+  { let tp: Player | undefined, td = 0; for (const [pid, dmg] of m.contrib) { const q = w.players.get(pid); if (q && dmg > td) { td = dmg; tp = q; } } if (tp) w.chron('dungeon', tp.name, Math.max(0, DUNGEON_IDS.indexOf(r.region.id as MapId)), 0, 'dun.' + r.region.id); }
   for (const id of r.members) {
     const p = w.players.get(id); if (!p || regionAt(p.x, p.z)?.id !== r.region.id) continue;
     const share = (m.contrib.get(id) ?? 0) / total; if (share < 0.05 && p.deadUntil > 0) continue;

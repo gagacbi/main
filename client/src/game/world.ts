@@ -5,6 +5,7 @@ import { BOYS, BOY_COLORS, HUB, HUB_GATE_HALF, HUB_PLAZA_R, HUB_R, HUB_WALL_R, W
 import { MAPS, REGIONS, regionAt, type MapId } from '@shared/maps';
 import { LOOM_POS } from '@shared/costume';
 import { mulberry32 } from '@shared/rng';
+import { genRuins } from '@shared/chronicle';
 import { ROAD_HALF, ROAD_LEN, genStones, roadDist, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
@@ -198,7 +199,7 @@ export class World3D {
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRegions(); this.makeLoom();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRuins(); this.makeRegions(); this.makeLoom();
   }
   isGround(m: { name?: string } | null | undefined) { return !!m && (m === (this.ground as unknown) || this.grounds.includes(m as Mesh)); }
 
@@ -328,6 +329,25 @@ export class World3D {
       glow.material = gm; glow.parent = m; this.stones.push({ n: st.n, x: st.x, z: st.z, glow, mat: gm, seen: false });
     }
   }
+  ruins: { n: number; mat: ShaderMaterial; seen: boolean }[] = [];
+  /** Destan kalıntıları: yıkık kemer, devrik sütunlar ve amber parıltılı bir kitabe; okunmamışlar parlar. */
+  private makeRuins() {
+    const sc = this.scene;
+    for (const ru of genRuins()) {
+      const body: PartSpec[] = [
+        { k: 'box', w: 5.2, h: 0.35, dp: 3.4, p: [0, 0.17, 0], c: '#7d7868', c2: '#a39d88' },
+        { k: 'cyl', db: 1.0, dt: 0.8, h: 4.6, p: [-2.0, 2.45, 0], c: '#8f8a76', c2: '#bdb79e', seg: 8 }, { k: 'cyl', db: 1.0, dt: 0.85, h: 3.0, p: [2.0, 1.85, 0], c: '#8f8a76', c2: '#bdb79e', seg: 8 },
+        { k: 'box', w: 1.1, h: 0.4, dp: 1.1, p: [-2.0, 4.9, 0], c: '#a39d88', c2: '#cfc9b0' }, { k: 'box', w: 3.4, h: 0.55, dp: 0.9, p: [-0.7, 4.3, 0], c: '#7d7868', c2: '#a39d88', r: [0, 0, -0.18] },
+        { k: 'cyl', db: 0.9, dt: 0.9, h: 3.2, p: [1.0, 0.65, 2.2], c: '#7d7868', c2: '#a39d88', seg: 8, r: [0, 0, 1.45] },
+        { k: 'box', w: 1.3, h: 1.7, dp: 0.35, p: [0, 0.95, -1.1], c: '#6f6a5a', c2: '#8f8a76' },
+      ];
+      const m = build(sc, 'ruin' + ru.n, body); m.material = this.mat; m.position.set(ru.x, 0, ru.z); m.rotation.y = Math.atan2(-ru.x, -ru.z) + 0.4; addOutline(m, sc).parent = m; this.root.addChild(m);
+      const gm = toonMaterial(sc, { vertexColors: true, emissive: new Color3(1, 0.7, 0.25), rim: 0 });
+      const glow = build(sc, 'ruinglow' + ru.n, [{ k: 'box', w: 0.7, h: 0.08, dp: 0.06, p: [0, 1.45, -0.9], c: '#ffc15e' }, { k: 'box', w: 0.08, h: 0.7, dp: 0.06, p: [0, 1.3, -0.9], c: '#ffc15e' }, { k: 'box', w: 0.5, h: 0.07, dp: 0.06, p: [0, 0.95, -0.9], c: '#ffc15e' }]);
+      glow.material = gm; glow.parent = m; this.ruins.push({ n: ru.n, mat: gm, seen: false });
+    }
+  }
+  setRuinsSeen(seen: Set<number>) { for (const r of this.ruins) { r.seen = seen.has(r.n); r.mat.setColor3('uEmissive', r.seen ? new Color3(0.14, 0.1, 0.04) : new Color3(1, 0.7, 0.25)); } }
   setStonesSeen(seen: Set<number>) { for (const s of this.stones) { s.seen = seen.has(s.n); s.mat.setColor3('uEmissive', s.seen ? new Color3(0.05, 0.12, 0.16) : new Color3(0.2, 0.7, 1)); } }
 
   /** Ağaç, kaya ve yapıların altına yumuşak gölge yaması (tek birleşik mesh, alfa karışımlı). */

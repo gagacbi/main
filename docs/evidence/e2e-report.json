@@ -1,30 +1,10 @@
 {
- "at": "2026-10-06T22:10:55.918Z",
+ "at": "2026-10-06T23:07:04.951Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
    "ok": true,
    "detail": "Üç boy (Gök mavi-beyaz kartal tüyü, Yer yeşil-kahve kurt kulağı, Ay gümüş-mor geyik boynuzu) aynı sahnede, ayrı siluet"
-  },
-  {
-   "id": "D5.envanter",
-   "ok": true,
-   "detail": "Çanta paneli 8 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
-  },
-  {
-   "id": "B4.uzmanlik-ui",
-   "ok": true,
-   "detail": "Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür"
-  },
-  {
-   "id": "B4.uzmanlik",
-   "ok": true,
-   "detail": "Kılıç Alp seçildi, sunucu doğruladı, model/istatistik değişti"
-  },
-  {
-   "id": "B3.kademe",
-   "ok": true,
-   "detail": "Savurma M1→M2 (kademe=2), puan + akçe harcandı"
   },
   {
    "id": "D3.demirci-paneli",
@@ -282,6 +262,16 @@
    "detail": "Ganimet mıknatısı: akçe 5000→5013"
   },
   {
+   "id": "B7.olum-ekrani",
+   "ok": true,
+   "detail": "Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=0"
+  },
+  {
+   "id": "B7.yeniden-dogus",
+   "ok": true,
+   "detail": "Yurda dönüldü (güvenli bölge)"
+  },
+  {
    "id": "F6.tr",
    "ok": true,
    "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
@@ -304,17 +294,17 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt486"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt770"
   },
   {
    "id": "F1.toon",
    "ok": true,
-   "detail": "Toon materyal=35, kontur ağı=925, toplam ShaderMaterial=88"
+   "detail": "Toon materyal=44, kontur ağı=934, toplam ShaderMaterial=97"
   },
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 96 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 102 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -329,27 +319,42 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=2.59 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=7.71 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
   },
   {
-   "id": "B7.olum-ekrani",
+   "id": "D5.envanter",
    "ok": true,
-   "detail": "Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=0"
+   "detail": "Çanta paneli 7 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
   },
   {
-   "id": "B7.yeniden-dogus",
+   "id": "B4.uzmanlik-ui",
    "ok": true,
-   "detail": "Yurda dönüldü (güvenli bölge)"
+   "detail": "Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür"
+  },
+  {
+   "id": "B4.uzmanlik",
+   "ok": true,
+   "detail": "Kılıç Alp seçildi, sunucu doğruladı, model/istatistik değişti"
+  },
+  {
+   "id": "B3.kademe",
+   "ok": true,
+   "detail": "Savurma M1→M2 (kademe=2), puan + akçe harcandı"
+  },
+  {
+   "id": "S1.kut-yilligi",
+   "ok": true,
+   "detail": "Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür"
   },
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=3.51 ms; aktif mesh=200/2574; üçgen=548768; (yazılım rasterleştirmede FPS=7)"
+   "detail": "Kare başına JS/CPU maliyeti=2.79 ms; aktif mesh=175/2599; üçgen=518352; (yazılım rasterleştirmede FPS=11)"
   },
   {
    "id": "G.konsol",
@@ -358,15 +363,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 2.5859375,
+  "audioPeak": 7.7138671875,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 7,
-   "meshes": 2574,
-   "active": 200,
+   "fps": 11,
+   "meshes": 2599,
+   "active": 175,
    "draw": 0,
-   "tris": 548768,
-   "cpuMs": 3.51
+   "tris": 518352,
+   "cpuMs": 2.79
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

@@ -5,11 +5,12 @@
  *  elder : Ak Sakal          — seviye eşiklerinde, yalnızca ona gidenlere
  *  stone : Balbal Taşları    — bozkıra dağılmış 8 taş, gezen bulur
  *  shard : Mühür Kırıkları   — Erlik çatlaklarını kapatanlara düşer
+ *  ruin  : Destan Kalıntıları — dokuz harabe; dünyanın geçmişi (gizem iplikleri dışında, "kimdi bunlar?" katmanı)
  * Dört ipliğin ucu birleşince "Mühürün Dışı" açılır; ama "dıştaki el" sorusunun yanıtı bilerek yazılmamıştır.
  */
-export type Thread = 'insc' | 'dream' | 'elder' | 'stone' | 'shard' | 'truth';
-export const THREADS: Thread[] = ['insc', 'dream', 'elder', 'stone', 'shard', 'truth'];
-export const THREAD_SIZE: Record<Thread, number> = { insc: 5, dream: 5, elder: 5, stone: 8, shard: 3, truth: 1 };
+export type Thread = 'insc' | 'dream' | 'elder' | 'stone' | 'shard' | 'ruin' | 'truth';
+export const THREADS: Thread[] = ['insc', 'dream', 'elder', 'stone', 'shard', 'ruin', 'truth'];
+export const THREAD_SIZE: Record<Thread, number> = { insc: 5, dream: 5, elder: 5, stone: 8, shard: 3, ruin: 9, truth: 1 };
 /** oyuncuya ait iplikler (insc sunucu çapıdır, oyuncu verisinde tutulmaz) */
 export const clueId = (t: Thread, n: number) => `${t}.${n}`;
 
@@ -28,7 +29,7 @@ export function truthUnlocked(clues: readonly string[], inscUnlocked: number): b
 }
 
 /** Unvanlar: bir ipliği tamamlayanlara */
-export const TITLES: Partial<Record<Thread, string>> = { dream: 'title.dream', elder: 'title.elder', stone: 'title.stone', shard: 'title.shard', truth: 'title.truth' };
+export const TITLES: Partial<Record<Thread, string>> = { dream: 'title.dream', elder: 'title.elder', stone: 'title.stone', shard: 'title.shard', ruin: 'title.ruin', truth: 'title.truth' };
 export function titlesOf(clues: readonly string[]): string[] {
   return (Object.keys(TITLES) as Thread[]).filter((t) => clues.filter((x) => x.startsWith(t + '.')).length >= THREAD_SIZE[t]).map((t) => TITLES[t]!);
 }
