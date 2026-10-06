@@ -134,7 +134,7 @@ export class Engine {
       if (wallMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / wallMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / wallMin) * 0.5; }
       const o = occStat[a.idx]; if (o && farmMin >= 1) { const avg = o.sum / Math.max(1, o.n); const b = avg <= 1.5 ? '1' : avg <= 3.5 ? '2-3' : avg <= 6.5 ? '4-6' : avg <= 10.5 ? '7-10' : '11+'; const e = (log.occBuckets[b] ??= { n: 0, rate: 0 }); e.n++; e.rate += a.sliceFarmKills / farmMin; }
       if (extraMin > 0) { this.extrapolate(a, extraMin); a.extraKimiz(extraMin); }
-      if (a.kzCombatMin > 0.5) { a.kzRate = a.kzRate * 0.5 + ((a.kzUsedSlice + a.kzWantSlice) / a.kzCombatMin) * 0.5; } a.kzCombatMin = 0; a.kzUsedSlice = 0; a.kzWantSlice = 0;
+      if (a.kzCombatMin > 0.5 && SPEND_MODEL !== 'baseline_heavy') { a.kzRate = a.kzRate * 0.5 + (a.kzUsedSlice / a.kzCombatMin) * 0.5; }   // baseline_heavy: sabit temel oran (ölçülmez) a.kzCombatMin = 0; a.kzUsedSlice = 0; a.kzWantSlice = 0;
       a.town(); a.farmMin += farmMin;
     }
     for (const k of Object.keys(log.occBuckets)) log.occBuckets[k].rate = +(log.occBuckets[k].rate / log.occBuckets[k].n).toFixed(1);
