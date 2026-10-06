@@ -11,7 +11,7 @@ const url = `http://localhost:${srv.port}/`; const world = () => [...srv.ctx.wor
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: 'tr-TR' });
-await ctx.addInitScript(() => { try { localStorage.setItem('kut.lang', 'tr'); localStorage.setItem('kut.q', 'medium'); } catch { /* */ } });
+await ctx.addInitScript((vd) => { (window as any).__VD = vd; try { localStorage.setItem('kut.lang', 'tr'); localStorage.setItem('kut.q', 'medium'); localStorage.setItem('kut.vd', (window as any).__VD ?? 'mid'); } catch { /* */ } }, process.env.VD ?? 'mid');
 const page = await ctx.newPage(); page.setDefaultTimeout(120000);
 const NAME = 'Perf' + Math.floor(Math.random() * 900 + 100);
 await page.goto(url + '?autoq=0'); await page.waitForSelector('.title .tcard', { timeout: 120000 }); await sleep(1500);

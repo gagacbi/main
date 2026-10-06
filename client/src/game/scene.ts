@@ -1,7 +1,7 @@
 import {
   ArcRotateCamera, Color4, DefaultRenderingPipeline, Engine, Scene, Vector3,
 } from '@babylonjs/core';
-import { FOG_COLOR } from './toon';
+import { FOG_COLOR, VIEW_K, setViewK, type ViewDist } from './toon';
 
 export type Quality = 'high' | 'medium' | 'low';
 
@@ -18,6 +18,9 @@ export class GameScene {
     this.setQuality(quality);
     window.addEventListener('resize', () => this.engine.resize());
   }
+  viewDist: ViewDist = 'mid';
+  /** Görüş mesafesi: sis aralığı + kamera uzak düzlemi + LOD (World3D.lod ve EntityViews getViewK'yi okur). */
+  setViewDistance(v: ViewDist) { this.viewDist = v; const k = VIEW_K[v]; setViewK(k); this.camera.maxZ = Math.max(220, 300 * k * 1.25 + 80); }
   setQuality(q: Quality) {
     this.quality = q;
     this.pipeline?.dispose(); this.pipeline = null;

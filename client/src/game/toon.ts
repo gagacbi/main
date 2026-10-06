@@ -6,6 +6,14 @@ import {
 
 export const SKY = { top: '#16246a', mid: '#4d9be0', horizon: '#ffe2a3' };
 export const FOG_COLOR = new Color3(0.93, 0.84, 0.64);
+/** Görüş mesafesi (Metin2'deki Uzak–Yakın ayarı gibi): sis aralığı, kamera kırpma düzlemi ve LOD mesafeleri tek çarpandan (k) ölçeklenir. */
+export type ViewDist = 'near' | 'mid' | 'far';
+export const VIEW_K: Record<ViewDist, number> = { near: 0.45, mid: 0.75, far: 1 };
+const FOGS = new Map<ShaderMaterial, [number, number]>(); let viewK = VIEW_K.mid;
+export const getViewK = () => viewK;
+/** Malzemenin sis aralığını (taban değerlerle) kaydeder ve geçerli görüş mesafesine göre uygular. */
+export function registerFog(m: ShaderMaterial, x: number, y: number) { FOGS.set(m, [x, y]); m.setVector2('uFog', { x: x * viewK, y: y * viewK } as never); m.onDisposeObservable.add(() => FOGS.delete(m)); }
+export function setViewK(k: number) { viewK = k; for (const [m, [x, y]] of FOGS) m.setVector2('uFog', { x: x * k, y: y * k } as never); }
 export const LIGHT_DIR = { x: -0.45, y: 0.8, z: 0.4 }; // IŞIĞA doğru yön
 
 Effect.ShadersStore['toonVertexShader'] = `
@@ -91,7 +99,7 @@ export function toonMaterial(scene: Scene, o: ToonOpts = {}): ShaderMaterial {
   m.setColor3('uFlashColor', Color3.White()); m.setFloat('uFlash', 0);
   m.setVector3('uLight', { x: LIGHT_DIR.x, y: LIGHT_DIR.y, z: LIGHT_DIR.z } as never);
   m.setColor3('uShadow', new Color3(0.5, 0.56, 0.82));
-  m.setColor3('uFogColor', FOG_COLOR); m.setVector2('uFog', { x: 110, y: 300 } as never);
+  m.setColor3('uFogColor', FOG_COLOR); registerFog(m, 110, 300);
   m.setFloat('uRim', o.rim ?? 1); m.setFloat('uAlpha', o.alpha ?? 1);
   return m;
 }

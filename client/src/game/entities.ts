@@ -5,7 +5,7 @@ import { decodeCostume } from '@shared/costume';
 import { t } from '../i18n';
 import { buildHuman, buildMob, type AnimState, type Rig } from './models';
 import { build } from './meshkit';
-import { toonMaterial } from './toon';
+import { getViewK, toonMaterial } from './toon';
 import type { FX } from './fx';
 
 interface Sample { t: number; x: number; z: number; r: number }
@@ -71,7 +71,7 @@ export class ViewSystem {
   clear() { for (const v of [...this.views.values()]) this.remove(v); }
 
   update(dt: number, now: number, myBoy: Boy | null, project: (x: number, y: number, z: number) => { x: number; y: number; vis: boolean }, camX: number, camZ: number) {
-    const crowd = this.views.size; const olR = crowd > 60 ? 14 : crowd > 35 ? 22 : 38;   // kalabalıkta kontur yarıçapı daralır
+    const kv = getViewK(); const crowd = this.views.size; const olR = (crowd > 60 ? 14 : crowd > 35 ? 22 : 38) * kv;   // kalabalıkta kontur yarıçapı daralır
     for (const v of [...this.views.values()]) {
       v.t += dt;
       if (!v.self) v.sample(now);
@@ -91,7 +91,8 @@ export class ViewSystem {
       // yeniden doğma: bayrak kalktı ve can var → ölüm durumunu sıfırla (oyuncu görünümü silinmez, görünmez kalmaz)
       if (v.dyingT >= 0.2 && !(v.flags & F.DEAD) && v.hp > 0 && v.kind === 'player') { v.dyingT = -1; v.rig.root.rotation.z = 0; v.rig.root.rotation.x = 0; v.rig.baseY = 0; v.removeAt = 0; }
       // ayrıntı düzeyi: uzakta kontur kapalı, çok uzakta karakter hiç çizilmez (kendi karakter hariç)
-      if (!v.self) { const dd = Math.hypot(v.x - camX, v.z - camZ); v.rig.setOutlines(dd < olR); const off = dd > 95; if (off !== v.lodOff) { v.lodOff = off; v.rig.root.setEnabled(!off); } }
+      if (!v.self) { const dd = Math.hypot(v.x - camX, v.z - camZ); v.rig.setOutlines(dd < olR); const off = dd > 95 * kv; if (off !== v.lodOff) { v.lodOff = off; v.rig.root.setEnabled(!off); } }
+      if (v.lodOff && v.dyingT < 0 && !v.self) { v.plate.style.display = 'none'; continue; }   // görüş dışı: animasyon, boyama ve DOM işi yok (CPU tasarrufu)
       const dead = (v.flags & F.DEAD) !== 0 || v.dyingT >= 0;
       if (dead && v.dyingT < 0) v.dyingT = 0;
       if (v.dyingT >= 0) { v.dyingT += dt / 0.7; }

@@ -390,6 +390,8 @@ export class Panels {
     return this.shell(t('ui.settings'), 'skills', `<div style="min-width:460px"><div class="setrow"><span class="l">${t('ui.lang')}</span><div class="seg"><button data-act="lang" data-v="tr" class="${getLang() === 'tr' ? 'on' : ''}">Türkçe</button><button data-act="lang" data-v="en" class="${getLang() === 'en' ? 'on' : ''}">English</button></div></div>
       <div class="setrow"><span class="l">${t('ui.sound')}</span><div class="seg"><button data-act="snd" data-v="1" class="${a.muted ? '' : 'on'}">${icon('sound')} On</button><button data-act="snd" data-v="0" class="${a.muted ? 'on' : ''}">${icon('mute')} Off</button></div></div>
       <div class="setrow"><span class="l">${t('ui.quality')}</span><div class="seg">${(['high', 'medium', 'low'] as const).map((k) => `<button data-act="q" data-v="${k}" class="${q === k ? 'on' : ''}">${t('ui.q.' + k)}</button>`).join('')}</div></div>
+      <div class="setrow"><span class="l">${t('ui.view')}</span><div class="seg">${(['near', 'mid', 'far'] as const).map((k) => `<button data-act="vd" data-v="${k}" class="${this.g.gs.viewDist === k ? 'on' : ''}">${t('ui.v.' + k)}</button>`).join('')}</div></div>
+      <div class="sub" style="margin-top:2px">${t('ui.view.hint')}</div>
       <div class="gap"></div>${this.helpBody()}</div>`);
   }
   helpBody() { return `<div class="sub">${t('help.title')}</div><div class="helpgrid"><div>${t('help.move')}</div><div>${t('help.fight')}</div><div>${t('help.panels')}</div><div>${t('help.zones')}</div></div>`; }
@@ -475,6 +477,7 @@ export class Panels {
       case 'collect': { const r = await this.act('oba.collect', { expId: d.id }); if (r.ok) { const x = r.data as { result: ExpeditionResult; info: ObaInfo }; this.oba = x.info; this.expResult = x.result; this.g.audio.sfx('rare'); } break; }
       case 'lang': setLang(d.v as 'tr' | 'en'); this.g.refreshNpcNames(); this.g.ui.relocalize(); await this.g.net.rpc('lang', { lang: d.v }); break;
       case 'snd': this.g.audio.setMuted(d.v === '0'); this.g.audio.start(); break;
+      case 'vd': this.g.setViewDist(d.v as 'near' | 'mid' | 'far'); break;
       case 'q': this.g.setQuality(d.v as 'high' | 'medium' | 'low'); try { localStorage.setItem('kut.q', d.v!); } catch { /* */ } break;
     }
     if (act === 'send' || act === 'collect' || act === 'build') await this.refreshOba();

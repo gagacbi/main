@@ -39,3 +39,10 @@ Seviye mesafesi köy dışından (sv 1) haritanın kenarına (sv 48) doğrusal (
 - Nüfus simülasyonu ekonomi sonuçları **eski haritada** koşuldu. Yürüme mesafesi ×3 olduğu için kamp ziyareti ve gelir dağılımı değişebilir; yeniden kalibrasyon gerekir.
 - Haritada hâlâ yalnız ana yollar var; ara yol/nehir/dağ geçidi, ek kasaba ve hızlı yolculuk noktaları yok.
 - Gerçek GPU'da FPS ölçülemedi (yazılım rasterleştirme); kanıt üçgen/çizim sayıları.
+
+## Görüş mesafesi ayarı (Yakın / Orta / Uzak)
+
+Ayarlar panelinde (`Grafik` satırının altında). Metin2'deki Uzak–Yakın seçeneği gibi tek çarpandan (`VIEW_K`: 0,45 / 0,75 / 1) şunları birlikte ölçekler: sis aralığı, kamera uzak düzlemi, çimen/kaya/ağaç/köy parçalarının ve konturlarının kapanma mesafesi, uzak karakterlerin çizimi ve hesabı (95 m'nin ötesinde animasyon, boyama ve DOM plaka işi yapılmaz). Varsayılan Orta; seçim `localStorage`'da saklanır. Kare hızı 6 sn boyunca 22'nin altında kalırsa oyun önce görüş mesafesini, sonra grafik kalitesini kendisi düşürür.
+
+Ölçüm (köy görünümü, yazılım rasterleştirme): Uzak → Yakın: üçgen 562k → 484k (−%14), etkin mesh 752 → 464 (−%38), 40 yaratıkla varlık güncellemesi 0,55 → 0,24 ms. Kazanç açık sahada ve kalabalıkta daha büyüktür; köy görünümünde çoğu nesne zaten yakın.
+Sunucu tarafı ilgi alanı (`AOI_R` = 75 m, hangi yaratık/oyuncunun gönderileceği) sabit; istemci ayarı yalnız çizim ve hesabı azaltır.

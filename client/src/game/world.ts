@@ -8,7 +8,7 @@ import { mulberry32 } from '@shared/rng';
 import { ROAD_HALF, ROAD_LEN, genStones, roadDist, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
-import { FOG_COLOR, SKY, addOutline, toonMaterial } from './toon';
+import { FOG_COLOR, SKY, addOutline, getViewK, registerFog, toonMaterial } from './toon';
 
 // ───────────────────────── Zemin shader'ı ─────────────────────────
 Effect.ShadersStore['groundVertexShader'] = `
@@ -191,7 +191,7 @@ export class World3D {
   root = new TransformNode('world');
   chunks: Chunk[] = [];
   /** uzaklık tabanlı ayrıntı: uzaktaki çimen/kaya/ağaç parçaları ve konturları kapatılır (kamera hedefine göre) */
-  lod(camX: number, camZ: number) { const h = CHUNK * 0.71; for (const c of this.chunks) { const d = Math.hypot(c.x - camX, c.z - camZ) - h; const on = d < c.maxD; if (on !== c.on) { c.on = on; c.m.setEnabled(on); if (c.ol) { c.ol.setEnabled(on && c.olOn); } } if (c.ol && on) { const olOn = d < c.olD; if (olOn !== c.olOn) { c.olOn = olOn; c.ol.setEnabled(olOn); } } } }
+  lod(camX: number, camZ: number) { const h = CHUNK * 0.71; const kv = getViewK(); for (const c of this.chunks) { const d = Math.hypot(c.x - camX, c.z - camZ) - h; const on = d < c.maxD * kv; if (on !== c.on) { c.on = on; c.m.setEnabled(on); if (c.ol) { c.ol.setEnabled(on && c.olOn); } } if (c.ol && on) { const olOn = d < c.olD * kv; if (olOn !== c.olOn) { c.olOn = olOn; c.ol.setEnabled(olOn); } } } }
   ground!: Mesh; grounds: Mesh[] = []; sky!: Mesh; skyTop = Color3.FromHexString(SKY.top); skyMid = Color3.FromHexString(SKY.mid); skyHor = Color3.FromHexString(SKY.horizon); atmo: MapId = 'bozkir'; skyMat!: ShaderMaterial; clouds = new TransformNode('clouds');
   mats: ShaderMaterial[] = []; flames: Mesh[] = []; flagPivots: TransformNode[] = []; runes: Mesh[] = []; steleMat!: ShaderMaterial;
   otagGlow = 0; time = 0;
@@ -214,7 +214,7 @@ export class World3D {
     const g = MeshBuilder.CreateDisc('ground', { radius: WORLD_R + 130, tessellation: 96 }, this.scene);
     g.rotation.x = Math.PI / 2; g.bakeCurrentTransformIntoVertices();
     const mat = new ShaderMaterial('ground', this.scene, 'ground', { attributes: ['position'], uniforms: ['world', 'worldViewProjection', 'cameraPosition', 'uFogColor', 'uFog', 'uTime', 'uOtag'] });
-    mat.setColor3('uFogColor', FOG_COLOR); mat.setVector2('uFog', { x: 110, y: 300 } as never); mat.setFloat('uTime', 0); mat.setFloat('uOtag', 1);
+    mat.setColor3('uFogColor', FOG_COLOR); registerFog(mat, 110, 300); mat.setFloat('uTime', 0); mat.setFloat('uOtag', 1);
     mat.backFaceCulling = false; g.material = mat; g.isPickable = true; g.name = 'ground'; this.ground = g; this.grounds.push(g); this.mats.push(mat);
   }
   private makeMountains() {
@@ -505,7 +505,7 @@ export class World3D {
       const d = MeshBuilder.CreateDisc('rground' + g.id, { radius: g.r + 40, tessellation: 64 }, sc);
       d.rotation.x = Math.PI / 2; d.bakeCurrentTransformIntoVertices(); d.position.set(g.cx, 0, g.cz);
       const mat = new ShaderMaterial('rground' + g.id, sc, 'rground', { attributes: ['position'], uniforms: ['world', 'worldViewProjection', 'cameraPosition', 'uFogColor', 'uFog', 'uTime', 'uC', 'uA', 'uB', 'uR', 'uSafe', 'uKind'] });
-      mat.setColor3('uFogColor', FOG_COLOR); mat.setVector2('uFog', { x: dun ? 40 : 110, y: dun ? 140 : 300 } as never); mat.setFloat('uTime', 0);
+      mat.setColor3('uFogColor', FOG_COLOR); registerFog(mat, dun ? 40 : 110, dun ? 140 : 300); mat.setFloat('uTime', 0);
       mat.setVector2('uC', { x: g.cx, y: g.cz } as never); mat.setColor3('uA', Color3.FromHexString(def.palette.ground)); mat.setColor3('uB', Color3.FromHexString(def.palette.ground2));
       mat.setFloat('uR', g.r); mat.setFloat('uSafe', g.safeR); mat.setFloat('uKind', dun ? 1 : g.map === 'erlik' ? 2 : 0);
       mat.backFaceCulling = false; d.material = mat; d.isPickable = true; this.grounds.push(d); this.mats.push(mat);

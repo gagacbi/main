@@ -15,6 +15,7 @@ import { GATE_LINKS, gatePos } from '@shared/game';
 import { regionAt } from '@shared/maps';
 import { LOOM_POS, costumeCode } from '@shared/costume';
 import { GameScene, type Quality } from './scene';
+import type { ViewDist } from './toon';
 import { World3D } from './world';
 
 interface Npc { key: 'aksakal' | 'demirci' | 'guard'; rig: Rig; x: number; z: number; plate: HTMLElement; mark: HTMLElement | null; t: number; faceAway?: number }
@@ -32,6 +33,7 @@ export class Game {
 
   constructor(public canvas: HTMLCanvasElement, public uiRoot: HTMLElement, quality: Quality) {
     this.gs = new GameScene(canvas, quality);
+    { let vd: ViewDist = 'mid'; try { const v = localStorage.getItem('kut.vd'); if (v === 'near' || v === 'mid' || v === 'far') vd = v; } catch { /* */ } this.gs.setViewDistance(vd); }
     this.world = new World3D(this.gs.scene);
     this.fx = new FX(this.gs.scene, uiRoot);
     this.vs = new ViewSystem(this.gs.scene, this.fx, uiRoot);
@@ -354,7 +356,7 @@ export class Game {
     // ölüm bayrağı
     if (dead && !this.wasDead) this.deadSince = now; this.wasDead = dead;
     // kalite otomatiği: uzun süre düşük kare hızı → kalite düşür
-    if (this.autoQuality && this.fps < 22 && this.gs.quality !== 'low') { if (!this.lowFpsSince) this.lowFpsSince = now; if (now - this.lowFpsSince > 6000) { this.gs.setQuality(this.gs.quality === 'high' ? 'medium' : 'low'); this.lowFpsSince = 0; this.ui.qualityChanged(); } } else this.lowFpsSince = 0;
+    if (this.autoQuality && this.fps < 22 && (this.gs.quality !== 'low' || this.gs.viewDist !== 'near')) { if (!this.lowFpsSince) this.lowFpsSince = now; if (now - this.lowFpsSince > 6000) { if (this.gs.viewDist !== 'near') this.setViewDist(this.gs.viewDist === 'far' ? 'mid' : 'near'); else this.gs.setQuality(this.gs.quality === 'high' ? 'medium' : 'low'); this.lowFpsSince = 0; this.ui.qualityChanged(); } } else this.lowFpsSince = 0;
     this.ui.frame(dt, zone);
   }
 
@@ -379,6 +381,7 @@ export class Game {
   }
 
   setQuality(q: Quality) { this.gs.setQuality(q); }
+  setViewDist(v: ViewDist) { this.gs.setViewDistance(v); try { localStorage.setItem('kut.vd', v); } catch { /* */ } }
   respawn() { return this.net.rpc('respawn'); }
   dispose() { this.gs.engine.stopRenderLoop(); this.net.leave(); }
 }
