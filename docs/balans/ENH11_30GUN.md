@@ -33,6 +33,12 @@ Kontrol = +9 tavan, v1.1 = +10…+15 açık. Değerler seed ortalamasıdır.
 
 Kontrol kolunda (+9 tavan) ≥+10 oranı tanım gereği %0.
 
+**Doğal ilerleyenlerin erişimi (30. gün, ekipmanında ≥+n olan oran; Kontrol / deney):**
+
+| ≥+5 | ≥+6 | ≥+7 | ≥+8 | ≥+9 |
+|---|---|---|---|---|
+| %56.0 / %55.3 | %38.9 / %38.5 | %1.8 / %1.4 | %0.3 / %0.0 | %0.3 / %0.0 |
+
 **Deneme ve başarı (deney kolu, seed ortalaması):**
 
 | Hedef | Tasarım şansı | Deneme | Başarı | Gerçek oran | Düşme | Tılsım koruması (≈) |
@@ -45,6 +51,7 @@ Kontrol kolunda (+9 tavan) ≥+10 oranı tanım gereği %0.
 | +15 | 8% | 57.0 | 10.0 | %17.5 | 0.0 | 47.0 |
 
 - Deneme başına ortalama akçe **58.326**, başarılı yükseltme başına **162.841** · başarısız deneme akçesi 23.27M · demir cevheri 16.124 · Tılsım 213.7 · kitap 584.3.
+- Koruma eşyası: olgun kohortta gün sonu stok/oyuncu — Tılsım 749.4 (K) → 693.5, kitap 1401.3 (K) → 1251.1; sunucunun reddettiği deneme (ör. günlük sınır) 0.
 - Engel kayıtları: bütçe 25.943 · akçe 3.291 · cevher 347 · riskten vazgeçme 10.887.
 
 ## 2. Gerçek sink oluşuyor mu?
@@ -102,9 +109,9 @@ _Üst %1, 150 oyuncuda 1–2 oyuncu (kohortta 1) olduğundan gürültülüdür; 
 
 | Metrik | Kontrol | v1.1 | Fark |
 |---|---|---|---|
-| PvP TTK medyan→medyan (sn) | 23.3 | 25.9 | +11.2% |
-| PvP TTK üst %10→medyan (sn) | 19.1 | 18.1 | -5.5% |
-| PvP TTK medyan→üst %10 (sn) | 40.8 | 45.2 | +10.8% |
+| PvP TTK orta bant→orta bant (sn) | 31.2 | 32.3 | +3.5% |
+| PvP TTK üst %10→orta bant (sn) | 23.9 | 22.8 | -4.3% |
+| PvP TTK orta bant→üst %10 (sn) | 43.5 | 44.0 | +1.2% |
 | Boss TTK (sn) | 27.7 | 27.2 | -1.9% |
 | Zindan kazanma | %94.6 | %95.1 | +0.5% |
 | Ölüm/saat (tüm nüfus) | 0.31 | 0.30 | -5.3% |
