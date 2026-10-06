@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium, type Browser, type Page } from 'playwright';
 import { startGameServer } from '../../server/index';
-import { HUB, UPGRADE_RATE, makeItem } from '../../shared/game';
+import { HUB, HUB_R, UPGRADE_RATE, makeItem } from '../../shared/game';
 import { mulberry32 } from '../../shared/rng';
 import { Bot } from '../integration/helpers';
 import type { Player } from '../../server/world';
@@ -95,7 +95,7 @@ if (want('boylar')) {
 // ───────── 5. Yaratık çeşitleri (F3) ─────────
 if (want('yaratik')) {
   const me = pl(NAME); const w = world(); w.mobs.clear();
-  me.x = 0; me.z = 56; await sleep(800);
+  me.x = 0; me.z = 130; await sleep(800);
   const types = ['tepegoz', 'albasti', 'erlik', 'cakal'] as const;
   const still = (m: ReturnType<typeof w.makeMob>) => { w.applyStatus(m, 'stun', 3600); m.nextAtk = Infinity; m.rot = 0; m.hx = m.x; m.hz = m.z; return m; };
   types.forEach((t, i) => still(w.makeMob(t, 3, me.x - 7.5 + i * 5, me.z - 8, -1)));
@@ -113,7 +113,7 @@ if (want('yaratik')) {
 if (want('savas')) {
   const me = pl(NAME); const w = world(); w.mobs.clear();
   me.d.level = 14; me.d.skillPts = 3; w.recalc(me); me.hp = me.stats.maxHp; me.d.gold = 5000;
-  me.x = 0; me.z = 52; await sleep(600);
+  me.x = 0; me.z = 126; await sleep(600);
   await page.evaluate(() => { const g = (window as any).__game; g.camYaw = Math.PI / 2 + 0.3; g.camPitch = 1.08; g.camDist = 15; });
   const pack = Array.from({ length: 7 }, (_, i) => { const m = w.makeMob(i % 3 === 2 ? 'albasti' : 'cakal', 3, me.x + Math.cos(i * 0.9) * 9, me.z + 4 + Math.sin(i * 0.9) * 9, -1); m.hx = m.x; m.hz = m.z; m.leash = 60; return m; });
   const xp0 = me.d.xp + me.d.level * 1e6;
@@ -130,7 +130,7 @@ if (want('savas')) {
   const killedBySkills = pack.filter((m) => m.dead).length; await sleep(1500);
   check('B2.yetenek-temizleme', killedBySkills >= 5, `Çağrı Narası + Savurma + Sarsıntı + Tengri Hiddeti: ${killedBySkills}/7 yaratık yetenekle temizlendi`);
   // — B1: yalnızca Space (yetenek yok) —
-  w.mobs.clear(); me.d.level = 6; w.recalc(me); me.hp = me.stats.maxHp; me.x = 0; me.z = 52; me.d.gold = 5000; await sleep(800);
+  w.mobs.clear(); me.d.level = 6; w.recalc(me); me.hp = me.stats.maxHp; me.x = 0; me.z = 126; me.d.gold = 5000; await sleep(800);
   const solo = Array.from({ length: 4 }, (_, i) => { const m = w.makeMob('cakal', 2, me.x - 4 + i * 2.7, me.z - 6 - (i % 2) * 3, -1); m.hx = m.x; m.hz = m.z; m.leash = 60; return m; });
   const xpA = me.d.xp + me.d.level * 1e6; const skillsBefore = JSON.stringify(me.cds);
   await page.keyboard.down('Space');
@@ -254,12 +254,12 @@ if (want('catlak')) {
 
 // ───────── 10b. Ölüm ve yeniden doğuş (B7) ─────────
 if (want('olum')) {
-  const me = pl(NAME); const w = world(); w.mobs.clear(); me.x = 0; me.z = 70; me.deadUntil = 0; me.d.level = 14; w.recalc(me); me.hp = me.stats.maxHp; me.d.xp = 500; await sleep(1500);
+  const me = pl(NAME); const w = world(); w.mobs.clear(); me.x = 0; me.z = 140; me.deadUntil = 0; me.d.level = 14; w.recalc(me); me.hp = me.stats.maxHp; me.d.xp = 500; await sleep(1500);
   const m = w.makeMob('bekci', 40, me.x + 3, me.z, -1); m.target = me.id; m.hx = m.x; m.hz = m.z;
   await page.waitForFunction('window.__game.flags & 1', null, { timeout: 30000 }); await sleep(1200); await shot('20-olum');
   check('B7.olum-ekrani', await page.evaluate(() => getComputedStyle(document.getElementById('death')!).display) === 'grid', 'Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=' + me.d.xp);
   w.mobs.clear(); await sleep(2600); await page.click('#respawn'); await sleep(1500);
-  check('B7.yeniden-dogus', Math.hypot(me.x, me.z) < 36 && me.deadUntil === 0, 'Yurda dönüldü (güvenli bölge)');
+  check('B7.yeniden-dogus', Math.hypot(me.x, me.z) < HUB_R && me.deadUntil === 0, 'Yurda dönüldü (güvenli bölge)');
   await shot('21-yeniden-dogus');
 }
 
