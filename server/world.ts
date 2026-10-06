@@ -652,7 +652,7 @@ export class World {
         this.alive(p); if ((d.kimiz ?? 0) < 1) throw new GameError('kimiz_none'); if (this.now < p.kimizAt) throw new GameError('kimiz_cd', { s: Math.ceil((p.kimizAt - this.now) / 1000) });
         if (p.hp >= p.stats.maxHp) throw new GameError('kimiz_full_hp');
         const pvp = this.now - p.lastPvp < 10000; const mult = pvp ? KIMIZ.pvpMult : 1;
-        d.kimiz!--; p.kimizAt = this.now + KIMIZ.cooldownSec * 1000; p.hotUntil = this.now + KIMIZ.healSec * 1000; p.hotPerSec = (p.stats.maxHp * KIMIZ.healPct * mult) / KIMIZ.healSec;
+        (d.tel ??= { onlineSec: 0, combatSec: 0, kimizUsed: 0 }).kimizUsed++; d.kimiz!--; p.kimizAt = this.now + KIMIZ.cooldownSec * 1000; p.hotUntil = this.now + KIMIZ.healSec * 1000; p.hotPerSec = (p.stats.maxHp * KIMIZ.healPct * mult) / KIMIZ.healSec;
         this.ledger(p, 'kimiz.use', { pvp }); this.emit({ k: 'fx', fx: 'holy', x: p.x, z: p.z, r: 2, o: p.id } as never, p.x, p.z); p.meDirty = true; return { hot: Math.round(p.hotPerSec * KIMIZ.healSec) };
       }
       case 'pvp': {
@@ -881,6 +881,7 @@ export class World {
 
   updatePlayers(dt: number, now: number) {
     for (const p of this.players.values()) {
+      { const t = p.d.tel ??= { onlineSec: 0, combatSec: 0, kimizUsed: 0 }; t.onlineSec += dt; if (p.deadUntil === 0 && now - p.lastCombat < 5000 && p.lastCombat > 0) t.combatSec += dt; }   // telemetri
       // hız sınırı penceresi
       p.rate.win += dt; if (p.rate.win >= 1) { p.rate.win = 0; p.rate.msgs = 0; p.rate.rpcs = 0; p.rate.chat = 0; }
       if (p.duelInvite && now - p.duelInvite.at > 30000) p.duelInvite = null;

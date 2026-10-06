@@ -12,6 +12,7 @@ export interface PlayerData {
   claimAt: number; companions: Companion[]; expeditions: Expedition[]; rested: number; loggedOutAt: number; outInHub: boolean;
   rank: number; rankKills: number; tut: { step: number; prog: number };
   /** v1.2 deney: günlük yüksek artı denemesi sayacı (yalnızca ENH.v11 açıkken yazılır) */ enh?: { day: number; n: number };
+  /** telemetri (ekonomi kalibrasyonu): çevrimiçi/savaş saniyesi ve Kımız kullanımı; oyun mantığını etkilemez */ tel?: { onlineSec: number; combatSec: number; kimizUsed: number };
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };
   x: number; z: number; lang: 'tr' | 'en';
   clues: string[]; dreams: number; shards: number; pendingDream: number;
