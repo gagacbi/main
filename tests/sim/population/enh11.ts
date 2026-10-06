@@ -33,3 +33,18 @@ export const ENH12: EnhOverride = {
   ...ENH11, bookBonus: 0, protectFee: 0.6, dailyCap: { from: 12, n: 2 },
   cost: (t, ilvl) => ({ gold: Math.round(60 * t * t * (1 + ilvl / 6) * (MULT[t] ?? 1)), ore: 2 + t * 2 }),
 };
+
+/**
+ * v1.3 — kök neden çözümü (docs/balans/ENH13_KOK_NEDEN.md). YALNIZCA SİMÜLASYON.
+ * Kök nedenler: (1) güç eğrisi: v1.1/v1.2 +15 = +9'a göre ×1,58 (belgedeki "×1,19" aritmetik hataydı) → yoğunlaşma;
+ *               (2) Tılsım/kitap mob drop'u olarak sınırsız → koruma ve bonus kuralları etkisiz;
+ *               (3) maliyet ölçeği: +10…+15 harcaması olgun oyuncu gelirinin %2,6'sı.
+ * Değişen: düz güç eğrisi (+9 %160 → +15 %210 = +9'a göre ×1,19), kitap bonusu yok, koruma/Tılsım yok (başarısızlıkta eşya kalır, düşme yok),
+ *          maliyet çarpanı +10 ×1,0 · +11 ×1,2 · +12 ×1,5 · +13 ×2,0 · +14 ×2,8 · +15 ×4,0 (+15 aşaması en pahalı), günlük sınır: hedef ≥+12 için 2 deneme.
+ * Aynı: başarı oranları 40/32/25/18/12/8.
+ */
+const MULT3: Record<number, number> = { 10: 1, 11: 1.2, 12: 1.5, 13: 2.0, 14: 2.8, 15: 4.0 };
+export const ENH13: EnhOverride = {
+  ...ENH11, pct: [...UP_PCT, 168, 176, 184, 192, 200, 210], bookBonus: 0, charmFrom: 99, fail: () => 'keep', dailyCap: { from: 12, n: 2 },
+  cost: (t, ilvl) => ({ gold: Math.round(60 * t * t * (1 + ilvl / 6) * (MULT3[t] ?? 1)), ore: 2 + t * 2 }),
+};

@@ -146,7 +146,7 @@ export class Agent {
       const nCharm = ENH.v11.charmN?.(target) ?? 1; const wantCharm = target >= ENH.v11.charmFrom && par.charm && d.bag.charm >= nCharm; const fee = wantCharm && ENH.v11.protectFee ? Math.round(cost.gold * ENH.v11.protectFee) : 0; const total = cost.gold + fee;
       if (this.enhSpent + total > this.enhBudget || d.gold < total + 5000 || d.bag.ore < cost.ore) { const why = d.bag.ore < cost.ore ? 'Ore' : d.gold < cost.gold + 5000 ? 'Gold' : 'Budget'; this.ext['enhBlock' + why] = (this.ext['enhBlock' + why] ?? 0) + 1; break; }
       if (ENH.v11.fail(target) !== 'keep' && U(2) > (par.riskAppetite ?? 0.5)) { this.ext.enhSkippedRisk = (this.ext.enhSkippedRisk ?? 0) + 1; break; }
-      const useCharm = wantCharm; const useBook = par.book && d.bag.book > 0;
+      const useCharm = wantCharm; const useBook = par.book && d.bag.book > 0 && (ENH.v11.bookBonus ?? 10) > 0;
       const res = this.rpc('upgrade', { id: it.id, book: useBook, charm: useCharm }); if (!res.ok) { this.ext.enhRejected = (this.ext.enhRejected ?? 0) + 1; break; }
       this.enhTries++; this.enhSpent += total; const k = 't' + target; const inc = (n: string, v = 1) => { this.ext[n] = (this.ext[n] ?? 0) + v; };
       inc('enhTry_' + k); inc('enhGold', total); if (fee && useCharm) inc('enhFee', fee); inc('enhOre', cost.ore); if (useCharm) inc('enhCharm', nCharm); if (useBook) inc('enhBook');
