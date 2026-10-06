@@ -134,6 +134,8 @@ export function addSmoothNormals(mesh: Mesh) {
 export function addOutline(mesh: Mesh, scene: Scene): Mesh {
   addSmoothNormals(mesh);
   const o = mesh.clone(mesh.name + '_ol', mesh, true, false) as Mesh;
+  // kopya ana ağın ÇOCUĞU olarak oluşur ama konum/dönüş/ölçeği de miras alır → ebeveynin dönüşü iki kez uygulanır (konumlu ağlarda siyah hayalet). Yerel dönüşümü sıfırla.
+  o.position.setAll(0); o.rotationQuaternion = null; o.rotation.setAll(0); o.scaling.setAll(1);
   o.material = outlineMaterial(scene); o.isPickable = false; o.alwaysSelectAsActiveMesh = mesh.alwaysSelectAsActiveMesh;
   o.renderingGroupId = mesh.renderingGroupId;
   return o;
