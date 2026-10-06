@@ -27,7 +27,7 @@ export class Game {
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
   focusId = 0; atkHeld = false; clickAttack = false; moveTarget: { x: number; z: number } | null = null; lastDir = { x: 0, z: 0 }; lastSend = 0;
   cdEnd = [0, 0, 0, 0, 0, 0]; cdTotal = SKILLS.map((s) => s.cd); castLock = 0; serverOffset = 0; time = 0; fps = 60; slowFrames = 0; typing = false;
-  regionId = 'bozkir'; nearby: { key: string; dist: number } | null = null; lastDeath: { by: string; kd?: string } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0;
+  regionId = 'bozkir'; nearby: { key: string; dist: number } | null = null; lastDeath: { by: string; kd?: string } | null = null; deadSince = 0; wasDead = false; mobsNear = 0; lowFpsSince = 0; lodN = 0;
   dustT = 0; autoQuality = new URLSearchParams(location.search).get('autoq') !== '0'; private dragging = false; private lastX = 0; private lastY = 0; private downAt = 0; private downPos = { x: 0, y: 0 };
 
   constructor(public canvas: HTMLCanvasElement, public uiRoot: HTMLElement, quality: Quality) {
@@ -338,6 +338,7 @@ export class Game {
     for (const d of this.drops.values()) { const s = this.snap?.drops.find((x) => x.i === d.id); if (s) d.update(s.a + (now - this.snapAt), this.time, s.x, s.z); if (d.label) { const p = this.projector(d.root.position.x, 1.8, d.root.position.z); d.label.style.display = p.vis ? '' : 'none'; d.label.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; } }
     for (const r of this.rifts.values()) { const s = this.riftSnap.find((x) => x.i === r.id); r.update(dt, this.time, s?.st ?? 0); }
     this.updateNpcs(dt);
+    if ((this.lodN = (this.lodN + 1) % 6) === 0) this.world.lod(this.camTarget.x, this.camTarget.z);
     this.world.update(dt);
     this.fx.update(dt, this.projector);
     for (const f of this.world.flames) void f;

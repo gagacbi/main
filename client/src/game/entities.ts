@@ -14,7 +14,7 @@ const INTERP_MS = 110;
 export class View {
   kind: 'player' | 'mob'; id: number; rig: Rig; buf: Sample[] = []; x = 0; z = 0; r = 0; speed = 0; hp = 1; H = 1; flags = 0; name = ''; level = 1;
   cs = 0; boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false; bossId = 0; auraT = Math.random();
-  attackT = -1; hit = 0; dyingT = -1; castT = -1; t = Math.random() * 10; removeAt = 0; shadow: InstancedMesh; shield: Mesh | null = null; stars: Mesh | null = null;
+  lodOff = false; attackT = -1; hit = 0; dyingT = -1; castT = -1; t = Math.random() * 10; removeAt = 0; shadow: InstancedMesh; shield: Mesh | null = null; stars: Mesh | null = null;
   plate: HTMLElement; barFill: HTMLElement; nameEl: HTMLElement; stEl: HTMLElement; lastFlags = 0; boss = false; baseY = 0; lastAtkDur = 0.55;
   constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number; bossId?: number; cs?: number }) {
     this.kind = o.kind; this.id = o.id; this.name = o.name; this.level = o.level;
@@ -71,6 +71,7 @@ export class ViewSystem {
   clear() { for (const v of [...this.views.values()]) this.remove(v); }
 
   update(dt: number, now: number, myBoy: Boy | null, project: (x: number, y: number, z: number) => { x: number; y: number; vis: boolean }, camX: number, camZ: number) {
+    const crowd = this.views.size; const olR = crowd > 60 ? 14 : crowd > 35 ? 22 : 38;   // kalabalıkta kontur yarıçapı daralır
     for (const v of [...this.views.values()]) {
       v.t += dt;
       if (!v.self) v.sample(now);
@@ -87,6 +88,10 @@ export class ViewSystem {
         const band = Math.min(5, Math.floor(v.level / 10)); v.auraT += dt;
         if (v.auraT > 1.5 - band * 0.15) { v.auraT = 0; this.fx.ring(v.x, v.z, 1.0 + band * 0.18, AURA[band], 1.1, { alpha: 0.55 }); if (band >= 4) this.fx.burst('holy', v.x, 0.3, v.z, 3); }
       }
+      // yeniden doğma: bayrak kalktı ve can var → ölüm durumunu sıfırla (oyuncu görünümü silinmez, görünmez kalmaz)
+      if (v.dyingT >= 0.2 && !(v.flags & F.DEAD) && v.hp > 0 && v.kind === 'player') { v.dyingT = -1; v.rig.root.rotation.z = 0; v.rig.root.rotation.x = 0; v.rig.baseY = 0; v.removeAt = 0; }
+      // ayrıntı düzeyi: uzakta kontur kapalı, çok uzakta karakter hiç çizilmez (kendi karakter hariç)
+      if (!v.self) { const dd = Math.hypot(v.x - camX, v.z - camZ); v.rig.setOutlines(dd < olR); const off = dd > 95; if (off !== v.lodOff) { v.lodOff = off; v.rig.root.setEnabled(!off); } }
       const dead = (v.flags & F.DEAD) !== 0 || v.dyingT >= 0;
       if (dead && v.dyingT < 0) v.dyingT = 0;
       if (v.dyingT >= 0) { v.dyingT += dt / 0.7; }
@@ -122,7 +127,7 @@ export class ViewSystem {
         v.stEl.innerHTML = statusPips(v.flags);
       }
       // yok edilen
-      if (v.dyingT >= 1.4 || (v.removeAt && now > v.removeAt)) this.remove(v);
+      if ((v.kind !== 'player' && v.dyingT >= 1.4) || (v.removeAt && now > v.removeAt)) this.remove(v);   // oyuncu görünümü ölümde silinmez (yeniden doğunca geri gelir)
     }
   }
 }

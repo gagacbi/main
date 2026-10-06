@@ -149,8 +149,25 @@ export function emitTransformedCopies(scene: Scene, name: string, template: Mesh
   m.isPickable = false; return m;
 }
 
+
+/** Büyük birleşik ağları mekânsal hücrelere böler: kamera kırpması (culling) görüş dışındaki parçaları çizmez (tek dev ağ her zaman çizilirdi). */
+const CHUNK = 64;
+interface Chunk { m: Mesh; ol: Mesh | null; x: number; z: number; maxD: number; olD: number; on: boolean; olOn: boolean }
+function emitChunks(sc: Scene, name: string, tpl: Mesh, xf: { x: number; y?: number; z: number; s?: number; ry?: number; tint?: [number, number, number] }[], mat: ShaderMaterial, outline: boolean, root: TransformNode, reg: Chunk[], maxD: number, olD: number) {
+  const cells = new Map<string, typeof xf>();
+  for (const e of xf) { const k = `${Math.floor(e.x / CHUNK)}_${Math.floor(e.z / CHUNK)}`; let a = cells.get(k); if (!a) cells.set(k, (a = [])); a.push(e); }
+  for (const [k, list] of cells) {
+    const m = emitTransformedCopies(sc, `${name}@${k}`, tpl, list); m.material = mat; const ol = outline ? addOutline(m, sc) : null; root.addChild(m);
+    for (const x of [m, ol]) if (x) { x.freezeWorldMatrix(); x.doNotSyncBoundingInfo = true; }
+    const [cx, cz] = k.split('_').map(Number); reg.push({ m, ol, x: (cx + 0.5) * CHUNK, z: (cz + 0.5) * CHUNK, maxD, olD, on: true, olOn: true });
+  }
+}
+
 export class World3D {
   root = new TransformNode('world');
+  chunks: Chunk[] = [];
+  /** uzaklık tabanlı ayrıntı: uzaktaki çimen/kaya/ağaç parçaları ve konturları kapatılır (kamera hedefine göre) */
+  lod(camX: number, camZ: number) { const h = CHUNK * 0.71; for (const c of this.chunks) { const d = Math.hypot(c.x - camX, c.z - camZ) - h; const on = d < c.maxD; if (on !== c.on) { c.on = on; c.m.setEnabled(on); if (c.ol) { c.ol.setEnabled(on && c.olOn); } } if (c.ol && on) { const olOn = d < c.olD; if (olOn !== c.olOn) { c.olOn = olOn; c.ol.setEnabled(olOn); } } } }
   ground!: Mesh; grounds: Mesh[] = []; sky!: Mesh; skyTop = Color3.FromHexString(SKY.top); skyMid = Color3.FromHexString(SKY.mid); skyHor = Color3.FromHexString(SKY.horizon); atmo: MapId = 'bozkir'; skyMat!: ShaderMaterial; clouds = new TransformNode('clouds');
   mats: ShaderMaterial[] = []; flames: Mesh[] = []; flagPivots: TransformNode[] = []; runes: Mesh[] = []; steleMat!: ShaderMaterial;
   otagGlow = 0; time = 0;
@@ -227,7 +244,7 @@ export class World3D {
     }
     groups.forEach((g, i) => {
       if (!g.length) { tpl[i].dispose(); return; }
-      const m = emitTransformedCopies(sc, 'trees' + i, tpl[i], g); m.material = this.mat; addOutline(m, sc); tpl[i].dispose(); this.root.addChild(m);
+      emitChunks(sc, 'trees' + i, tpl[i], g, this.mat, true, this.root, this.chunks, 330, 140); tpl[i].dispose();
     });
   }
   private makeRocks() {
@@ -238,7 +255,7 @@ export class World3D {
     const xf = obs.map((o) => { const t = 0.88 + r() * 0.24; const g = regionAt(o.x, o.z);
       if (g && g.id !== 'bozkir') { const pal = MAPS[g.map].palette.ground2; const c = [1, 3, 5].map((i) => Math.min(1.5, parseInt(pal.slice(i, i + 2), 16) / 255 * 2.3)); return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [c[0] * t, c[1] * t, c[2] * t] as [number, number, number] }; }
       const far = Math.hypot(o.x, o.z) > 110; return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [far ? t * 1.05 : t, far ? t * 0.88 : t, far ? t * 1.15 : t] as [number, number, number] }; });
-    const m = emitTransformedCopies(sc, 'rocks', tpl, xf); m.material = this.mat; addOutline(m, sc); tpl.dispose(); this.root.addChild(m);
+    emitChunks(sc, 'rocks', tpl, xf, this.mat, true, this.root, this.chunks, 260, 120); tpl.dispose();
   }
   private makeGrass() {
     const sc = this.scene; const r = mulberry32(44); const obs = worldObstacles();
@@ -252,7 +269,7 @@ export class World3D {
       (d < 36 ? xg : d > 115 ? xp : xa).push(e);
     }
     for (const [tpl, xf, nm] of [[tg, xg, 'g0'], [tgold, xa, 'g1'], [tpurple, xp, 'g2']] as const) {
-      const m = emitTransformedCopies(sc, nm, tpl, xf); m.material = this.mat; tpl.dispose(); this.root.addChild(m);
+      emitChunks(sc, nm, tpl, xf, this.mat, false, this.root, this.chunks, 150, 0); tpl.dispose();
     }
     // çiçekler (hub çevresi)
     const specs: PartSpec[] = []; const cols = ['#ff6b8a', '#ffd166', '#ffffff', '#8fb8ff', '#ff9f43'];

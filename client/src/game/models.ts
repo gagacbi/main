@@ -29,6 +29,9 @@ export class Rig {
     if (outline) { const o = addOutline(m, this.scene); this.meshes.push(o); }
     this.pivots[name] = piv; return piv;
   }
+  /** uzaktaki karakterlerde kontur geçişini kapatır (üçgen ve çizim çağrısını yarıya indirir) */
+  private olOn = true;
+  setOutlines(on: boolean) { if (on === this.olOn) return; this.olOn = on; for (const m of this.meshes) if (m.name.endsWith('_ol')) m.setEnabled(on); }
   flash(a: number) { setFlash(this.mat, a, this.flashColor); }
   setScale(s: number) { this.scale = s; this.root.scaling.setAll(s); }
   update(s: AnimState) { this.extra?.(s, this); }

@@ -13,7 +13,7 @@ const hex = (h: string, a = 1) => { const c = Color4.FromHexString(h.length === 
 function make(scene: Scene, s: PartSpec): Mesh {
   let m: Mesh;
   switch (s.k) {
-    case 'sphere': m = MeshBuilder.CreateSphere('p', { diameter: s.d ?? 1, segments: s.seg ?? 10 }, scene); break;
+    case 'sphere': { const dd = s.d ?? 1; /* küçük kürelere az segment: göz/iris/örgü gibi ayrıntılar 400 yerine 64–144 üçgen */ m = MeshBuilder.CreateSphere('p', { diameter: dd, segments: s.seg ?? (dd >= 0.8 ? 10 : dd >= 0.4 ? 8 : dd >= 0.2 ? 6 : 4) }, scene); break; }
     case 'icos': m = MeshBuilder.CreateIcoSphere('p', { radius: (s.d ?? 1) / 2, subdivisions: s.sub ?? 1, flat: s.flat ?? false }, scene); break;
     case 'cyl': m = MeshBuilder.CreateCylinder('p', { height: s.h ?? 1, diameterTop: s.dt ?? s.d ?? 1, diameterBottom: s.db ?? s.d ?? 1, tessellation: s.seg ?? 12 }, scene); break;
     case 'cone': m = MeshBuilder.CreateCylinder('p', { height: s.h ?? 1, diameterTop: s.dt ?? 0, diameterBottom: s.db ?? s.d ?? 1, tessellation: s.seg ?? 12 }, scene); break;
