@@ -153,6 +153,7 @@ const D: Record<string, [string, string]> = {
   // — sistem iletileri —
   'sys.levelup': ['Seviye atladın! Yeni seviye: {lvl}', 'Level up! You are now level {lvl}'], 'sys.spec_ready': ['Uzmanlık seçebilirsin! (K)', 'You can pick a specialization! (K)'],
   'sys.tut_done': ['Ak Sakal\'ın görevi tamamlandı, ödül aldın!', 'Elder\'s task complete, reward received!'],
+  'sys.guard_warn': ['Şehir Muhafızları seni vuruyor! Adın kırmızı: köyden uzaklaş, yaratık keserek (20 öldürmede +1) derecini düzelt.', 'City guards are shooting you! Your name is red: leave town and kill monsters (+1 rank per 20 kills) to recover.'],
   'sys.rank_down': ['Derecen düştü ({rank}). Adın kırmızı, muhafızlar sana saldıracak!', 'Your rank dropped ({rank}). Your name is red; guards will attack you!'],
   'sys.rank_up': ['Derecen yükseldi.', 'Your rank improved.'], 'sys.xp_lost': ['Ölümde {xp} deneyim kaybettin.', 'You lost {xp} XP on death.'],
   'sys.item_lost': ['Bir eşyanı düşürdün!', 'You dropped an item!'], 'sys.bag_full': ['Çanta dolu!', 'Bag is full!'],

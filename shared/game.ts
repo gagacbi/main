@@ -33,6 +33,8 @@ export type MatKey = 'ore' | 'hide' | 'wood';
 export const TICK_HZ = 20;
 export const WORLD_R = 160;
 export const HUB_R = 36;
+/** Şehir Muhafızı menzili (kırmızı adlı oyuncuya ateş eder) */
+export const GUARD_RANGE = 34;
 export const AOI_R = 75;
 export const PLAYER_BASE_SPEED = 7.0;
 export const BAG_SIZE = 30;

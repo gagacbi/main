@@ -1,5 +1,5 @@
 import { dungeonDay } from '../shared/dungeon';
-import {
+import { HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
@@ -59,6 +59,7 @@ interface Rift {
 interface Drop { id: number; owner: number; k: SnapDrop['k']; x: number; z: number; t: number; m?: string; born: number; amount: number; item?: Item }
 
 export class World {
+  guardWarnAt = new Map<number, number>();
   players = new Map<number, Player>();
   mobs = new Map<number, Mob>();
   rifts = new Map<number, Rift>();
@@ -470,6 +471,8 @@ export class World {
     const g = regionAt(p.x, p.z);
     if (isDungeonRegion(g)) return { x: gatePos('erlik').x, z: gatePos('erlik').z + 3.5 };
     if (g && g.id !== 'bozkir') return { x: g.cx + (this.ctx.rng() - 0.5) * 4, z: g.cz + 3 + this.ctx.rng() * 2 };
+    // kırmızı adlı (derece < 0) oyuncu muhafızların menzilinde doğmaz: köyün hemen dışındaki sürgün noktasında başlar (yoksa ölüm döngüsü)
+    if (p.d.rank < 0) { const s = HUB.spawn[p.boy]; const a = Math.atan2(s.z, s.x); return { x: Math.cos(a) * (HUB_R + 8), z: Math.sin(a) * (HUB_R + 8) }; }
     return HUB.spawn[p.boy];
   }
 
@@ -1129,15 +1132,16 @@ export class World {
     if (this.tickCount % TICK_HZ !== 0) return;
     for (const p of this.players.values()) {
       if (p.deadUntil > 0 || p.d.rank >= 0 || zoneAt(p.x, p.z) !== 'safe') continue;
+      if (p.role === 'admin' || p.protectUntil > this.now) continue;   // GM hesabı muhafızlardan etkilenmez; yeniden doğma korumasında vurulmaz (ölüm döngüsünü önler)
       for (const g of HUB.guards) {
-        if (dist(p, g) < 34) {
+        if (dist(p, g) < GUARD_RANGE) {
           this.emit({ k: 'guard', x: g.x, z: g.z, tx: p.x, tz: p.z }, g.x, g.z);
+          if (now - (this.guardWarnAt.get(p.id) ?? 0) > 10000) { this.guardWarnAt.set(p.id, now); this.sys(p, 'sys.guard_warn'); }   // neden vurulduğunu açıkla
           this.damage(null, p, p.stats.maxHp * 0.3);
           break;
         }
       }
     }
-    void now;
   }
 
   // ───────────── ağ ─────────────
