@@ -238,3 +238,7 @@ button { font-family: var(--f-head); cursor: pointer; }
 .gp { font-style: normal; font-size: 11px; opacity: .85; margin-left: 3px; } .gp::after { content: ' ¤'; }
 .look { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #1a1230; background: var(--lc); cursor: pointer; padding: 0; } .look.cur { outline: 3px solid var(--gold); } .look:disabled { opacity: .5; cursor: default; }
 .bad { color: #b0402a; }
+
+.kimizslot { position: absolute; left: calc(50% + 330px); bottom: 14px; width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; pointer-events: auto; cursor: pointer; }
+.kimizslot .ic svg { width: 30px; height: 30px; color: #f2e2b0; } .kimizslot b { position: absolute; right: 6px; bottom: 3px; font-family: var(--f-head); font-size: 14px; color: #fff6df; text-shadow: 0 2px 0 #1a1230; }
+.kimizslot kbd { position: absolute; left: 4px; top: 2px; font-size: 10px; color: #d8c49a; } .kimizslot.empty { opacity: .55; } .kimizslot.cd .ic { opacity: .4; } .kimizslot .cdt { position: absolute; font-family: var(--f-head); font-size: 20px; color: #fff; text-shadow: 0 2px 0 #1a1230; }

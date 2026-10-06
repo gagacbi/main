@@ -43,6 +43,7 @@ export const ICONS: Record<string, string> = {
   dugum: S('<path d="M12 44 Q12 16 32 20 Q52 16 52 44"/><path d="M24 30 L40 50 M40 30 L24 50"/>'),
   nazar: S('<circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="5"/>'),
   kagit: S('<path d="M14 8 L44 8 L50 14 L50 56 L14 56 Z"/><path d="M22 24 L42 24 M22 34 L42 34 M22 44 L34 44"/>'),
+  kimiz: S('<path d="M24 6 L40 6 L38 16 Q50 24 50 38 L50 54 Q50 58 46 58 L18 58 Q14 58 14 54 L14 38 Q14 24 26 16 Z"/><path d="M16 36 Q32 30 48 36"/><path d="M22 10 L42 10"/>'),
   loom: S('<path d="M10 56 L10 8 L54 8 L54 56"/><path d="M18 14 L18 50 M26 14 L26 50 M34 14 L34 50 M42 14 L42 50"/><path d="M10 34 L54 34"/>'),
   close: S('<path d="M14 14 L50 50 M50 14 L14 50"/>'),
   swords: S('<path d="M10 10 L50 50 M54 10 L14 50"/><path d="M6 14 L14 6 M58 14 L50 6 M10 54 L6 58 M54 54 L58 58"/>'),

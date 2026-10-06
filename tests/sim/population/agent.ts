@@ -6,8 +6,8 @@ import { dist2, type Camp } from '../../../shared/world';
 import { MAPS, regionAt, type MapId } from '../../../shared/maps';
 import { DUNGEONS } from '../../../shared/dungeon';
 import { costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, addLineCost, costUnit, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, type CostumeTier } from '../../../shared/costume';
-import { gatePos } from '../../../shared/game';
-import { GOOD_KEYS, goodBounds, goodGet, goodRef, type GoodKey } from '../../../shared/goods';
+import { KIMIZ, gatePos } from '../../../shared/game';
+import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '../../../shared/goods';
 import type { Mob, Player } from '../../../server/world';
 import type { Arch } from './archetypes';
 import type { Engine } from './engine';
@@ -101,7 +101,7 @@ export class Agent {
     this.sellJunk();
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
-    this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
+    this.buyKimiz(); this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
   }
   /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
@@ -280,7 +280,7 @@ export class Agent {
     const keep = (k: GoodKey): number => {
       const cos = this.par.cos; const bookish = this.par.book; const charmish = this.par.charm;
       switch (k) { case 'ore': return 90; case 'hide': return 20; case 'wood': return 20; case 'book': return bookish ? 4 : 0; case 'charm': return charmish ? 3 : 0; case 'frag': return 30;
-        case 'lif': case 'boya': case 'ipek': case 'nakis': return cos ? 999 : 0; case 'boncuk': case 'dugum': case 'nazar': return cos ? 3 : 0; case 'kagit': return cos && (this.par.cosChase ?? 0) > 0.05 ? 6 : 0; }
+        case 'lif': case 'boya': case 'ipek': case 'nakis': return cos ? 999 : 0; case 'boncuk': case 'dugum': case 'nazar': return cos ? 3 : 0; case 'kagit': return cos && (this.par.cosChase ?? 0) > 0.05 ? 6 : 0; case 'kimiz': return 999; }
     };
     const minBatch = (k: GoodKey) => (k === 'ore' || k === 'hide' || k === 'wood' ? 40 : k === 'lif' ? 20 : 1);
     for (const k of GOOD_KEYS) {
@@ -308,6 +308,20 @@ export class Agent {
       if (pick && this.rpc('market.buy', { id: pick.id }).ok) { this.tot.mktBought++; this.ext.cosBought = (this.ext.cosBought ?? 0) + 1; mk.invalidate(); }
     }
     void w;
+  }
+
+  /** kımız stoğu: etkinliğe göre hedef; yalnızca kasası rahatsa alır (zorunlu harcama hissi yaratmasın) */
+  private buyKimiz() {
+    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; const now = (d.kimiz ?? 0);
+    const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const target = heavy ? 10 : d.level >= 30 ? 6 : 3;
+    const n = Math.min(KIMIZ.buyMax, target - now); if (n <= 0) return; const price = kimizPrice(d.level);
+    if (d.gold < price * n * 4) return; const r = this.rpc('kimiz.buy', { n }); if (r.ok) { this.ext.kimizBought = (this.ext.kimizBought ?? 0) + n; this.ext.kimizSpend = (this.ext.kimizSpend ?? 0) + r.data.cost; }
+  }
+  /** savaşta can düşünce kımız içer (bilinçli oyuncu daha erken); bekleme süresi sunucuda doğrulanır */
+  private useKimiz(): boolean {
+    const p = this.p; const w = this.w; if ((this.d.kimiz ?? 0) < 1 || w.now < p.kimizAt) return false;
+    const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const thr = (heavy ? 0.5 : 0.38) * (0.7 + 0.3 * this.par.skill);
+    if (p.hp >= p.stats.maxHp * thr) return false; const r = this.rpc('kimiz.use'); if (r.ok) { this.ext.kimizUsed = (this.ext.kimizUsed ?? 0) + 1; return true; } return false;
   }
   /** günlük kostüm rutini: tezgâh, üretim, giyme, efsunlama, uzatma. Harcama oyuncunun kasasıyla sınırlıdır. */
   costumeRoutine() {
@@ -362,7 +376,8 @@ export class Agent {
     const p = this.p; const w = this.w; const risky = zoneAt(p.x, p.z) === 'risky';
     if (p.deadUntil > 0) { try { w.respawn(p); } catch { /* erken */ } this.resting = true; return; }
     if (this.resting) { if (risky) { const rg = regionAt(p.x, p.z); this.go(rg ? rg.cx : 0, rg ? rg.cz : 0); w.onAttack(p, { on: false }); this.actTicks.rest++; return; } this.stop(); w.onAttack(p, { on: false }); this.actTicks.rest++; if (p.hp >= p.stats.maxHp * 0.95) this.resting = false; return; }
-    if (p.hp < p.stats.maxHp * this.par.retreat) { this.resting = true; return; }
+    this.useKimiz();
+    if (p.hp < p.stats.maxHp * this.par.retreat && !(p.hotUntil > w.now)) { this.resting = true; return; }
     // saldırıya karşılık
     if (p.lastDamager && w.now - p.lastCombat < 4000 && this.par.fightBack && w.players.get(p.lastDamager) && p.lastDamager !== this.fightBackId) { this.fightBackId = p.lastDamager; this.fightBackUntil = w.now + 12000; }
     const fb = this.fightBackUntil > w.now ? w.players.get(this.fightBackId) : undefined;

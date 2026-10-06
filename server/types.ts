@@ -18,6 +18,8 @@ export interface PlayerData {
   pvp?: boolean;
   /** kostüm sistemi (eski kayıtlarda yok) */
   cos?: CostumeState;
+  /** kımız (şifa içeceği) adedi */
+  kimiz?: number;
   /** günlük zindan hakkı ve toplam bitirme sayısı */
   dun?: { day: number; n: Record<string, number>; clears: Record<string, number> };
 }

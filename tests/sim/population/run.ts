@@ -5,8 +5,9 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Engine } from './engine';
-import { PVP_FLAG } from '../../../shared/game';
+import { KIMIZ, PVP_FLAG } from '../../../shared/game';
 if (process.env.POP_BONUS) PVP_FLAG.bonus = Number(process.env.POP_BONUS);   // A/B: bayrak bonusu
+if (process.env.POP_KIMIZ_PRICE) KIMIZ.priceUnits = Number(process.env.POP_KIMIZ_PRICE);   // kımız fiyatı (seviye birimi katı)
 
 const N = Number(process.env.POP_N ?? 150), DAYS = Number(process.env.POP_DAYS ?? 14), W = Number(process.env.POP_W ?? 10), SEED = Number(process.env.POP_SEED ?? 7);
 const OUT = process.env.POP_OUT ?? 'docs/balans/populasyon'; mkdirSync(OUT, { recursive: true });

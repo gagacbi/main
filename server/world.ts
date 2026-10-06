@@ -6,7 +6,8 @@ import {
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { GATE_LINKS, NPC_SELL_MULT, PVP_FLAG, gatePos } from '../shared/game';
+import { GATE_LINKS, KIMIZ, NPC_SELL_MULT, PVP_FLAG, gatePos } from '../shared/game';
+import { kimizPrice } from '../shared/goods';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
 import { CLUE_GOLD, DREAM_MIN_HOURS, ELDER_LEVELS, SHARD_AT, STONE_LAST_NEEDS, STONE_REWARD_GOLD, THREAD_SIZE, titlesOf, truthUnlocked } from '../shared/lore';
@@ -26,7 +27,7 @@ export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
-  cosWarnAt = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
+  cosWarnAt = 0; kimizAt = 0; hotUntil = 0; hotPerSec = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -419,7 +420,7 @@ export class World {
   }
 
   killPlayer(p: Player, src: Player | Mob | null) {
-    p.hp = 0; p.deadUntil = this.now + RESPAWN_SEC * 1000; p.atk = false; p.dirx = p.dirz = 0; p.status = {};
+    p.hotUntil = 0; p.hp = 0; p.deadUntil = this.now + RESPAWN_SEC * 1000; p.atk = false; p.dirx = p.dirz = 0; p.status = {};
     p.d.counters.deaths++;
     const by = src?.kind === 'mob' ? (src.bossId ? 'boss.' + src.bossId : src.type) : src?.kind === 'player' ? 'pl' : 'dot';
     const kd = src?.kind === 'mob' ? (src.bossId ? FIELD_BOSS.list[src.bossId - 1][1] : MOBS[src.type].kind) : src?.kind === 'player' ? src.stats.weaponKind : undefined;
@@ -641,6 +642,18 @@ export class World {
       case 'respawn': this.respawn(p); return null;
       case 'dungeon.enter': case 'dungeon.leave': return dungeonRpc(this, p, op, a as Record<string, unknown>);
       case 'cos': return costumeRpc(this, p, a as Record<string, unknown>);
+      case 'kimiz.buy': {
+        this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci + 4); const n = Math.floor(Number(a.n)); if (!(n >= 1) || n > KIMIZ.buyMax) throw new GameError('bad_item');
+        if ((d.kimiz ?? 0) + n > KIMIZ.maxStack) throw new GameError('kimiz_full', { n: KIMIZ.maxStack }); const cost = kimizPrice(d.level) * n; if (d.gold < cost) throw new GameError('no_gold');
+        d.gold -= cost; d.kimiz = (d.kimiz ?? 0) + n; this.ledger(p, 'kimiz.buy', { n, gold: cost }); p.meDirty = true; return { n, cost };
+      }
+      case 'kimiz.use': {
+        this.alive(p); if ((d.kimiz ?? 0) < 1) throw new GameError('kimiz_none'); if (this.now < p.kimizAt) throw new GameError('kimiz_cd', { s: Math.ceil((p.kimizAt - this.now) / 1000) });
+        if (p.hp >= p.stats.maxHp) throw new GameError('kimiz_full_hp');
+        const pvp = this.now - p.lastPvp < 10000; const mult = pvp ? KIMIZ.pvpMult : 1;
+        d.kimiz!--; p.kimizAt = this.now + KIMIZ.cooldownSec * 1000; p.hotUntil = this.now + KIMIZ.healSec * 1000; p.hotPerSec = (p.stats.maxHp * KIMIZ.healPct * mult) / KIMIZ.healSec;
+        this.ledger(p, 'kimiz.use', { pvp }); this.emit({ k: 'fx', fx: 'holy', x: p.x, z: p.z, r: 2, o: p.id } as never, p.x, p.z); p.meDirty = true; return { hot: Math.round(p.hotPerSec * KIMIZ.healSec) };
+      }
       case 'pvp': {
         this.alive(p); const on = !!a.on; if (on === !!d.pvp) return null;
         const g = regionAt(p.x, p.z);
@@ -874,6 +887,7 @@ export class World {
       // otomatik saldırı
       const moving = p.dirx !== 0 || p.dirz !== 0;
       if (p.atk && !stunned && now >= p.nextAtk && !(moving && p.stats.range > RANGED_MIN_RANGE)) this.autoAttack(p, now);
+      if (p.hotUntil > now && p.deadUntil === 0 && p.hp < p.stats.maxHp) { p.regenAcc += p.hotPerSec * dt; if (p.regenAcc >= 1) { const h = Math.floor(p.regenAcc); p.regenAcc -= h; p.hp = Math.min(p.stats.maxHp, p.hp + h); } }
       // yenilenme
       const ooc = now - p.lastCombat > 5000;
       if (ooc && p.hp < p.stats.maxHp) {
@@ -1122,7 +1136,7 @@ export class World {
     return {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
-      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
+      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },

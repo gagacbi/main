@@ -8,10 +8,10 @@ import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
 import { MAPS, regionAt, type MapId } from '@shared/maps';
 import { DUNGEONS } from '@shared/dungeon';
-import { GOOD_KEYS, goodBounds, goodGet, goodRef, type GoodKey } from '@shared/goods';
+import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '@shared/goods';
 import { LOOM_POS } from '@shared/costume';
 import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LUCK_KEYS, addLineCost, baseLine, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, rerollLineCost, type Costume, type CostumeTier } from '@shared/costume';
-import { GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
+import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 
@@ -145,7 +145,7 @@ export class Panels {
     const [b, m] = await Promise.all([this.g.net.rpc('market.browse', { slot: this.mkSlot || undefined, sort: this.mkSort, ...(this.mkMine2 && this.mkSlot !== 'good' && this.mkSlot !== 'costume' ? { minIlvl: Math.max(1, this.me.level - 10), maxIlvl: this.me.level + 2 } : {}) }), this.g.net.rpc('market.mine')]);
     if (b.ok) this.mkData = b.data as typeof this.mkData; if (m.ok) this.mkMine = m.data as typeof this.mkMine;
   }
-  goodName(k: string) { return t(['lif', 'boya', 'ipek', 'nakis'].includes(k) ? 'cos.mat.' + k : ['boncuk', 'dugum', 'nazar', 'kagit'].includes(k) ? 'cos.luck.' + k : 'mat.' + k); }
+  goodName(k: string) { if (k === 'kimiz') return t('kimiz.name'); return t(['lif', 'boya', 'ipek', 'nakis'].includes(k) ? 'cos.mat.' + k : ['boncuk', 'dugum', 'nazar', 'kagit'].includes(k) ? 'cos.luck.' + k : 'mat.' + k); }
   market() {
     const m = this.me; const inTown = inHubTown(this.g.pos.x, this.g.pos.z); const gold = `<span class="chip">${icon('akce')}${num(m.gold)}</span>`;
     const tabs = `<div class="tabs2"><div class="tab2 ${this.mkTab === 'browse' ? 'on' : ''}" data-act="mktab" data-v="browse">${t('mk.browse')} <small>${this.mkData.total}</small></div><div class="tab2 ${this.mkTab === 'mine' ? 'on' : ''}" data-act="mktab" data-v="mine">${t('mk.mine')} <small>${this.mkMine.listings.length}/${this.mkMine.max}</small>${this.mkMine.mail.length ? ' <span class="badge">' + this.mkMine.mail.length + '</span>' : ''}</div></div>`;
@@ -244,7 +244,8 @@ export class Panels {
         return `<div class="recipe card"><div class="cell">${icon(r.ic)}</div><div><b>${nm}</b><div class="row" style="flex-wrap:wrap;margin-top:4px"><span class="chip ${m.gold >= r.gold ? 'need-ok' : 'need-no'}">${icon('akce')}${num(r.gold)}</span>${Object.entries(r.need).map(([k, v]) => `<span class="chip ${m.bag[k as MatKey] >= v ? 'need-ok' : 'need-no'}">${icon(k)}${v}</span>`).join('')}${r.k === 'charm' ? `<span class="chip">${t('bld.demir')} 2</span>` : ''}</div></div><button class="btn small green" data-act="craft" data-k="${r.k}" ${ok ? '' : 'disabled'}>${t('ui.craft')}</button></div>`;
       }).join('') + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
     }
-    return this.shell(t('npc.demirci'), 'weapon', `<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div></div>
+    const kp = kimizPrice(m.level); const kimizCard = `<div class="card" style="margin-bottom:8px"><div class="row">${icon('kimiz')}<b style="margin-left:6px">${t('kimiz.name')}</b><span class="muted grow"> ${t('kimiz.desc', { p: KIMIZ.healPct * 100, s: KIMIZ.healSec, c: KIMIZ.cooldownSec })}</span><span class="chip">${t('kimiz.stock')}: ${m.kimiz ?? 0}/${KIMIZ.maxStack}</span></div><div class="row" style="margin-top:6px;gap:6px">${[1, 5, 10].map((n) => `<button class="btn small" data-act="kimizbuy" data-n="${n}" ${m.gold < kp * n || (m.kimiz ?? 0) + n > KIMIZ.maxStack ? 'disabled' : ''}>+${n} <i class="gp">${num(kp * n)}</i></button>`).join('')}<span class="muted">${t('kimiz.price', { p: num(kp) })}</span></div></div>`;
+    return this.shell(t('npc.demirci'), 'weapon', `${kimizCard}<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div></div>
       <div class="smith"><div>${this.smithTab === 'up' ? `<div class="sub">${t('ui.bag')}</div><div class="itemlist">${list}</div>${this.matChips()}` : this.matChips()}</div><div>${right}</div></div>`);
   }
 
@@ -437,6 +438,7 @@ export class Panels {
       case 'mkclaim': { await this.act('market.claim'); await this.loadMarket(); break; }
       case 'mkpick': { this.mkSel = d.id!; const it = this.me.items.find((i) => i.id === d.id); this.mkPrice = it ? String(Math.round(marketRef(it))) : ''; break; }
       case 'mkcos': { this.mkSel = 'cos:' + d.id; const c = this.me.cos.bag.find((q) => q.id === d.id); this.mkPrice = c ? String(costumeRef(c, this.g.net.now())) : ''; break; }
+      case 'kimizbuy': { const r = await this.g.net.rpc('kimiz.buy', { n: Number(d.n) }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else { this.g.audio.sfx('coin'); } this.render(true); break; }
       case 'mkgood': { this.mkSel = 'good:' + d.k; const have = goodGet(this.me, d.k as GoodKey); this.mkQty = String(have); this.mkPrice = String(goodRef(d.k as GoodKey, have)); break; }
       case 'mklist': { const v = (this.el.querySelector('#mkprice') as HTMLInputElement | null)?.value ?? this.mkPrice; const price = Number(String(v).replace(/\D/g, '')); const q = Number(String((this.el.querySelector('#mkqty') as HTMLInputElement | null)?.value ?? this.mkQty).replace(/\D/g, '')); const r = this.mkSel.startsWith('cos:') ? await this.act('market.list', { costume: this.mkSel.slice(4), price }) : this.mkSel.startsWith('good:') ? await this.act('market.list', { good: this.mkSel.slice(5), qty: q, price }) : await this.act('market.list', { id: this.mkSel, price }); if (r.ok) { this.mkSel = ''; this.mkPrice = ''; this.g.audio.sfx('upok'); } await this.loadMarket(); break; }
       case 'gm': await this.runGm(d.line!); return;

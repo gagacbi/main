@@ -8,7 +8,7 @@ export interface JoinOptions {
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
-  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos'
+  | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos' | 'kimiz.buy' | 'kimiz.use'
   | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
@@ -32,7 +32,7 @@ export interface DunInfo {
 export interface Me {
   name: string; boy: Boy; level: number; xp: number; xpNext: number; kut: number; gold: number; spec: Spec;
   hp: number; stats: Stats; skillRanks: number[]; skillPts: number; bag: Bag; items: Item[]; equip: Partial<Record<Slot, Item>>;
-  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; rank: number; points: number; oymakId: number; oymakName: string;
+  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; kimiz: number; kimizAt: number; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
   role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
