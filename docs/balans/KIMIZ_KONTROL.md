@@ -35,3 +35,31 @@
 | Pazar vergisi | ~0,0 | ~0,0 |
 
 **Pazar:** günde ≈ 20–32 satış, hacim 0,1–0,3M/gün, vergi ≈ 0,01M/gün → vergiyi artırmak sink olarak **anlamsız** (5 katı bile ~0,05M). **Zindan ücreti:** ≈ 0,1M/gün (sink'in %0,4'ü); anlamlı olması için ücretin ~50 kat artması gerekir (giriş başına ~2,5 maliyet birimi) — oyuncuyu zindandan caydırır, kullanıcı kuralıyla çelişir.
+
+# Kaynak tarafı deneyi (NPC satış çarpanı ve yaratık akçesi, 3 tohum 7/8/9, Kımız 0,6)
+
+Kontrol: NPC 0,70 · yaratık %100. A: NPC 0,50. B: yaratık %85. Üretim: `tests/sim/population/compare.ts`.
+
+| Metrik | kontrol (n=3) | A_npc0.5 (n=3) | Fark A_npc0.5 | B_mob85 (n=3) | Fark B_mob85 |
+|---|---|---|---|---|---|
+| Sink/kaynak | %57.5 | %57.8 | +0.3 puan | %58.2 | +0.6 puan |
+| Kaynak/gün | 54.7M | 51.7M | -3.0M | 49.7M | -5.0M |
+| Sink/gün | 31.5M | 29.9M | -1.6M | 28.9M | -2.5M |
+| Net akçe artışı/gün | 23.2M | 21.8M | -1.4M | 20.8M | -2.4M |
+| Toplam akçe G14 | 298.8M | 280.4M | -18.4M | 266.4M | -32.4M |
+| Medyan bakiye G7 → G14 | 0.7M → 1.3M | 0.6M → 1.2M | — | 0.6M → 1.1M | — |
+| Üst %10 bakiye | 5.6M | 5.1M | -0.5M | 4.9M | -0.7M |
+| NPC satışından kaynak/gün | 11.6M | 8.4M | -3.2M | 11.7M | 0.1M |
+| Yaratık akçesinden kaynak/gün | 34.6M | 34.9M | 0.4M | 29.6M | -5.0M |
+| Sefer kaynağı/gün | 8.2M | 8.1M | -0.1M | 8.1M | -0.1M |
+| Boss+çatlak kaynağı/gün | 0.0M | 0.0M | 0.0M | 0.0M | 0.0M |
+| Kımız sink/gün | 3.9M | 3.7M | -0.2M | 3.5M | -0.4M |
+| Kostüm sink/gün | 19.6M | 18.2M | -1.3M | 17.9M | -1.7M |
+| Şans eşyası sink/gün | 0.7M | 0.7M | 0.0M | 0.7M | -0.0M |
+| Artı basma sink/gün | 5.9M | 5.9M | -0.1M | 5.5M | -0.5M |
+| Zindan kazanma | %89 | %89 | 0 puan | %91 | 3 puan |
+| Bayraklı çiftçi ölüm/sa | 0.65 | 0.48 | -0.17 | 0.52 | -0.13 |
+
+Tohum başına sink/kaynak: kontrol: 58.5 / 58.0 / 56.1 · A_npc0.5: 60.2 / 57.8 / 55.4 · B_mob85: 59.6 / 58.8 / 56.0
+
+**Okuma:** kaynak kısıldığında sink da neredeyse orantılı düştü (kaynak −3,0M → sink −1,6M; −5,0M → −2,5M), bu yüzden sink/kaynak oranı kıpırdamadı (%57,5 → %57,8 / %58,2). Simülasyon ajanları harcamayı gelire/bakiyeye orantılı yapıyor (bütçe kuralları); kısılan gelir yalnızca ekonomiyi küçülttü: net birikim −1,4M / −2,4M, G14 toplam akçe −%6 / −%11, medyan G14 1,3M → 1,2M / 1,1M. İki kalemin tek başına oran elastikiyeti ≈ 0.
