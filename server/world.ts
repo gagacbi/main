@@ -545,18 +545,20 @@ export class World {
     // zincir: pencere içinde "devamı" olan skill → +%hasar ve bekleme iadesi; halka sayısı artar
     const chained = this.now < p.comboUntil && comboFollows(p.comboSlot, slot);
     const links = chained ? Math.min(COMBO.maxLinks, p.comboLinks + 1) : 0;
-    p.cds[slot] = this.now + sk.cd * 1000 * (chained ? 1 - COMBO.cdRefund : 1);
+    p.cds[slot] = this.now + sk.cd * 1000;   // bekleme iadesi (zincir) yalnız yaratıklara vurunca: PvP'de iade yok (dengeyi bozmasın)
     p.comboSlot = sk.id === 'hiddet' ? -1 : slot; p.comboLinks = sk.id === 'hiddet' ? 0 : links; p.comboUntil = this.now + COMBO.windowSec * 1000;
     if (chained) this.emit({ k: 'fx', fx: 'combo', x: p.x, z: p.z, r: 2 + links, o: p.id }, p.x, p.z);
     p.lastAggro = this.now;
     const rank = skillRankMult(p.d.skillRanks[slot]);
-    const sp = p.stats.spell * rank * (1 + COMBO.bonusPerLink * links);
+    const sp = p.stats.spell * rank;
+    const cmMob = 1 + COMBO.bonusPerLink * links, cmPl = 1 + COMBO.bonusPerLink * links * COMBO.pvpMult;   // PvP'de zincir bonusu zayıf: patlama hasarı dengeyi bozmasın
     const r = sk.r * p.stats.aoe;
-    let hit = 0;
+    let hit = 0; let hitPlayer = false;
     this.emit({ k: 'fx', fx: sk.fx, x: p.x, z: p.z, r: Math.max(r, 2), o: p.id }, p.x, p.z);
     if (sk.kind === 'shield') {
       const absorb = Math.round(p.stats.maxHp * SHIELD_ABSORB * p.stats.shieldMult * rank);
       this.applyStatus(p, 'shield', sk.status!.shield!, { absorb });
+      if (chained) p.cds[slot] = this.now + sk.cd * 1000 * (1 - COMBO.cdRefund);
       p.meDirty = true; return;
     }
     const taunt = SPEC_MODS[p.d.spec].taunt;
@@ -568,7 +570,7 @@ export class World {
         m.x += (p.x - m.x) * k; m.z += (p.z - m.z) * k;
         if (taunt || sk.kind === 'pull') { m.target = p.id; m.tauntUntil = this.now + 5000; m.tauntBy = p.id; }
       } else if (taunt && sk.id === 'sarsinti') { m.target = p.id; m.tauntUntil = this.now + 4000; m.tauntBy = p.id; }
-      if (sk.mult > 0) { this.playerHit(p, m, sk.mult * sp); hit++; }
+      if (sk.mult > 0) { this.playerHit(p, m, sk.mult * sp * cmMob); hit++; }
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {
         if (m.dead) break;
         if (s === 'poison') this.applyStatus(m, s, dur, { dps: p.stats.atk * POISON_DOT * rank * p.stats.spell, by: p.id });
@@ -577,14 +579,15 @@ export class World {
     }
     for (const q of this.players.values()) {
       if (!this.canHitPlayer(p, q, false) || !this.pvpEngaged(p, q) || Math.sqrt(dist2(p, q)) > r + 0.6) continue;
-      const dealtQ = sk.mult > 0 ? this.playerHit(p, q, sk.mult * sp, 1, { skill: true, dk: sk.dk }) : 1;
+      hitPlayer = true;
+      const dealtQ = sk.mult > 0 ? this.playerHit(p, q, sk.mult * sp * cmPl, 1, { skill: true, dk: sk.dk }) : 1;
       if (dealtQ === 0) continue; // bloklanan beceri durum etkisi de uygulamaz
       for (const [s, dur] of Object.entries(sk.status ?? {}) as [StatusKey, number][]) {
         if (s === 'poison') this.applyStatus(q, s, dur, { dps: p.stats.atk * POISON_DOT * rank * p.stats.spell * 0.35, by: p.id });
         else this.applyStatus(q, s, dur);
       }
     }
-    void hit;
+    if (chained && hit > 0 && !hitPlayer) p.cds[slot] = this.now + sk.cd * 1000 * (1 - COMBO.cdRefund);
     p.meDirty = true;
   }
 

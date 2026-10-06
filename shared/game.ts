@@ -116,7 +116,7 @@ export const SKILLS: SkillDef[] = [
 /** Skill zinciri (combo): bir skill'den sonra pencere içinde "devamı" olan başka bir skill basılırsa zincir büyür: her halka hasara +%, bekleme süresine iade.
  *  Ritüel: Çağrı Narası → Sarsıntı → Savurma → Zehir → Tengri Hiddeti (en fazla 4 halka). Tengri Hiddeti zinciri bitirir. */
 export const COMBO = {
-  windowSec: 3.5, bonusPerLink: 0.15, maxLinks: 4, cdRefund: 0.3,
+  windowSec: 3.5, bonusPerLink: 0.15, maxLinks: 4, cdRefund: 0.3, /** PvP'de bonus çarpanı (yaratıklara tam) */ pvpMult: 0.35,
   chains: { savurma: ['sarsinti', 'zehir'], sarsinti: ['savurma', 'hiddet'], nara: ['sarsinti', 'savurma', 'zehir'], kalkan: ['savurma', 'nara', 'hiddet'], zehir: ['savurma', 'hiddet'], hiddet: [] } as Record<string, string[]>,
 };
 export const comboFollows = (prevSlot: number, slot: number) => prevSlot >= 0 && !!COMBO.chains[SKILLS[prevSlot]?.id]?.includes(SKILLS[slot]?.id);
