@@ -357,7 +357,7 @@ export const NPC_SELL_MULT = 0.7;
  * Kımız (şifa içeceği): KONTROLLÜ savaş sink'i. Stat vermez, kalıcı güç eklemez; yalnızca zamana yayılmış can yeniler.
  * Fiyat (seviye birimi × priceUnits) simülasyonla kalibre edilir; PvP'de etkisi yarım, ortak bekleme süresi vardır (iksir yığmayı engeller).
  */
-export const KIMIZ = { priceUnits: 0.25, healPct: 0.3, healSec: 4, cooldownSec: 25, pvpMult: 0.5, maxStack: 60, buyMax: 20 };
+export const KIMIZ = { priceUnits: 0.6, healPct: 0.3, healSec: 4, cooldownSec: 25, pvpMult: 0.5, maxStack: 60, buyMax: 20 };
 export const MILESTONE_LEVELS = [10, 20, 30, 40, 50];
 /** Kilometre taşı armağanı (Kut Armağanı): seviye 10·20·30·40·50 */
 export const milestoneGift = (level: number) => ({ gold: 400 * level, books: Math.round(level / 10), charms: Math.round(level / 10), itemTier: (level >= 40 ? 3 : 2) as Tier, frags: level / 10 * 5 });

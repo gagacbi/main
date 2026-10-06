@@ -27,4 +27,12 @@ for (const dir of process.argv.slice(2)) {
     'zindan kazanma': dl.length ? `%${Math.round((dw / dl.length) * 100)} (${dl.length})` : '—', 'PvP öldürme': D.pvpLog.length, 'bayraklı çiftçi ölüm/sa': f(deathsPerH(flagged), 2), 'ölüm/sa (hepsi)': f(deathsPerH(A), 2),
   });
 }
-const keys = Object.keys(rows[0]); console.log(`| ${keys.join(' | ')} |\n|${keys.map(() => '---').join('|')}|\n${rows.map((r) => `| ${keys.map((k) => r[k]).join(' | ')} |`).join('\n')}`);
+// sink kalem dökümü ve pazar hacmi (son 7 gün ortalaması)
+const cats = new Set<string>(); const det: Record<string, Record<string, number>> = {}; const mkt: Record<string, string> = {};
+for (const dir of process.argv.slice(2)) { const D = JSON.parse(readFileSync(`${dir}/ham.json`, 'utf8')); const last = D.econ.slice(-7); const o: Record<string, number> = {};
+  for (const e of last) for (const [k, v] of Object.entries(e.sinks)) { o[k] = (o[k] ?? 0) + (v as number) / last.length; cats.add(k); } det[dir.split('/').pop()!] = o;
+  const sales = sum(last.map((e: any) => e.mkt.sales)) / last.length, vol = sum(last.map((e: any) => e.mkt.volume)) / last.length, tax = sum(last.map((e: any) => e.mkt.tax)) / last.length, fees = sum(last.map((e: any) => e.mkt.fees)) / last.length;
+  mkt[dir.split('/').pop()!] = `satış ${Math.round(sales)}/gün · hacim ${M(vol)} · vergi ${M(tax)} · ilan ücreti ${M(fees)}`; }
+const names = Object.keys(det); const order = [...cats].sort((a, b) => Math.max(...names.map((n) => det[n][b] ?? 0)) - Math.max(...names.map((n) => det[n][a] ?? 0)));
+const keys = Object.keys(rows[0]);
+const sinkTable = `| sink kalemi (M/gün) | ${names.join(' | ')} |\n|---|${names.map(() => '---').join('|')}|\n${order.map((c) => `| ${c} | ${names.map((n) => M(det[n][c] ?? 0)).join(' | ')} |`).join('\n')}\n\n${names.map((n) => `* ${n}: ${mkt[n]}`).join('\n')}`; console.log(`${sinkTable}\n\n| ${keys.join(' | ')} |\n|${keys.map(() => '---').join('|')}|\n${rows.map((r) => `| ${keys.map((k) => r[k]).join(' | ')} |`).join('\n')}`);
