@@ -73,13 +73,18 @@ export function genHubObstacles(): Obstacle[] {
     out.push({ x, z, r: 0.9, kind: 'tree', s: 0.9 + r() * 0.6, v: Math.floor(r() * 3) }); inTown++;
   }
   // Açık alan: ağaç ve kaya (yol koridoru ve sur kuşağı boş)
-  tries = 0;
-  while (out.filter((o) => o.kind === 'tree').length < 44 + 900 && tries++ < 20000) {
-    const a = r() * Math.PI * 2; const d = HUB_R + 6 + Math.sqrt(r()) * (WORLD_R - HUB_R - 20);
-    const x = Math.cos(a) * d; const z = Math.sin(a) * d;
+  // koru merkezleri: ağaçların %70'i kümelenir (doğal görünüm, boş çayırlar kamplar için), %30'u serpilir
+  const groves: { x: number; z: number; rad: number }[] = [];
+  for (let g = 0, t = 0; g < 70 && t < 2000; t++) { const a = r() * Math.PI * 2; const d = HUB_R + 24 + Math.sqrt(r()) * (WORLD_R - HUB_R - 60); const x = Math.cos(a) * d, z = Math.sin(a) * d; if (roadDist(x, z) < ROAD_HALF + 14) continue; groves.push({ x, z, rad: 18 + r() * 26 }); g++; }
+  tries = 0; let nt = 0;
+  while (nt < 1150 && tries++ < 40000) {
+    let x: number, z: number;
+    if (r() < 0.7) { const g = groves[Math.floor(r() * groves.length)]; const a = r() * Math.PI * 2; const d = Math.sqrt(r()) * g.rad; x = g.x + Math.cos(a) * d; z = g.z + Math.sin(a) * d; if (Math.hypot(x, z) > WORLD_R - 8) continue; }
+    else { const a = r() * Math.PI * 2; const d = HUB_R + 6 + Math.sqrt(r()) * (WORLD_R - HUB_R - 20); x = Math.cos(a) * d; z = Math.sin(a) * d; }
+    if (Math.hypot(x, z) < HUB_R + 6) continue;
     if (roadDist(x, z) < ROAD_HALF + 3) continue;
     if (out.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 2.6) ** 2)) continue;
-    out.push({ x, z, r: 0.9, kind: 'tree', s: 0.8 + r() * 0.9, v: Math.floor(r() * 3) });
+    out.push({ x, z, r: 0.9, kind: 'tree', s: 0.8 + r() * 0.9, v: Math.floor(r() * 3) }); nt++;
   }
   tries = 0; let rocks = 0;
   while (rocks < 340 && tries++ < 12000) {

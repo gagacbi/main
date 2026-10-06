@@ -1,11 +1,11 @@
 import {
   Color3, DynamicTexture, Effect, Engine, Mesh, MeshBuilder, ShaderMaterial, StandardMaterial, TransformNode, VertexBuffer, VertexData, type Scene,
 } from '@babylonjs/core';
-import { BOYS, BOY_COLORS, HUB, HUB_R, WORLD_R, type Boy } from '@shared/game';
+import { BOYS, BOY_COLORS, HUB, HUB_GATE_HALF, HUB_PLAZA_R, HUB_R, HUB_WALL_R, WORLD_R, type Boy } from '@shared/game';
 import { MAPS, REGIONS, regionAt, type MapId } from '@shared/maps';
 import { LOOM_POS } from '@shared/costume';
 import { mulberry32 } from '@shared/rng';
-import { genStones, worldObstacles } from '@shared/world';
+import { ROAD_HALF, ROAD_LEN, genStones, roadDist, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
 import { FOG_COLOR, SKY, addOutline, toonMaterial } from './toon';
@@ -15,6 +15,7 @@ Effect.ShadersStore['groundVertexShader'] = `
 precision highp float;
 attribute vec3 position; uniform mat4 world; uniform mat4 worldViewProjection; varying vec3 vP;
 void main(){ vec4 wp = world * vec4(position, 1.0); vP = wp.xyz; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+const GF = (n: number) => n.toFixed(1);
 Effect.ShadersStore['groundFragmentShader'] = `
 precision highp float;
 varying vec3 vP; uniform vec3 cameraPosition; uniform vec3 uFogColor; uniform vec2 uFog; uniform float uTime; uniform float uOtag;
@@ -22,6 +23,8 @@ float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); 
 float vnoise(vec2 p){ vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }
 float fbm(vec2 p){ return vnoise(p) * 0.55 + vnoise(p * 2.1) * 0.3 + vnoise(p * 4.3) * 0.15; }
+const float WR = ${GF(WORLD_R)}; const float HR = ${GF(HUB_R)}; const float PR = ${GF(HUB_PLAZA_R)}; const float WALL = ${GF(HUB_WALL_R)}; const float RH = ${GF(ROAD_HALF)}; const float RL = ${GF(ROAD_LEN)};
+const vec2 POND = vec2(${GF(HUB.pond.x)}, ${GF(HUB.pond.z)}); const float PONDR = ${GF(HUB.pond.r)};
 void main(){
   vec2 p = vP.xz; float r = length(p);
   float n1 = fbm(p * 0.05); float n2 = fbm(p * 0.21 + 7.0); float n3 = fbm(p * 0.9);
@@ -30,37 +33,58 @@ void main(){
   vec3 steppe = mix(gold1, gold2, step(0.5, band));
   steppe = mix(steppe, green, smoothstep(0.56, 0.60, n2) * 0.55);
   steppe *= 0.94 + 0.1 * step(0.6, n3);
-  float far = smoothstep(105.0, 150.0, r);
+  float far = smoothstep(WR * 0.66, WR * 0.94, r);
   steppe = mix(steppe, vec3(0.52, 0.38, 0.60) * (0.9 + 0.25 * n2), far * 0.78);
+  // ana yollar (köy kapılarından dışarı): aşınmış toprak, kenarlarında ot şeridi
+  float perp = min(abs(p.x), abs(p.y));
+  float trail = (1.0 - smoothstep(RH - 1.6, RH + 0.4, perp + (n3 - 0.5) * 2.2)) * smoothstep(HR - 10.0, HR - 2.0, r) * (1.0 - smoothstep(RL - 60.0, RL, r));
+  vec3 dirt = vec3(0.80, 0.62, 0.40) * (0.92 + 0.14 * n3);
+  float rut = step(0.5, fract(perp * 0.55)) * 0.06; dirt *= 1.0 - rut;
+  vec3 col = mix(steppe, dirt, trail * 0.92);
+  // köy çimi (şeritli) ve yumuşak sınır
   vec3 hubA = vec3(0.40, 0.76, 0.42); vec3 hubB = vec3(0.33, 0.66, 0.38);
   float stripe = step(0.5, fract((p.x + p.y) * 0.1 + n2 * 0.4));
   vec3 hubc = mix(hubA, hubB, stripe);
-  float hubMask = 1.0 - smoothstep(31.0, 40.0, r + (n1 - 0.5) * 9.0);
-  vec3 col = mix(steppe, hubc, hubMask);
-  // halka yol (aşınmış toprak)
-  float road = smoothstep(2.4, 1.2, abs(r - 37.0)) * (1.0 - far);
-  col = mix(col, vec3(0.80, 0.62, 0.40) * (0.95 + 0.1 * n3), road * 0.8);
-  // plaza: kilim taş
-  float plaza = 1.0 - smoothstep(13.2, 13.7, r);
-  vec2 q = p / 2.2; vec2 fq = abs(fract(q) - 0.5);
-  float diamond = step(fq.x + fq.y, 0.4);
-  float chk = step(0.5, fract(floor(q.x) * 0.5 + floor(q.y) * 0.5));
-  vec3 stone = mix(vec3(0.86, 0.77, 0.60), vec3(0.78, 0.66, 0.48), diamond);
-  stone = mix(stone, vec3(0.30, 0.48, 0.78), diamond * chk * 0.9);
-  stone = mix(stone, vec3(0.83, 0.28, 0.25), (1.0 - diamond) * (1.0 - chk) * 0.0);
+  float hubMask = 1.0 - smoothstep(WALL - 2.0, HR + 3.0, r + (n1 - 0.5) * 5.0);
+  col = mix(col, hubc, hubMask);
+  // sur temeli (taş şerit; kapı açıklığında kesilir)
+  float wall = (1.0 - smoothstep(1.6, 2.6, abs(r - WALL))) * smoothstep(RH + 0.6, RH + 1.8, perp);
+  col = mix(col, vec3(0.47, 0.45, 0.44), wall * 0.95);
+  // köy içi kaldırım: dört yol + iç halka yol (kesme taş, derzli)
+  float ringRoad = 1.0 - smoothstep(1.8, 2.5, abs(r - 46.0));
+  float pav = max((1.0 - smoothstep(RH - 0.4, RH + 0.6, perp)) * step(PR - 1.0, r), ringRoad) * (1.0 - smoothstep(WALL + 1.5, WALL + 3.5, r));
+  vec2 q2 = p / 1.7; vec2 id2 = floor(q2 + vec2(step(0.5, fract(q2.y * 0.5)) * 0.5, 0.0)); vec2 f2 = fract(q2 + vec2(step(0.5, fract(q2.y * 0.5)) * 0.5, 0.0));
+  float grout2 = clamp(step(f2.x, 0.07) + step(f2.y, 0.09), 0.0, 1.0);
+  vec3 cob = mix(vec3(0.66, 0.61, 0.54), vec3(0.54, 0.50, 0.46), hash(id2)); cob = mix(cob, vec3(0.34, 0.31, 0.29), grout2 * 0.85);
+  col = mix(col, cob, pav * 0.97);
+  // gölet (kum kıyı + su)
+  float pd = length(p - POND); float shore = 1.0 - smoothstep(PONDR + 0.2, PONDR + 2.2, pd);
+  col = mix(col, vec3(0.86, 0.78, 0.58), shore * 0.9);
+  float water = 1.0 - smoothstep(PONDR - 1.2, PONDR - 0.2, pd + (n3 - 0.5) * 0.8);
+  vec3 wc = mix(vec3(0.25, 0.62, 0.82), vec3(0.42, 0.80, 0.94), 0.5 + 0.5 * sin(pd * 2.2 - uTime * 1.6 + n2 * 6.0));
+  col = mix(col, wc, water);
+  // meydan: koyu gri kesme taş + kilim halkaları (kimlik)
+  float plaza = 1.0 - smoothstep(PR - 0.4, PR + 0.2, r);
+  vec2 q = p / 3.0; vec2 iq = floor(q); vec2 fq2 = fract(q);
+  float tileh = hash(iq + 3.7);
+  vec3 slate = mix(vec3(0.46, 0.47, 0.50), vec3(0.58, 0.58, 0.60), tileh) * (0.94 + 0.12 * n3);
+  float gr = clamp(step(fq2.x, 0.045) + step(fq2.y, 0.045), 0.0, 1.0); slate = mix(slate, vec3(0.22, 0.22, 0.25), gr * 0.9);
   float ang = atan(p.y, p.x);
-  float ring = smoothstep(11.3, 11.45, r) - smoothstep(13.1, 13.25, r);
-  float tri = step(0.5, fract(ang * 5.9 + step(0.5, fract(r * 0.55)) * 0.5));
+  float disc2 = 1.0 - smoothstep(4.6, 5.0, r); vec3 core = mix(vec3(0.30, 0.28, 0.27), vec3(0.20, 0.19, 0.19), step(0.5, fract(r * 1.4)));
+  slate = mix(slate, core, disc2);
+  float ringB = smoothstep(8.5, 8.7, r) - smoothstep(9.3, 9.5, r);
+  slate = mix(slate, vec3(0.30, 0.45, 0.80), ringB);
+  float ring = smoothstep(PR - 2.7, PR - 2.5, r) - smoothstep(PR - 0.5, PR - 0.3, r);
+  float tri = step(0.5, fract(ang * 6.5 + step(0.5, fract(r * 0.55)) * 0.5));
   vec3 ringc = mix(vec3(0.82, 0.22, 0.22), vec3(0.98, 0.86, 0.45), tri);
-  float ring2 = smoothstep(8.4, 8.5, r) - smoothstep(8.9, 9.0, r);
-  stone = mix(stone, vec3(0.30, 0.45, 0.80), ring2);
-  col = mix(col, stone, plaza); col = mix(col, ringc, ring * plaza);
-  // Erlik çatlakları (uzak bölge)
+  slate = mix(slate, ringc, ring);
+  col = mix(col, slate, plaza);
+  // Erlik çatlakları (uzak bölge) ve dünya kenarı
   float cr = abs(fbm(p * 0.085 + 3.0) - 0.5);
   float crack = (1.0 - smoothstep(0.0, 0.014, cr)) * far;
   float glow = 0.6 + 0.4 * sin(uTime * 2.0 + p.x * 0.1);
   col = mix(col, vec3(1.0, 0.25, 0.45) * (0.8 + 0.4 * glow), crack);
-  float edge = smoothstep(154.0, 164.0, r); col = mix(col, vec3(0.16, 0.11, 0.30), edge);
+  float edge = smoothstep(WR - 6.0, WR + 4.0, r); col = mix(col, vec3(0.16, 0.11, 0.30), edge);
   float d = distance(cameraPosition, vP); float f = clamp((d - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0);
   col = mix(col, uFogColor, f * f);
   gl_FragColor = vec4(col, 1.0);
@@ -187,7 +211,7 @@ export class World3D {
     this.sky = m; this.mats.push(mat);
   }
   private makeGround() {
-    const g = MeshBuilder.CreateDisc('ground', { radius: 330, tessellation: 64 }, this.scene);
+    const g = MeshBuilder.CreateDisc('ground', { radius: WORLD_R + 130, tessellation: 96 }, this.scene);
     g.rotation.x = Math.PI / 2; g.bakeCurrentTransformIntoVertices();
     const mat = new ShaderMaterial('ground', this.scene, 'ground', { attributes: ['position'], uniforms: ['world', 'worldViewProjection', 'cameraPosition', 'uFogColor', 'uFog', 'uTime', 'uOtag'] });
     mat.setColor3('uFogColor', FOG_COLOR); mat.setVector2('uFog', { x: 110, y: 300 } as never); mat.setFloat('uTime', 0); mat.setFloat('uOtag', 1);
@@ -195,8 +219,8 @@ export class World3D {
   }
   private makeMountains() {
     const specs: PartSpec[] = []; const r = mulberry32(5);
-    for (let i = 0; i < 46; i++) {
-      const a = (i / 46) * Math.PI * 2 + r() * 0.1; const d = 215 + r() * 60; const h = 55 + r() * 70; const w = 70 + r() * 60;
+    for (let i = 0; i < 70; i++) {
+      const a = (i / 70) * Math.PI * 2 + r() * 0.1; const d = WORLD_R + 50 + r() * 70; const h = 70 + r() * 90; const w = 100 + r() * 90;
       specs.push({ k: 'cone', db: w, dt: 6, h, p: [Math.cos(a) * d, h / 2 - 4, Math.sin(a) * d], c: '#6b5aa8', c2: '#c9b6f0', seg: 7 });
       specs.push({ k: 'cone', db: w * 0.42, dt: 2, h: h * 0.38, p: [Math.cos(a) * d, h * 0.82 - 4, Math.sin(a) * d], c: '#f4f1ff', c2: '#ffffff', seg: 7 });
     }
@@ -238,9 +262,10 @@ export class World3D {
       const g = regionAt(o.x, o.z); const t = 0.9 + r() * 0.2;
       if (g && g.map === 'otlak') { groups[o.v].push({ x: o.x, z: o.z, s: o.s, ry: r() * 6.28, tint: [t * 1.05, t * 1.12, t * 0.95] }); continue; }
       if (g && g.map === 'erlik') { groups[1].push({ x: o.x, z: o.z, s: o.s * 1.1, ry: r() * 6.28, tint: [t * 1.25, t * 0.62, t * 1.35] }); continue; }
-      const d = Math.hypot(o.x, o.z); const far = d > 110;
-      const v = d < 60 ? (o.v === 2 ? 0 : o.v % 2) : far ? (o.v === 0 ? 1 : 1) : o.v;
-      groups[v === 2 && d < 55 ? 0 : v].push({ x: o.x, z: o.z, s: o.s * 1.0, ry: r() * 6.28, tint: [t, t, far ? t * 1.1 : t] });
+      const d = Math.hypot(o.x, o.z); const fd = (d - HUB_R) / (WORLD_R - HUB_R); const far = fd > 0.55;
+      if (d < HUB_R) { groups[0].push({ x: o.x, z: o.z, s: o.s * 0.95, ry: r() * 6.28, tint: [t * 1.45, t * 0.8, t * 1.08] }); continue; }   // köy içi: sakura (pembe) bahçeleri
+      const v = fd < 0.2 ? (o.v === 2 ? 0 : o.v % 2) : far ? 1 : o.v;
+      groups[v === 2 && fd < 0.18 ? 0 : v].push({ x: o.x, z: o.z, s: o.s * 1.0, ry: r() * 6.28, tint: [t, t, far ? t * 1.1 : t] });
     }
     groups.forEach((g, i) => {
       if (!g.length) { tpl[i].dispose(); return; }
@@ -248,13 +273,13 @@ export class World3D {
     });
   }
   private makeRocks() {
-    const sc = this.scene; const obs = worldObstacles().filter((o) => o.kind === 'rock'); const r = mulberry32(33);
+    const sc = this.scene; const obs = worldObstacles().filter((o) => o.kind === 'rock' && o.v !== 9); const r = mulberry32(33);
     const tpl = build(sc, 'rock', [
       { k: 'icos', d: 2.4, s: [1, 0.72, 0.9], p: [0, 0.8, 0], c: '#8a8aa6', c2: '#b9b9d2', sub: 1 }, { k: 'icos', d: 1.5, s: [1, 0.8, 1], p: [0.9, 0.5, 0.5], c: '#7a7a98', c2: '#a4a4c0', sub: 1 },
     ]);
     const xf = obs.map((o) => { const t = 0.88 + r() * 0.24; const g = regionAt(o.x, o.z);
       if (g && g.id !== 'bozkir') { const pal = MAPS[g.map].palette.ground2; const c = [1, 3, 5].map((i) => Math.min(1.5, parseInt(pal.slice(i, i + 2), 16) / 255 * 2.3)); return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [c[0] * t, c[1] * t, c[2] * t] as [number, number, number] }; }
-      const far = Math.hypot(o.x, o.z) > 110; return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [far ? t * 1.05 : t, far ? t * 0.88 : t, far ? t * 1.15 : t] as [number, number, number] }; });
+      const far = Math.hypot(o.x, o.z) > WORLD_R * 0.55; return { x: o.x, z: o.z, s: o.s * 0.9, ry: r() * 6.28, tint: [far ? t * 1.05 : t, far ? t * 0.88 : t, far ? t * 1.15 : t] as [number, number, number] }; });
     emitChunks(sc, 'rocks', tpl, xf, this.mat, true, this.root, this.chunks, 260, 120); tpl.dispose();
   }
   private makeGrass() {
@@ -262,22 +287,27 @@ export class World3D {
     const mk = (c1: string, c2: string, h: number) => build(sc, 'tuft', [0, 1, 2, 3].map((i): PartSpec => ({ k: 'cone', db: 0.16, dt: 0, h: h * (0.7 + (i % 2) * 0.35), p: [Math.cos(i * 1.6) * 0.14, h * 0.4, Math.sin(i * 1.6) * 0.14], r: [Math.sin(i * 1.6) * 0.25, 0, -Math.cos(i * 1.6) * 0.25], c: c1, c2, seg: 4 })));
     const tg = mk('#4fa84a', '#a8e060', 0.8); const tgold = mk('#c99a3a', '#f2d36a', 0.9); const tpurple = mk('#7a4f9a', '#c49bff', 0.9);
     const xg: { x: number; z: number; s: number; ry: number; tint: [number, number, number] }[] = [], xa: typeof xg = [], xp: typeof xg = [];
-    for (let i = 0; i < 4200; i++) {
+    for (let i = 0; i < 38000; i++) {
       const a = r() * 6.283; const d = 4 + Math.sqrt(r()) * (WORLD_R + 6); const x = Math.cos(a) * d, z = Math.sin(a) * d;
-      if (d < 14 && d > 0) continue; if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 0.4) ** 2)) continue;
+      if (d < HUB_PLAZA_R + 2) continue;
+      if (d < HUB_WALL_R) { if (Math.min(Math.abs(x), Math.abs(z)) < ROAD_HALF + 1.5 || Math.abs(d - 46) < 3.5 || r() < 0.6) continue; }   // köy içinde yalnız çim kenarları, seyrek
+      else if (roadDist(x, z) < ROAD_HALF + 1) continue;
+      if (Math.hypot(x - HUB.pond.x, z - HUB.pond.z) < HUB.pond.r + 1.5) continue;
+      if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 0.4) ** 2)) continue;
       const t = 0.85 + r() * 0.3; const e = { x, z, s: 0.7 + r() * 0.9, ry: r() * 6.28, tint: [t, t, t] as [number, number, number] };
-      (d < 36 ? xg : d > 115 ? xp : xa).push(e);
+      (d < HUB_R ? xg : d > WORLD_R * 0.72 ? xp : xa).push(e);
     }
     for (const [tpl, xf, nm] of [[tg, xg, 'g0'], [tgold, xa, 'g1'], [tpurple, xp, 'g2']] as const) {
       emitChunks(sc, nm, tpl, xf, this.mat, false, this.root, this.chunks, 150, 0); tpl.dispose();
     }
     // çiçekler (hub çevresi)
     const specs: PartSpec[] = []; const cols = ['#ff6b8a', '#ffd166', '#ffffff', '#8fb8ff', '#ff9f43'];
-    for (let i = 0; i < 160; i++) {
-      const a = r() * 6.283; const d = 15 + r() * 25; const x = Math.cos(a) * d, z = Math.sin(a) * d; if (obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 0.8) ** 2)) continue;
-      specs.push({ k: 'cyl', d: 0.04, h: 0.45, p: [x, 0.22, z], c: '#3f9a4a' }, { k: 'sphere', d: 0.26, s: [1, 0.6, 1], p: [x, 0.5, z], c: cols[i % cols.length], seg: 5 });
+    for (let i = 0; i < 520; i++) {
+      const a = r() * 6.283; const d = HUB_PLAZA_R + 4 + r() * (HUB_WALL_R - HUB_PLAZA_R - 10); const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if (Math.min(Math.abs(x), Math.abs(z)) < ROAD_HALF + 1.5 || Math.abs(d - 46) < 3.5 || Math.hypot(x - HUB.pond.x, z - HUB.pond.z) < HUB.pond.r + 1.5 || obs.some((o) => (o.x - x) ** 2 + (o.z - z) ** 2 < (o.r + 0.8) ** 2)) continue;
+      specs.push({ k: 'cyl', d: 0.04, h: 0.45, p: [x, 0.22, z], c: '#3f9a4a', seg: 4 }, { k: 'sphere', d: 0.26, s: [1, 0.6, 1], p: [x, 0.5, z], c: cols[i % cols.length], seg: 4 });
     }
-    const f = build(sc, 'flowers', specs); f.material = this.mat; this.root.addChild(f);
+    this.buildChunked('flowers', specs, 100, 0);
   }
 
   stones: { n: number; x: number; z: number; glow: Mesh; mat: ShaderMaterial; seen: boolean }[] = [];
@@ -302,19 +332,24 @@ export class World3D {
 
   /** Ağaç, kaya ve yapıların altına yumuşak gölge yaması (tek birleşik mesh, alfa karışımlı). */
   private makePropShadows() {
-    const obs = worldObstacles(); const P: number[] = [], U: number[] = [], I: number[] = []; let n = 0;
-    const disc = (x: number, z: number, rx: number, rz: number) => {
-      const seg = 14; const base = n; P.push(x + 0.5, 0.045, z - 0.6); U.push(0, 0); n++;
-      for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; P.push(x + 0.5 + Math.cos(a) * rx, 0.045, z - 0.6 + Math.sin(a) * rz); U.push(Math.cos(a), Math.sin(a)); n++; }
-      for (let i = 0; i < seg; i++) I.push(base, base + 1 + i, base + 1 + ((i + 1) % seg));
-    };
-    for (const o of obs) { const k = o.kind === 'tree' ? 2.4 * o.s : o.kind === 'rock' ? 1.9 * o.s : o.r + 1.8; disc(o.x, o.z, k, k * 0.9); }
-    for (const b of BOYS) disc(HUB.banners[b].x, HUB.banners[b].z, 1.2, 1.1);
-    for (const g of HUB.guards) disc(g.x, g.z, 1.6, 1.5);
-    const m = new Mesh('propShadows', this.scene); const vd = new VertexData();
-    vd.positions = new Float32Array(P); vd.uvs = new Float32Array(U); vd.indices = new Uint32Array(I); vd.normals = new Float32Array(P.length).map((_, i) => (i % 3 === 1 ? 1 : 0)); vd.applyToMesh(m);
+    type S = { x: number; z: number; rx: number; rz: number };
+    const items: S[] = [];
+    for (const o of worldObstacles()) { if ((o.kind === 'rock' && o.v === 9) || (o.kind === 'building' && (o.v === 4 || o.v === 5))) continue; const k = o.kind === 'tree' ? 2.4 * o.s : o.kind === 'rock' ? 1.9 * o.s : o.r + 1.8; items.push({ x: o.x, z: o.z, rx: k, rz: k * 0.9 }); }
+    for (const b of BOYS) items.push({ x: HUB.banners[b].x, z: HUB.banners[b].z, rx: 1.2, rz: 1.1 });
+    for (const g of HUB.guards) items.push({ x: g.x, z: g.z, rx: 1.6, rz: 1.5 });
+    const cells = new Map<string, S[]>(); for (const it of items) { const k = `${Math.floor(it.x / CHUNK)}_${Math.floor(it.z / CHUNK)}`; let a = cells.get(k); if (!a) cells.set(k, (a = [])); a.push(it); }
     const mat = new ShaderMaterial('propShadow', this.scene, 'propshadow', { attributes: ['position', 'uv'], uniforms: ['worldViewProjection'], needAlphaBlending: true });
-    mat.backFaceCulling = false; mat.disableDepthWrite = true; mat.alphaMode = Engine.ALPHA_COMBINE; m.material = mat; m.isPickable = false; m.alwaysSelectAsActiveMesh = true; this.root.addChild(m);
+    mat.backFaceCulling = false; mat.disableDepthWrite = true; mat.alphaMode = Engine.ALPHA_COMBINE;
+    for (const [key, list] of cells) {
+      const P: number[] = [], U: number[] = [], I: number[] = []; let n = 0; const seg = 8;
+      for (const { x, z, rx, rz } of list) { const base = n; P.push(x + 0.5, 0.045, z - 0.6); U.push(0, 0); n++;
+        for (let i = 0; i < seg; i++) { const a = (i / seg) * Math.PI * 2; P.push(x + 0.5 + Math.cos(a) * rx, 0.045, z - 0.6 + Math.sin(a) * rz); U.push(Math.cos(a), Math.sin(a)); n++; }
+        for (let i = 0; i < seg; i++) I.push(base, base + 1 + i, base + 1 + ((i + 1) % seg)); }
+      const m = new Mesh('propShadows@' + key, this.scene); const vd = new VertexData();
+      vd.positions = new Float32Array(P); vd.uvs = new Float32Array(U); vd.indices = new Uint32Array(I); vd.normals = new Float32Array(P.length).map((_, i) => (i % 3 === 1 ? 1 : 0)); vd.applyToMesh(m);
+      m.material = mat; m.isPickable = false; this.root.addChild(m); m.freezeWorldMatrix(); m.doNotSyncBoundingInfo = true;
+      const [cx, cz] = key.split('_').map(Number); this.chunks.push({ m, ol: null, x: (cx + 0.5) * CHUNK, z: (cz + 0.5) * CHUNK, maxD: 190, olD: 0, on: true, olOn: true });
+    }
   }
 
   // ───────────────────────── Boy yurdu (hub) ─────────────────────────
@@ -323,7 +358,7 @@ export class World3D {
     s.push({ k: 'cyl', d: r * 2, h: wall, p: [x, wall / 2, z], c: '#f6ecd2', c2: '#e8d7b0', seg: 18 });
     s.push({ k: 'cone', db: r * 2.35, dt: r * 0.28, h: r * 0.95, p: [x, wall + r * 0.47, z], c: o.roof, c2: o.roof2, seg: 18 });
     s.push({ k: 'cyl', d: r * 0.34, h: r * 0.16, p: [x, wall + r * 0.98, z], c: '#7a4f2e' });
-    for (let i = 0; i < 3; i++) s.push({ k: 'torus', d: r * 2.02 + i * 0.01, th: 0.14, p: [x, wall * (0.22 + i * 0.28), z], c: i % 2 ? o.stripe2 : o.stripe, seg: 28 });
+    for (let i = 0; i < 3; i++) s.push({ k: 'torus', d: r * 2.02 + i * 0.01, th: 0.14, p: [x, wall * (0.22 + i * 0.28), z], c: i % 2 ? o.stripe2 : o.stripe, seg: 16 });
     for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; s.push({ k: 'box', w: 0.5, h: 0.5, dp: 0.1, p: [x + Math.cos(a) * (r + 0.02), wall * 0.62, z + Math.sin(a) * (r + 0.02)], r: [0, -a + Math.PI / 2, Math.PI / 4], c: i % 2 ? o.stripe : o.stripe2 }); }
     const da = o.door ?? Math.PI / 2;
     s.push({ k: 'box', w: r * 0.62, h: wall * 0.78, dp: 0.18, p: [x + Math.cos(da) * (r + 0.05), wall * 0.4, z + Math.sin(da) * (r + 0.05)], r: [0, -da + Math.PI / 2, 0], c: '#5a3a24', c2: '#7a5030' });
@@ -331,14 +366,81 @@ export class World3D {
     if (o.flag) { s.push({ k: 'cyl', d: 0.08, h: r * 0.9, p: [x, wall + r * 1.35, z], c: '#7a4f2e' }, { k: 'box', w: 1.0, h: 0.55, dp: 0.04, p: [x + 0.5, wall + r * 1.65, z], c: o.flag }); }
     return s;
   }
+
+  /** PartSpec listesini 64 m'lik hücrelere bölüp birleşik ağlar olarak ekler (kırpma + uzaklık LOD'u). olD>0: kontur da eklenir. */
+  private buildChunked(name: string, specs: PartSpec[], maxD: number, olD: number) {
+    const sc = this.scene; const cells = new Map<string, PartSpec[]>();
+    for (const sp of specs) { const px = sp.p?.[0] ?? 0, pz = sp.p?.[2] ?? 0; const k = `${Math.floor(px / CHUNK)}_${Math.floor(pz / CHUNK)}`; let a = cells.get(k); if (!a) cells.set(k, (a = [])); a.push(sp); }
+    for (const [k, list] of cells) { const m = build(sc, `${name}@${k}`, list); m.material = this.mat; const ol = olD > 0 ? addOutline(m, sc) : null; this.root.addChild(m); for (const x of [m, ol]) if (x) { x.freezeWorldMatrix(); x.doNotSyncBoundingInfo = true; } const [cx, cz] = k.split('_').map(Number); this.chunks.push({ m, ol, x: (cx + 0.5) * CHUNK, z: (cz + 0.5) * CHUNK, maxD, olD, on: true, olOn: true }); }
+  }
+  lampPts: [number, number, number][] = [];
+  /** Köy işleri: sur + kule + kapı kemeri, meydan bordürü, yol fenerleri, pazar tezgâhları, gölet kıyısı. */
+  private townWorks(specs: PartSpec[]) {
+    const W = HUB_WALL_R, GH = HUB_GATE_HALF, RH = ROAD_HALF;
+    const STONE = '#cfc6b6', STONE2 = '#e8e1d2', CAP = '#34425f', CAP2 = '#586a92', TIMB = '#6b4326', TIMB2 = '#8a5a32', TEAL = '#2c6f7a', TEAL2 = '#4aa3ad';
+    // 1) sur: teğet yönünde kesme taş bloklar + çatı kiremit şeridi + dişler (kapı açıklığında kesilir)
+    const step = 4.4; const n = Math.round((Math.PI * 2 * W) / step);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2; const x = Math.cos(a) * W, z = Math.sin(a) * W; if (Math.min(Math.abs(x), Math.abs(z)) < GH + 1.6) continue;
+      const rot = -a - Math.PI / 2; const tx = -Math.sin(a), tz = Math.cos(a);
+      specs.push({ k: 'box', w: step + 0.25, h: 5.0, dp: 1.7, p: [x, 2.5, z], r: [0, rot, 0], c: STONE, c2: STONE2 },
+        { k: 'box', w: step + 0.5, h: 0.5, dp: 2.3, p: [x, 5.2, z], r: [0, rot, 0], c: CAP, c2: CAP2 });
+      for (const k of [-1, 1]) specs.push({ k: 'box', w: 0.95, h: 0.85, dp: 1.2, p: [x + tx * k * 1.15, 5.85, z + tz * k * 1.15], r: [0, rot, 0], c: STONE, c2: STONE2 });
+      if (i % 4 === 0) specs.push({ k: 'cyl', d: 1.25, h: 5.6, p: [x * (1 + 0.5 / W), 2.8, z * (1 + 0.5 / W)], c: '#b9ae9c', c2: '#d9cfbc', seg: 8 });
+    }
+    // 2) kuleler (kapı yanlarında) ve 3) kapı kemeri (iki katlı çatı)
+    for (const [sx, sz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const gx = sx * W, gz = sz * W; const along = sx ? 1 : 0;   // sx≠0: kapı z ekseni boyunca açılır
+      for (const sg of [-1, 1]) {
+        const tx = sx ? gx : sg * (GH + 3.4), tz = sz ? gz : sg * (GH + 3.4);
+        specs.push({ k: 'cyl', d: 5.6, h: 9.0, p: [tx, 4.5, tz], c: STONE, c2: STONE2, seg: 10 }, { k: 'cyl', d: 6.3, h: 0.6, p: [tx, 9.3, tz], c: CAP, c2: CAP2, seg: 10 },
+          { k: 'cone', db: 7.6, dt: 0.3, h: 4.0, p: [tx, 11.4, tz], c: TEAL, c2: TEAL2, seg: 10 }, { k: 'cyl', d: 0.12, h: 2.2, p: [tx, 14.4, tz], c: TIMB });
+        for (let w = 0; w < 4; w++) { const a = (w / 4) * Math.PI * 2 + 0.78; specs.push({ k: 'box', w: 0.8, h: 1.4, dp: 0.35, p: [tx + Math.cos(a) * 2.78, 6.6, tz + Math.sin(a) * 2.78], r: [0, -a + Math.PI / 2, 0], c: '#2a2236' }); }
+        this.lampPts.push([tx + (sx ? -sx * 3.0 : 0), 3.4, tz + (sz ? -sz * 3.0 : 0)]);
+      }
+      const rotG = along ? Math.PI / 2 : 0;
+      specs.push({ k: 'box', w: 2 * GH + 3.2, h: 1.3, dp: 2.4, p: [gx, 7.4, gz], r: [0, rotG, 0], c: TIMB, c2: TIMB2 },
+        { k: 'box', w: 2 * GH + 5.4, h: 0.5, dp: 3.6, p: [gx, 8.3, gz], r: [0, rotG, 0], c: CAP, c2: CAP2 },
+        { k: 'cone', db: 2 * GH + 7.2, dt: 4.2, h: 1.8, p: [gx, 9.45, gz], r: [0, rotG + Math.PI / 4, 0], c: TEAL, c2: TEAL2, seg: 4 },
+        { k: 'cone', db: 9.5, dt: 0.4, h: 2.4, p: [gx, 11.6, gz], r: [0, rotG + Math.PI / 4, 0], c: CAP, c2: CAP2, seg: 4 }, { k: 'sphere', d: 0.9, p: [gx, 13.1, gz], c: '#f2c14e', gloss: 0.6 });
+      for (const sg of [-1, 1]) specs.push({ k: 'cyl', d: 1.0, h: 7.4, p: [sx ? gx : sg * (GH + 0.5), 3.7, sz ? gz : sg * (GH + 0.5)], c: TIMB, c2: TIMB2, seg: 8 });
+    }
+    // 4) meydan bordürü ve meydan fenerleri
+    const kn = 44; for (let i = 0; i < kn; i++) { const a = (i / kn) * Math.PI * 2; const x = Math.cos(a) * (HUB_PLAZA_R + 0.3), z = Math.sin(a) * (HUB_PLAZA_R + 0.3);
+      specs.push({ k: 'box', w: 3.7, h: 0.5, dp: 0.9, p: [x, 0.25, z], r: [0, -a - Math.PI / 2, 0], c: '#8a8b96', c2: '#aeb0bd' });
+      if (i % 6 === 3) { specs.push({ k: 'cyl', d: 0.2, h: 3.4, p: [x * 1.02, 1.7, z * 1.02], c: TIMB }, { k: 'box', w: 0.5, h: 0.12, dp: 0.5, p: [x * 1.02, 3.45, z * 1.02], c: '#2a2236' }); this.lampPts.push([x * 1.02, 3.75, z * 1.02]); } }
+    // 5) yol fenerleri (dört ana yol, iki yanda)
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (let t = HUB_PLAZA_R + 8; t < W - 5; t += 13) for (const sd of [-1, 1]) {
+      const x = dx * t + -dz * sd * (RH + 0.9), z = dz * t + dx * sd * (RH + 0.9);
+      specs.push({ k: 'cyl', d: 0.2, h: 3.4, p: [x, 1.7, z], c: TIMB, c2: TIMB2 }, { k: 'box', w: 0.5, h: 0.12, dp: 0.5, p: [x, 3.45, z], c: '#2a2236' }); this.lampPts.push([x, 3.75, z]);
+    }
+    // 6) pazar tezgâhları (yola bakar)
+    const AW = [['#d63a3a', '#ff8a7a'], ['#2f6fd6', '#8fb8ff'], ['#f2c14e', '#ffe9a0'], ['#3aa56a', '#9fe8b8']];
+    HUB.stalls.forEach(([x, z], i) => { const f = z > 0 ? -1 : 1; const [c1, c2] = AW[i % AW.length];
+      specs.push({ k: 'box', w: 2.6, h: 0.95, dp: 1.3, p: [x, 0.48, z], c: TIMB, c2: TIMB2 }, { k: 'box', w: 2.8, h: 0.12, dp: 1.5, p: [x, 0.98, z], c: '#a87a4a' });
+      for (const [px, pz] of [[-1.25, -0.6], [1.25, -0.6], [-1.25, 0.6], [1.25, 0.6]]) specs.push({ k: 'cyl', d: 0.12, h: 2.5, p: [x + px, 1.25, z + pz], c: TIMB });
+      specs.push({ k: 'box', w: 3.1, h: 0.16, dp: 1.9, p: [x, 2.55, z + f * 0.1], r: [f * 0.28, 0, 0], c: c1, c2: c2 }, { k: 'box', w: 3.1, h: 0.17, dp: 0.5, p: [x, 2.42, z + f * 0.95], c: '#fff6df' });
+      for (let k = 0; k < 4; k++) specs.push({ k: 'sphere', d: 0.38, p: [x - 0.9 + k * 0.6, 1.2, z + f * 0.1], c: ['#d65a2a', '#e8c24a', '#7ac24a', '#c24a8a'][(i + k) % 4], seg: 6 });
+      specs.push({ k: 'box', w: 0.6, h: 0.5, dp: 0.5, p: [x + (i % 2 ? -1.6 : 1.6), 0.25, z - f * 0.2], c: '#8a5a32' }); });
+    // 7) gölet: kıyı taşları, sazlık, nilüfer
+    const P = HUB.pond; for (let i = 0; i < 20; i++) { const a = (i / 20) * Math.PI * 2 + (i % 3) * 0.05; const rr = P.r + 0.6 + (i % 2) * 0.5;
+      specs.push({ k: 'icos', d: 0.9 + (i % 3) * 0.35, s: [1, 0.7, 1], p: [P.x + Math.cos(a) * rr, 0.25, P.z + Math.sin(a) * rr], c: '#8a8aa6', c2: '#b9b9d2', sub: 0 });
+      if (i % 3 === 0) specs.push({ k: 'icos', d: 0.9, s: [1, 0.8, 1], p: [P.x + Math.cos(a) * (rr + 0.8), 0.35, P.z + Math.sin(a) * (rr + 0.8)], c: '#3f9a4a', c2: '#7ad07a', sub: 0 }); }
+    for (let i = 0; i < 7; i++) { const a = i * 2.4; const rr = 1.5 + (i % 4) * 1.4; specs.push({ k: 'disc', d: 1.1, p: [P.x + Math.cos(a) * rr, 0.07, P.z + Math.sin(a) * rr], r: [-Math.PI / 2, 0, 0], c: '#3f9a4a', c2: '#6ac26a', seg: 8 }); }
+    // 8) kapı levhaları: yol kenarında yönlendirme direkleri
+    for (const [dx, dz, c] of [[1, 0, '#d63a3a'], [-1, 0, '#2f6fd6'], [0, 1, '#f2c14e'], [0, -1, '#3aa56a']] as [number, number, string][]) {
+      const x = dx * (W - 16) + -dz * (RH + 2.4), z = dz * (W - 16) + dx * (RH + 2.4);
+      specs.push({ k: 'cyl', d: 0.22, h: 3.0, p: [x, 1.5, z], c: TIMB }, { k: 'box', w: 1.6, h: 0.6, dp: 0.12, p: [x, 2.6, z], r: [0, Math.atan2(dx, dz) + Math.PI / 2, 0], c, c2: '#fff6df' }); }
+  }
   makeHub() {
     const sc = this.scene; const specs: PartSpec[] = [];
     // Otağ (büyük, renkli)
-    specs.push(...this.yurt(HUB.otag.x, HUB.otag.z, { r: HUB.otag.r, wall: 3.4, roof: '#d63a3a', roof2: '#ff8a5a', stripe: '#2f6fd6', stripe2: '#f2c14e', flag: '#2f6fd6', door: Math.atan2(5, 15) }));
+    specs.push(...this.yurt(HUB.otag.x, HUB.otag.z, { r: HUB.otag.r, wall: 3.4, roof: '#d63a3a', roof2: '#ff8a5a', stripe: '#2f6fd6', stripe2: '#f2c14e', flag: '#2f6fd6', door: Math.atan2(-HUB.otag.z, -HUB.otag.x) }));
     for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; specs.push({ k: 'cone', db: 0.7, dt: 0.1, h: 3.0, p: [HUB.otag.x + Math.cos(a) * 3.0, 5.3, HUB.otag.z + Math.sin(a) * 3.0], r: [Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9], c: i % 2 ? '#f2c14e' : '#2f6fd6', c2: '#ffffff', seg: 4 }); }
     // süs yurtlar
-    const deco = [[-24, 10, '#3aa56a', '#8fe0a8'], [24, 8, '#4a7fd6', '#9fc4ff'], [-27, -4, '#b46bd6', '#e0b8ff'], [27, -14, '#e0903a', '#ffd08a'], [-6, -26, '#3aa5a5', '#9fe8e0'], [22, 22, '#d6527a', '#ffa8c0'], [-22, 24, '#d6b33a', '#fff08a']] as [number, number, string, string][];
-    deco.forEach(([x, z, c1, c2], i) => specs.push(...this.yurt(x, z, { r: 3.0, wall: 2.4, roof: c1, roof2: c2, stripe: '#f2c14e', stripe2: '#d63a3a', flag: i % 2 ? '#d63a3a' : '#2f6fd6', door: Math.atan2(-z, -x) })));
+    const PAL: [string, string][] = [['#3aa56a', '#8fe0a8'], ['#4a7fd6', '#9fc4ff'], ['#b46bd6', '#e0b8ff'], ['#e0903a', '#ffd08a'], ['#3aa5a5', '#9fe8e0'], ['#d6527a', '#ffa8c0'], ['#d6b33a', '#fff08a']];
+    HUB.yurts.forEach(([x, z], i) => { const [c1, c2] = PAL[i % PAL.length]; specs.push(...this.yurt(x, z, { r: 3.0 + (i % 3) * 0.2, wall: 2.4 + (i % 2) * 0.3, roof: c1, roof2: c2, stripe: '#f2c14e', stripe2: '#d63a3a', flag: i % 2 ? '#d63a3a' : '#2f6fd6', door: Math.atan2(-z, -x) })); });
+    this.townWorks(specs);
     // Demirhane (açık çadır + ocak + örs)
     const D = HUB.demirhane;
     for (const [dx, dz] of [[-3.4, -3], [3.4, -3], [-3.4, 3], [3.4, 3]]) specs.push({ k: 'cyl', d: 0.34, h: 4.2, p: [D.x + dx, 2.1, D.z + dz], c: '#6b4326', c2: '#8a5a32' });
@@ -360,8 +462,10 @@ export class World3D {
     // muhafız postları
     for (const g of HUB.guards) specs.push({ k: 'cyl', d: 2.0, h: 0.5, p: [g.x, 0.25, g.z], c: '#8a8aa6', c2: '#b9b9d2' }, { k: 'cyl', d: 0.24, h: 1.5, p: [g.x + 1.2, 0.9, g.z], c: '#6b4326' }, { k: 'sphere', d: 0.4, p: [g.x + 1.2, 1.8, g.z], c: '#ff9f43', gloss: 0.5 });
     // mesireli kenar çitleri
-    const m = build(sc, 'hub', specs); m.material = this.mat; addOutline(m, sc); this.root.addChild(m);
+    this.buildChunked('hub', specs, 300, 110);   // köy tek dev mesh değil: hücrelere bölünür
 
+    // fenerlerin parlayan camları (tek birleşik emissive mesh)
+    if (this.lampPts.length) { const lg = build(sc, 'lampglow', this.lampPts.map(([x, y, z]) => ({ k: 'sphere' as const, d: 0.62, p: [x, y, z] as [number, number, number], c: '#ffe9a8', c2: '#fff5d0', seg: 4 }))); lg.material = toonMaterial(sc, { vertexColors: true, emissive: new Color3(1, 0.78, 0.35), rim: 0 }); this.root.addChild(lg); }
     // alev (ateş çukuru) — parlayan
     const fm = toonMaterial(sc, { vertexColors: true, emissive: new Color3(0.9, 0.5, 0.1), rim: 0 });
     for (const [k, h, c1, c2, s] of [['a', 2.2, '#ff6a1a', '#ffd166', 0.0], ['b', 1.6, '#ff9f1a', '#fff0a0', 0.8], ['c', 1.3, '#ff6a1a', '#ffd166', 2.1]] as const) {

@@ -1,6 +1,6 @@
-import { BOY_COLORS, HUB, HUB_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
+import { BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
-import { genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
+import { ROAD_HALF, ROAD_LEN, genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
 import { MAPS, regionAt } from '@shared/maps';
 import { LOOM_POS } from '@shared/costume';
 import type { Game } from '../game/game';
@@ -259,7 +259,7 @@ export class UI {
 
   // ───────── mini harita ─────────
   private drawMap() {
-    const g = this.g; const c = this.minimap; const ctx = c.getContext('2d')!; const S = c.width; const R = 95; const k = S / 2 / R; const cx = S / 2;
+    const g = this.g; const c = this.minimap; const ctx = c.getContext('2d')!; const S = c.width; const R = 130; const k = S / 2 / R; const cx = S / 2;
     ctx.save(); ctx.clearRect(0, 0, S, S); ctx.beginPath(); ctx.arc(cx, cx, cx - 2, 0, Math.PI * 2); ctx.clip();
     const yaw = g.camYaw; const fx = -Math.cos(yaw), fz = -Math.sin(yaw); const rx = fz, rz = -fx;
     // dünya → harita (kamera yönü yukarı)
@@ -268,10 +268,12 @@ export class UI {
     const reg = regionAt(g.pos.x, g.pos.z) ?? regionAt(0, 0)!; const hub = reg.id === 'bozkir'; let [ox, oy] = P(reg.cx, reg.cz);
     if (hub) {
       // Erlik bölgesi (mor halka) ve dünya sınırı
-      ctx.fillStyle = 'rgba(122,90,160,.55)'; ctx.beginPath(); ctx.arc(ox, oy, 150 * k, 0, 6.3); ctx.arc(ox, oy, 105 * k, 0, 6.3, true); ctx.fill();
+      ctx.fillStyle = 'rgba(122,90,160,.55)'; ctx.beginPath(); ctx.arc(ox, oy, WORLD_R * k, 0, 6.3); ctx.arc(ox, oy, WORLD_R * 0.66 * k, 0, 6.3, true); ctx.fill();
       ctx.fillStyle = '#4a2e6a'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, WORLD_R * k, 0, 6.3, true); ctx.fill();
       ctx.fillStyle = '#5fbf6a'; ctx.beginPath(); ctx.arc(ox, oy, HUB_R * k, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#fff6df'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, 13 * k, 0, 6.3); ctx.fill();
+      ctx.fillStyle = '#e8d2a0'; ctx.beginPath(); ctx.arc(ox, oy, HUB_PLAZA_R * k, 0, 6.3); ctx.fill();
+      ctx.strokeStyle = 'rgba(217,185,122,.9)'; ctx.lineWidth = 2 * ROAD_HALF * k; ctx.lineCap = 'butt'; for (const [ax, az] of [[0, 1], [1, 0]]) { const [x1, y1] = P(-ax * ROAD_LEN, -az * ROAD_LEN); const [x2, y2] = P(ax * ROAD_LEN, az * ROAD_LEN); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+      ctx.strokeStyle = '#8a8b96'; ctx.lineWidth = Math.max(2, 3.2 * k); ctx.beginPath(); ctx.arc(ox, oy, HUB_WALL_R * k, 0, 6.3); ctx.stroke();
     } else {
       const pal = MAPS[reg.map].palette; ctx.fillStyle = pal.ground; ctx.fillRect(0, 0, S, S);
       ctx.fillStyle = '#2a1a44'; ctx.beginPath(); ctx.rect(0, 0, S, S); ctx.arc(ox, oy, reg.r * k, 0, 6.3, true); ctx.fill();

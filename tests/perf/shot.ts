@@ -13,6 +13,7 @@ const NAME = 'Foto' + Math.floor(Math.random() * 900 + 100);
 await page.goto(url + '?autoq=0'); await page.waitForSelector('.title .tcard'); await sleep(1500);
 await page.click('#sw'); await sleep(400); await page.fill('#ln', NAME); await page.fill('#lp', 'gizli1234'); await page.click('.boycard[data-b="ay"]'); await sleep(400);
 await page.click('#go'); await page.waitForFunction('window.__ready === true'); await sleep(2500);
+await page.evaluate(() => { const c = (window as any).__game.gs.camera; c.upperRadiusLimit = 900; c.upperBetaLimit = 1.56; });
 const me = () => [...world().players.values()].find((p) => p.name === NAME)!; me().god = true;
 for (const spec of (process.env.SHOTS ?? 'a:0:20:-1.57:1.0:24').split(',')) {
   const [name, x, z, yaw, pitch, dist] = spec.split(':'); const p = me(); p.x = Number(x); p.z = Number(z); p.meDirty = true; await sleep(1500);
