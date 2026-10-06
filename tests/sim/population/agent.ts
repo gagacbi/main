@@ -24,7 +24,7 @@ const DEFAULT_ORDER = [0, 1, 5, 4, 3, 2];
 /** Bir oyuncunun kararlarını ve ölçümlerini taşıyan ajan. */
 export class Agent {
   p!: Player; activity: Activity = 'farm'; camp: Camp | null = null; resting = false; noticeAt: number[] = [0, 0, 0, 0, 0, 0];
-  plannedMin = 20; kzWantSlice = 0; kzWantAt = 0; kzRate = 0.12; kzCombatMin = 0; kzUsedSlice = 0; shortage = 0; map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
+  plannedMin = 20; kzWantSlice = 0; kzWantAt = 0; kzRate = Number(process.env.POP_KZ_RATE ?? 0.12); kzCombatMin = 0; kzUsedSlice = 0; shortage = 0; map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
   victim: number | null = null; bossTarget: Mob | null = null; fightBackUntil = 0; fightBackId = 0;
   // ölçümler
   days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0, dun: 0 };

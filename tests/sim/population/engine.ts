@@ -12,6 +12,9 @@ import { genBosses, type Camp } from '../../../shared/world';
 import { MAPS, regionAt } from '../../../shared/maps';
 import type { Mob, Player } from '../../../server/world';
 import { makeRig, type Rig } from '../rig';
+/** kalibrasyon: savaş dakikası başına içme (stok kısıtı yokken talep) */
+export const KZ_CAL: Record<string, { used: number; want: number; min: number }> = {};
+if (process.env.POP_KZ_CAL) process.on('exit', () => { for (const [k, c] of Object.entries(KZ_CAL)) console.log(`KZCAL ${k}: ${(c.used / c.min).toFixed(4)} içme/savaş-dk (talep dahil ${((c.used + c.want) / c.min).toFixed(4)}) · ${c.min.toFixed(0)} savaş-dk`); });
 import { Agent, DEFAULT_ORDER, SPEND_MODEL, type DayRec, type Params } from './agent';
 import { ARCHS, specOf, type Arch } from './archetypes';
 import { MarketModel } from './market-model';
@@ -134,6 +137,7 @@ export class Engine {
       if (wallMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / wallMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / wallMin) * 0.5; }
       const o = occStat[a.idx]; if (o && farmMin >= 1) { const avg = o.sum / Math.max(1, o.n); const b = avg <= 1.5 ? '1' : avg <= 3.5 ? '2-3' : avg <= 6.5 ? '4-6' : avg <= 10.5 ? '7-10' : '11+'; const e = (log.occBuckets[b] ??= { n: 0, rate: 0 }); e.n++; e.rate += a.sliceFarmKills / farmMin; }
       if (extraMin > 0) { this.extrapolate(a, extraMin); a.extraKimiz(extraMin); }
+      if (a.kzCombatMin > 0.5) { const k = ['boss', 'rift', 'pvp', 'dun'].includes(a.activity) ? 'heavy' : 'normal'; const c = (KZ_CAL[k] ??= { used: 0, want: 0, min: 0 }); c.used += a.kzUsedSlice; c.want += a.kzWantSlice; c.min += a.kzCombatMin; }
       if (a.kzCombatMin > 0.5 && SPEND_MODEL !== 'baseline_heavy') { a.kzRate = a.kzRate * 0.5 + (a.kzUsedSlice / a.kzCombatMin) * 0.5; }   // baseline_heavy: sabit temel oran (ölçülmez) a.kzCombatMin = 0; a.kzUsedSlice = 0; a.kzWantSlice = 0;
       a.town(); a.farmMin += farmMin;
     }
