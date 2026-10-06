@@ -41,4 +41,18 @@ Hedefler ve mikro-model sonucu: güç çarpanı ×1,14 (hedef ≤ ×1,20) · sil
 
 ## 4. Doğrulama
 
-Ajan simülasyonu (3 seed, 30 gün, aynı kohort): bkz. `ENH13_30GUN.md` (üretildikten sonra).
+Ajan simülasyonu (3 seed, 30 gün, aynı kohort): `ENH13_30GUN.md`.
+
+| 30. gün | Kontrol | v1.1 | v1.2 | v1.3 |
+|---|---|---|---|---|
+| Üst %10 / medyan güç (tüm nüfus) | 1,49 | 1,75 | 1,62 | **1,56** |
+| Üst %10 / medyan güç (olgun kohort) | 1,31 | 1,62 | 1,53 | **1,41** |
+| Üst %1 / medyan güç (tüm nüfus) | 1,73 | 2,40 | 2,04 | **1,86** |
+| Olgun kohort ≥+13 / +15 | – | %33,7 / %16,4 | %15,0 / %0 | %26,5 / %3,0 |
+| +10…+15 sink / toplam sink | – | %2,9 | %3,7 | %4,6 |
+| Sink/kaynak | %79,1 | %80,8 | %81,4 | %82,3 |
+| Medyan bakiye | 1,01M | 1,05M | 1,03M | 0,95M (−%6,0) |
+| PvP TTK üst %10→orta bant | 23,9 sn | 22,8 | 23,6 | 23,2 |
+| Zindan kazanma | %94,6 | %95,1 | %94,6 | %95,3 |
+
+Yoğunlaşma farkı v1.3'te gün 14'ten 30'a kadar sabit (üst %10: +%3,8 → +%4,7); v1.1'de +%17. Güç sıçraması tasarım gereği sınırlı (slot başına en fazla ×1,19). Sink payı küçük kalıyor (%4,6): +10…+15 bir **progression** sistemi olarak çalışıyor, ekonomi çözümü değil.
