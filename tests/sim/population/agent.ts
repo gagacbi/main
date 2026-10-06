@@ -24,7 +24,7 @@ const DEFAULT_ORDER = [0, 1, 5, 4, 3, 2];
 /** Bir oyuncunun kararlarını ve ölçümlerini taşıyan ajan. */
 export class Agent {
   p!: Player; activity: Activity = 'farm'; camp: Camp | null = null; resting = false; noticeAt: number[] = [0, 0, 0, 0, 0, 0];
-  plannedMin = 20; kzRate = 0.12; kzCombatMin = 0; kzUsedSlice = 0; shortage = 0; map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
+  plannedMin = 20; kzWantSlice = 0; kzWantAt = 0; kzRate = 0.12; kzCombatMin = 0; kzUsedSlice = 0; shortage = 0; map: MapId = 'bozkir'; dunPhase = 0; dunWonAt = 0; dunTries = 0; mapTicks: Record<string, number> = {}; ext: Record<string, number> = {}; lastCosSlice = -1;
   victim: number | null = null; bossTarget: Mob | null = null; fightBackUntil = 0; fightBackId = 0;
   // ölçümler
   days: DayRec[] = []; events: string[] = []; actTicks: Record<string, number> = { farm: 0, boss: 0, rift: 0, pvp: 0, rest: 0, dun: 0 };
@@ -338,8 +338,9 @@ export class Agent {
   }
   /** savaşta can düşünce kımız içer (bilinçli oyuncu daha erken); bekleme süresi sunucuda doğrulanır */
   private useKimiz(): boolean {
-    const p = this.p; const w = this.w; if ((this.d.kimiz ?? 0) < 1 || w.now < p.kimizAt) return false;
-    const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const thr = (heavy ? 0.5 : 0.38) * (0.7 + 0.3 * this.par.skill);
+    const p = this.p; const w = this.w; const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const thr = (heavy ? 0.5 : 0.38) * (0.7 + 0.3 * this.par.skill);
+    if ((this.d.kimiz ?? 0) < 1) { if (p.hp < p.stats.maxHp * thr && w.now >= this.kzWantAt) { this.kzWantSlice++; this.kzWantAt = w.now + KIMIZ.cooldownSec; } return false; }   // talep (stok olmasa da) ölçülür
+    if (w.now < p.kimizAt) return false;
     if (p.hp >= p.stats.maxHp * thr) return false; const r = this.rpc('kimiz.use'); if (r.ok) { this.ext.kimizUsed = (this.ext.kimizUsed ?? 0) + 1; this.kzUsedSlice++; return true; } return false;
   }
   /** günlük kostüm rutini: tezgâh, üretim, giyme, efsunlama, uzatma. Harcama oyuncunun kasasıyla sınırlıdır. */
