@@ -32,7 +32,7 @@ export interface DunInfo {
 export interface Me {
   name: string; boy: Boy; level: number; xp: number; xpNext: number; kut: number; gold: number; spec: Spec;
   hp: number; stats: Stats; skillRanks: number[]; skillPts: number; bag: Bag; items: Item[]; equip: Partial<Record<Slot, Item>>;
-  rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; kimiz: number; kimizAt: number; rank: number; points: number; oymakId: number; oymakName: string;
+  /** skill zinciri: son skill slotu (−1 yok), halka sayısı, bitiş (sunucu ms) */ combo: { s: number; n: number; u: number }; rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; kimiz: number; kimizAt: number; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
   role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;

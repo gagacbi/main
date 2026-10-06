@@ -129,6 +129,7 @@ export class FX {
     switch (fx) {
       case 'slash': this.ring(x, z, r, '#bfe4ff', 0.34, { angle: ang, span: 6.3, fill: true }); this.ring(x, z, r * 0.8, '#ffffff', 0.28, { angle: ang, span: 2.6, inner: 0.1 }); this.burst('spark', x, 1.2, z, 16); this.shake = Math.max(this.shake, 0.15); break;
       case 'quake': this.ring(x, z, r, '#ffd08a', 0.7, { fill: true }); this.ring(x, z, r * 0.6, '#ffffff', 0.5); this.burst('dust', x, 0.3, z, 34); this.shake = Math.max(this.shake, 0.5); break;
+      case 'combo': this.ring(x, z, r + 1.2, '#ffd46a', 0.5, { fill: false }); this.ring(x, z, r * 0.6, '#ffffff', 0.35); this.burst('spark', x, 1.4, z, 18 + Math.round(r) * 4); this.shake = Math.max(this.shake, 0.12); break;
       case 'roar': this.ring(x, z, r, '#ffe27a', 0.7, { inward: true }); this.ring(x, z, r * 0.55, '#ff9f43', 0.6, { inward: true }); this.burst('spark', x, 1.4, z, 14); this.shake = Math.max(this.shake, 0.25); break;
       case 'shield': this.ring(x, z, 2.6, '#8fd0ff', 0.7, { fill: true }); this.burst('holy', x, 0.3, z, 30); this.beam(x, z, 5, 1.6, '#9fd8ff', 0.8); break;
       case 'poison': this.ring(x, z, r, '#7dff6a', 0.8, { fill: true }); this.burst('poison', x, 0.4, z, 36); break;

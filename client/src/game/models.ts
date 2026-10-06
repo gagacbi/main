@@ -176,7 +176,8 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   if (robe) rig.part('weapon', [{ k: 'cyl', d: 0.07, h: 2.3, p: [0, 0.55, 0], c: '#8a5a32' }, { k: 'torus', d: 0.34, th: 0.06, p: [0, 1.75, 0], r: [0, Math.PI / 2, 0], c: GOLD, gloss: 0.6 }, { k: 'sphere', d: 0.2, p: [0, 1.75, 0], c: '#7fc0ff', gloss: 0.5 }], [0, -0.58, 0.1], 'armL');
 
   // duruş: silah eli
-  if (rig.pivots.weapon) rig.pivots.weapon.rotation.x = kind === 'guard' ? 0 : -0.35;
+  // silah ele göre ÖNE-YUKARI eğik tutulur (eskiden -0.35 bıçağı geriye yatırıyordu: kol idle'da -0.25 → toplam -0.6 rad = arkaya)
+  if (rig.pivots.weapon) rig.pivots.weapon.rotation.x = kind === 'guard' ? 0 : 0.95;
   if (kind === 'demirci' && rig.pivots.weapon) rig.pivots.weapon.rotation.x = -1.1;
   rig.height = 2.9;
 

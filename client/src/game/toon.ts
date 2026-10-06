@@ -68,8 +68,9 @@ Effect.ShadersStore['outlineVertexShader'] = `
 precision highp float;
 attribute vec3 position; attribute vec3 snormal;
 uniform mat4 world; uniform mat4 worldViewProjection; uniform mat4 viewProjection;
-uniform float uWidth; uniform vec2 uRes;
+uniform float uWidth; uniform vec2 uRes; varying vec3 vP;
 void main(){
+  vP = (world * vec4(position, 1.0)).xyz;
   vec4 p = worldViewProjection * vec4(position, 1.0);
   vec3 wn = normalize(vec3(world * vec4(snormal, 0.0)));
   vec4 pn = viewProjection * vec4(wn, 0.0);
@@ -80,8 +81,9 @@ void main(){
 }`;
 Effect.ShadersStore['outlineFragmentShader'] = `
 precision highp float;
-uniform vec3 uOutline; uniform vec3 uFogColor; uniform vec2 uFog; uniform vec3 cameraPosition;
-void main(){ gl_FragColor = vec4(uOutline, 1.0); }`;
+uniform vec3 uOutline; uniform vec3 uFogColor; uniform vec2 uFog; uniform vec3 cameraPosition; varying vec3 vP;
+// kontur da dolgu gibi sise karışır: yoksa uzaktaki nesnelerin koyu çerçevesi sisin içinde 'siyah çizgi' olarak kalır
+void main(){ float d = distance(cameraPosition, vP); float f = clamp((d - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); gl_FragColor = vec4(mix(uOutline, uFogColor, f * f), 1.0); }`;
 
 export interface ToonOpts { color?: Color3 | string; vertexColors?: boolean; emissive?: Color3 | string; rim?: number; alpha?: number }
 const toC3 = (c: Color3 | string | undefined, d: Color3) => (c === undefined ? d : typeof c === 'string' ? Color3.FromHexString(c) : c);
@@ -114,7 +116,7 @@ export function outlineMaterial(scene: Scene): ShaderMaterial {
   const m = new ShaderMaterial('outline', scene, 'outline', {
     attributes: ['position', 'snormal'], uniforms: ['world', 'worldViewProjection', 'viewProjection', 'uWidth', 'uRes', 'uOutline', 'uFogColor', 'uFog', 'cameraPosition'],
   });
-  m.setFloat('uWidth', 2.1); m.setColor3('uOutline', Color3.FromHexString('#1a1230'));
+  m.setFloat('uWidth', 2.1); m.setColor3('uOutline', Color3.FromHexString('#1a1230')); m.setColor3('uFogColor', FOG_COLOR); registerFog(m, 110, 300);
   m.setVector2('uRes', { x: 1280, y: 720 } as never);
   m.backFaceCulling = true; (m as unknown as { cullBackFaces: boolean }).cullBackFaces = false; // ön yüzleri kes, arka yüzleri çiz
   outlineMat = m;

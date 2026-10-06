@@ -1,5 +1,5 @@
 import { Matrix, Vector3 } from '@babylonjs/core';
-import { BOYS, HUB, SKILLS, zoneAt, type Boy, type MobType, type Spec } from '@shared/game';
+import { COMBO, comboFollows, BOYS, HUB, SKILLS, zoneAt, type Boy, type MobType, type Spec } from '@shared/game';
 import { F, type ChatMsg, type GameEvent, type Me, type SnapDrop, type SnapRift, type Snapshot } from '@shared/protocol';
 import { Audio } from '../audio';
 import { getLang, itemName, t } from '../i18n';
@@ -20,6 +20,11 @@ import { World3D } from './world';
 
 interface Npc { key: 'aksakal' | 'demirci' | 'guard'; rig: Rig; x: number; z: number; plate: HTMLElement; mark: HTMLElement | null; t: number; faceAway?: number }
 
+/** Tuş adı: harfler fiziksel tuş koduyla (Türkçe klavyede I tuşu 'ı' üretir; e.key 'i' ile eşleşmezdi). İ tuşu (i) da 'i' sayılır. */
+export const keyOf = (e: KeyboardEvent): string => {
+  if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3).toLowerCase();
+  const k = e.key.toLowerCase(); return k === 'ı' || k === 'i̇' ? 'i' : k;
+};
 export class Game {
   gs: GameScene; world: World3D; fx: FX; audio = new Audio(); net = new Net(); vs: ViewSystem; ui!: UI;
   me!: Me; prevMe: Me | null = null; myId = 0; myBoy: Boy = 'gok'; pred = new Predictor(); pos = this.pred.pos; rot = 0; hp = 1; flags = 0; selfView: View | null = null;
@@ -219,7 +224,7 @@ export class Game {
     window.addEventListener('keydown', (e) => {
       this.audio.start();
       if (this.typing || (e.target as HTMLElement)?.tagName === 'INPUT') return;
-      const k = e.key.toLowerCase();
+      const k = keyOf(e);
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { this.keys.add(k); this.moveTarget = null; this.clickAttack = false; e.preventDefault(); }
       if (e.code === 'Space') { e.preventDefault(); this.setAttack(true); }
       if (/^[1-6]$/.test(k)) this.useSkill(Number(k) - 1);
@@ -227,7 +232,7 @@ export class Game {
       if (k === 'e') this.interact();
       this.ui?.key(k, e);
     });
-    window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); this.keys.delete(k); if (e.code === 'Space') this.setAttack(false); });
+    window.addEventListener('keyup', (e) => { const k = keyOf(e); this.keys.delete(k); if (e.code === 'Space') this.setAttack(false); });
     window.addEventListener('blur', () => { this.keys.clear(); this.setAttack(false); });
     c.addEventListener('contextmenu', (e) => e.preventDefault());
     c.addEventListener('pointerdown', (e) => {
@@ -249,7 +254,7 @@ export class Game {
   useSkill(i: number) {
     if (!this.me || (this.flags & F.DEAD)) return; const sk = SKILLS[i]; if (this.me.level < sk.lvl) { this.audio.sfx('err'); this.ui.toast(t('ui.locked', { n: sk.lvl }), 'warn'); return; }
     if (performance.now() < this.cdEnd[i]) return;
-    this.cdEnd[i] = performance.now() + sk.cd * 1000; this.net.skill(i);
+    this.cdEnd[i] = performance.now() + sk.cd * 1000 * (this.comboChained(i) ? 1 - COMBO.cdRefund : 1); this.net.skill(i);
     if (this.selfView) this.selfView.castT = 0;
   }
   private pickEntity(x: number, y: number) {
@@ -380,6 +385,9 @@ export class Game {
     cam.target.set(this.camTarget.x + (Math.random() - 0.5) * s, this.camTarget.y + (Math.random() - 0.5) * s * 0.6, this.camTarget.z + (Math.random() - 0.5) * s);
   }
 
+  /** zincir sürüyor mu ve bu skill zincirin devamı mı (sunucunun hesabıyla aynı kural) */
+  comboActive() { const c = this.me?.combo; return !!c && c.s >= 0 && this.net.now() < c.u; }
+  comboChained(i: number) { return this.comboActive() && comboFollows(this.me.combo.s, i); }
   setQuality(q: Quality) { this.gs.setQuality(q); }
   setViewDist(v: ViewDist) { this.gs.setViewDistance(v); try { localStorage.setItem('kut.vd', v); } catch { /* */ } }
   respawn() { return this.net.rpc('respawn'); }

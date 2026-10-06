@@ -1,5 +1,5 @@
 import { dungeonDay } from '../shared/dungeon';
-import { HUB_R, GUARD_RANGE,
+import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
@@ -27,7 +27,7 @@ type StatusMap = Partial<Record<StatusKey, { until: number; dps?: number; by?: n
 export class Player {
   kind = 'player' as const;
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
-  cds = [0, 0, 0, 0, 0, 0]; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
+  cds = [0, 0, 0, 0, 0, 0]; comboSlot = -1; comboLinks = 0; comboUntil = 0; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
   cosWarnAt = 0; kimizAt = 0; hotUntil = 0; hotPerSec = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
@@ -542,10 +542,15 @@ export class World {
     const sk = SKILLS[slot];
     if (p.d.level < sk.lvl) return;
     if (this.now < p.cds[slot]) return;
-    p.cds[slot] = this.now + sk.cd * 1000;
+    // zincir: pencere içinde "devamı" olan skill → +%hasar ve bekleme iadesi; halka sayısı artar
+    const chained = this.now < p.comboUntil && comboFollows(p.comboSlot, slot);
+    const links = chained ? Math.min(COMBO.maxLinks, p.comboLinks + 1) : 0;
+    p.cds[slot] = this.now + sk.cd * 1000 * (chained ? 1 - COMBO.cdRefund : 1);
+    p.comboSlot = sk.id === 'hiddet' ? -1 : slot; p.comboLinks = sk.id === 'hiddet' ? 0 : links; p.comboUntil = this.now + COMBO.windowSec * 1000;
+    if (chained) this.emit({ k: 'fx', fx: 'combo', x: p.x, z: p.z, r: 2 + links, o: p.id }, p.x, p.z);
     p.lastAggro = this.now;
     const rank = skillRankMult(p.d.skillRanks[slot]);
-    const sp = p.stats.spell * rank;
+    const sp = p.stats.spell * rank * (1 + COMBO.bonusPerLink * links);
     const r = sk.r * p.stats.aoe;
     let hit = 0;
     this.emit({ k: 'fx', fx: sk.fx, x: p.x, z: p.z, r: Math.max(r, 2), o: p.id }, p.x, p.z);
@@ -1159,7 +1164,7 @@ export class World {
     return {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
-      rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
+      combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },

@@ -15,7 +15,7 @@ const D: Record<string, [string, string]> = {
   'ui.connecting': ['Bağlanıyor…', 'Connecting…'], 'ui.loading': ['Dünya yükleniyor…', 'Loading the world…'], 'ui.close': ['Kapat', 'Close'], 'ui.ok': ['Tamam', 'OK'], 'ui.cancel': ['Vazgeç', 'Cancel'],
   'ui.newhere': ['İlk kez mi geliyorsun?', 'First time here?'], 'ui.have': ['Hesabın var mı?', 'Have an account?'],
   'ui.lang': ['Dil', 'Language'], 'ui.sound': ['Ses', 'Sound'], 'ui.quality': ['Grafik', 'Graphics'], 'ui.q.high': ['Yüksek', 'High'], 'ui.q.medium': ['Orta', 'Medium'], 'ui.q.low': ['Düşük', 'Low'],
-  'ui.view': ['Görüş mesafesi', 'View distance'], 'ui.v.near': ['Yakın', 'Near'], 'ui.v.mid': ['Orta', 'Medium'], 'ui.v.far': ['Uzak', 'Far'],
+  'ui.combo': ['ZİNCİR', 'COMBO'], 'ui.view': ['Görüş mesafesi', 'View distance'], 'ui.v.near': ['Yakın', 'Near'], 'ui.v.mid': ['Orta', 'Medium'], 'ui.v.far': ['Uzak', 'Far'],
   'ui.view.hint': ['Yakın: uzaktaki her şeyi çizmeyi ve hesaplamayı keser, kalabalıkta en çok FPS kazandırır. Kasma olursa oyun bunu kendisi de düşürür.', 'Near: stops drawing and updating distant things; biggest FPS win in crowds. The game also lowers it automatically when frames drop.'],
   'ui.level': ['Sv', 'Lv'], 'ui.rested': ['Dinlenmiş', 'Rested'], 'ui.xp': ['Deneyim', 'Experience'], 'ui.kut': ['Kut puanı', 'Kut points'], 'ui.gold': ['Akçe', 'Akçe'],
   'ui.hp': ['Can', 'HP'], 'ui.dead': ['Yenildin', 'You were defeated'], 'ui.respawn': ['Kampa dön', 'Return to camp'], 'ui.respawnIn': ['{n} sn sonra kampa dönebilirsin', 'You can return in {n}s'],

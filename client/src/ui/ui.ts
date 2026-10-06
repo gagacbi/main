@@ -1,4 +1,4 @@
-import { BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
+import { COMBO, BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { ROAD_HALF, ROAD_LEN, genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
 import { MAPS, regionAt } from '@shared/maps';
@@ -43,7 +43,7 @@ export class UI {
     this.minimap = r.querySelector('#mm') as HTMLCanvasElement;
     // yetenek çubuğu
     this.e.skillbar.innerHTML = `<div class="slot atk" data-skill="-1" title="Space"><span class="key">␣</span>${icon('swords')}</div>` + SKILLS.map((s, i) => `<div class="slot" data-i="${i}" data-skill="${i}"><span class="key">${i + 1}</span>${icon(s.id)}<span class="rk"></span><div class="cd"></div><span class="cdt"></span><div class="lk"></div></div>`).join('');
-    this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
+    this.e.skillbar.insertAdjacentHTML('beforeend', '<div class="combobadge" style="display:none"></div>'); this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
     this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
     // sağ üst düğmeler
     const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
@@ -248,10 +248,12 @@ export class UI {
       const sk = SKILLS[i]; const locked = m.level < sk.lvl; s.classList.toggle('locked', locked);
       (s.querySelector('.lk') as HTMLElement).textContent = locked ? t('ui.locked', { n: sk.lvl }) : ''; (s.querySelector('.lk') as HTMLElement).style.display = locked ? '' : 'none';
       (s.querySelector('.rk') as HTMLElement).textContent = locked ? '' : SKILL_RANK_LABEL[m.skillRanks[i] - 1];
+      s.classList.toggle('nextc', !locked && this.g.comboChained(i));   // zincirin devamı: parlayan çerçeve
       const left = Math.max(0, this.g.cdEnd[i] - now) / 1000; const cd = left > 0; const p = cd ? (left / sk.cd) * 100 : 0;
       (s.querySelector('.cd') as HTMLElement).style.setProperty('--p', `${p}%`); const ct = s.querySelector('.cdt') as HTMLElement; ct.style.display = cd ? 'grid' : 'none'; if (cd) ct.textContent = left >= 1 ? String(Math.ceil(left)) : left.toFixed(1);
       if (this.lastCd[i] && !cd && !locked) { s.classList.remove('ready-flash'); void s.offsetWidth; s.classList.add('ready-flash'); } this.lastCd[i] = cd;
     });
+    { const b = this.e.skillbar.querySelector('.combobadge') as HTMLElement | null; const c = this.g.me?.combo; if (b) { const on = this.g.comboActive() && c.n > 0; b.style.display = on ? '' : 'none'; if (on) { const left = Math.max(0, (c.u - this.g.net.now()) / 1000); b.innerHTML = `${t('ui.combo')} ×${c.n}<i style="width:${Math.min(100, (left / COMBO.windowSec) * 100)}%"></i>`; } } }
     if (this.hudAcc > 0.1) { this.hud(this.hudAcc); this.hudAcc = 0; }
     if (this.mapAcc > 0.08) { this.drawMap(); this.mapAcc = 0; }
     if (this.fpsAcc > 0.5) { this.fpsAcc = 0; this.e.fps.innerHTML = `${Math.round(this.g.fps)} ${t('ui.fps')} · ${t('ui.ping')} ${this.g.net.pingMs}ms<br>${this.g.gs.quality}`; this.e.info.innerHTML = ''; }
