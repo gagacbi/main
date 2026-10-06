@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { MAPS, REGIONS, regionAt } from '../../shared/maps';
 import { HUB, gatePos, zoneAt, inHubTown } from '../../shared/game';
-import { genAllCamps, genBosses, genCamps, stepMove, worldObstacles } from '../../shared/world';
+import { MAX_CAMPS, genAllCamps, genBosses, genCamps, stepMove, worldObstacles } from '../../shared/world';
 import { makeRig } from '../sim/rig';
 
 describe('çoklu harita altyapısı', () => {
@@ -9,8 +9,8 @@ describe('çoklu harita altyapısı', () => {
     for (const a of REGIONS) { expect(regionAt(a.cx, a.cz)?.id).toBe(a.id); for (const b of REGIONS) if (a !== b) expect(Math.hypot(a.cx - b.cx, a.cz - b.cz)).toBeGreaterThan(a.r + b.r + 20); }
     expect(regionAt(5000, 5000)).toBeNull();
   });
-  test('Bozkır kampları eskisi gibi (64) ve kimlik = dizin; yeni alanların kampları seviye aralığında', () => {
-    const all = genAllCamps(); expect(genCamps().length).toBe(64); all.forEach((c, i) => expect(c.id).toBe(i));
+  test('Bozkır kampları MAX_CAMPS kadar ve kimlik = dizin; yeni alanların kampları seviye aralığında', () => {
+    const all = genAllCamps(); expect(genCamps().length).toBe(MAX_CAMPS); all.forEach((c, i) => expect(c.id).toBe(i));
     for (const m of ['otlak', 'erlik'] as const) { const cs = all.filter((c) => c.map === m); expect(cs.length).toBeGreaterThan(20); for (const c of cs) { expect(c.level).toBeGreaterThanOrEqual(MAPS[m].lv[0]); expect(c.level).toBeLessThanOrEqual(MAPS[m].lv[1]); expect(regionAt(c.x, c.z)?.map).toBe(m); } }
   });
   test('her boss kendi haritasında, engelsiz yerde', () => {

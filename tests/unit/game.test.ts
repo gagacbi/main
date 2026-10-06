@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   BOY_BONUS, KUT_PER_POINT, MAX_LEVEL, PVE_COEF, PVP_COEF, RESTED_CAP_LEVELS, SKILLS, SKILL_RANK_LABEL, TIER_MULT, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, UP_PCT,
-  computeStats, ENCH_TABLE, hitDamage, makeItem, mobXp, restedCap, restedGain, rollTier, skillRankMult, upMult, xpToNext, itemStats, type Item,
+  WORLD_R, computeStats, ENCH_TABLE, hitDamage, makeItem, mobXp, restedCap, restedGain, rollTier, skillRankMult, upMult, xpToNext, itemStats, type Item,
 } from '../../shared/game';
 import { mulberry32 } from '../../shared/rng';
 import { genCamps, genObstacles, stepMove } from '../../shared/world';
@@ -119,8 +119,8 @@ describe('Dünya üretimi ve çarpışma', () => {
     expect(genCamps().length).toBeGreaterThan(30);
   });
   test('hareket dünya sınırını ve engelleri aşamaz', () => {
-    const p = { x: 150, z: 0 }; stepMove(p, 1, 0, 50, 1);
-    expect(Math.hypot(p.x, p.z)).toBeLessThanOrEqual(160);
+    const p = { x: WORLD_R - 10, z: 0 }; stepMove(p, 1, 0, 50, 1);
+    expect(Math.hypot(p.x, p.z)).toBeLessThanOrEqual(WORLD_R);
     const o = genObstacles().find((x) => x.kind === 'tree')!;
     const q = { x: o.x - 5, z: o.z }; for (let i = 0; i < 40; i++) stepMove(q, 1, 0, 7, 0.05);
     expect(Math.hypot(q.x - o.x, q.z - o.z)).toBeGreaterThanOrEqual(o.r + 0.5 - 0.01);

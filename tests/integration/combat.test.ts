@@ -5,7 +5,7 @@ import { F } from '../../shared/protocol';
 import { Bot, mobAt, playerOf, startTestServer, tp, uniq, waitSnap, worldOf, type TestServer } from './helpers';
 
 let s: TestServer; let anchor: Bot;
-const FAR = { x: 0, z: 70 }; // riskli bölge, kamp yok (spawnCamps=false)
+const FAR = { x: 0, z: 130 }; // riskli bölge, kamp yok (spawnCamps=false)
 beforeAll(async () => { s = await startTestServer({ cfg: { spawnCamps: false } }); anchor = await new Bot(s.url, 'Capa').join('gok'); });
 afterAll(async () => { await anchor.leave(); await s.stop(); });
 const fresh = async (boy: 'gok' | 'yer' | 'ay' = 'gok', n = 'Sv') => { worldOf(s).mobs.clear(); const b = await new Bot(s.url, uniq(n)).join(boy); tp(s, b, FAR.x, FAR.z); await waitSnap(b); return b; };

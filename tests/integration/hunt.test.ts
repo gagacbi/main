@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { makeRig } from '../sim/rig';
-import { BAG_SIZE, CRAFT, DEATH_XP_LOSS, FIELD_BOSS, campRespawnMult, deathXpLoss, HUB, HUB_R, MAX_LEVEL, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
+import { BAG_SIZE, CRAFT, DEATH_XP_LOSS, FIELD_BOSS, campRespawnMult, deathXpLoss, HUB, HUB_R, MAX_LEVEL, zoneAt, UPGRADE_RATE, computeStats, itemStats, makeItem, upgradeCost, type Item, type Slot } from '../../shared/game';
 import { newPlayerData } from '../../server/types';
 import { genBosses, genCamps } from '../../shared/world';
 import { mulberry32 } from '../../shared/rng';
@@ -141,7 +141,7 @@ describe('av 5: sayı uçları (özellik tabanlı)', () => {
 describe('av 6: kalabalık ve zorbalık (nüfus simülasyonu bulgusu)', () => {
   test('düşük seviye koruması: 10+ seviye aşağıdaki oyuncu PvP’de azalan, 20+ aşağıdaki dokunulmaz hasar alır; düello ve karşılık koruma dışıdır', () => {
     const rig = makeRig(31, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const v = rig.add('yer');
-    a.d.level = 40; v.d.level = 40; for (const p of [a, v]) { p.x = 80; p.z = 0; w.recalc(p); } v.x = 82;
+    a.d.level = 40; v.d.level = 40; for (const p of [a, v]) { p.x = 130; p.z = 0; w.recalc(p); } v.x = 132;
     const mean = (n = 400) => { let s = 0; for (let i = 0; i < n; i++) { v.hp = v.stats.maxHp; s += w.playerHit(a, v, 1); } return s / n; };
     const same = mean();
     v.d.level = 28; w.recalc(v); const gap12 = mean(); v.d.level = 15; w.recalc(v); const gap25 = mean();
@@ -158,7 +158,7 @@ describe('av 6: kalabalık ve zorbalık (nüfus simülasyonu bulgusu)', () => {
 describe('av 7: sürü ve cezasız avcılık (nüfus simülasyonu bulgusu)', () => {
   test('PvP cezası ilk saldırana işler: yaratıkla dövüşen oyuncuya saldırmak ya da karşılık veren kurbanı öldürmek cezasız değil; çok aşağıdaki oyuncuyu avlamak çift ceza; kurban saldırgansa ceza yok', () => {
     const rig = makeRig(41, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const v = rig.add('yer'); const same = rig.add('ay');
-    a.d.level = 40; v.d.level = 25; same.d.level = 40; a.x = 80; v.x = 82; same.x = 84;
+    a.d.level = 40; v.d.level = 25; same.d.level = 40; a.x = 130; v.x = 132; same.x = 134;
     // gerçek akış: avcı yaratıkla dövüşen kurbana vurur → saldırgan bayrağı; kurban karşılık verir → kurban saldırgan DEĞİL, avcı sorumlu
     v.lastAggro = w.now; v.lastPvpAgg = 0; a.lastPvpAgg = 0; a.focus = v.id; w.playerHit(a, v, 1); expect(a.aggressorUntil).toBeGreaterThan(w.now);
     v.focus = a.id; w.playerHit(v, a, 1); expect(v.aggressorUntil).toBe(0);                      // karşılık veren saldırgan sayılmaz
@@ -183,10 +183,10 @@ describe('av 7: sürü ve cezasız avcılık (nüfus simülasyonu bulgusu)', () 
 describe('av 8: ölüm döngüleri ve zirve kalabalığı (nüfus simülasyonu bulgusu)', () => {
   test('kırmızı adlı oyuncu yurtta doğunca muhafız döngüsüne düşmez: 8 sn dokunulmaz, saldırınca koruma biter', () => {
     const rig = makeRig(51, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.rank = -3; w.recalc(p); p.hp = p.stats.maxHp;
-    w.killPlayer(p, null); rig.seconds(3.2); w.respawn(p); expect(Math.hypot(p.x, p.z)).toBeLessThan(36);
-    rig.seconds(6); expect(p.deadUntil).toBe(0); expect(p.hp).toBe(p.stats.maxHp);              // muhafızlar vurur ama koruma sürerken hasar işlemez
+    w.killPlayer(p, null); rig.seconds(3.2); w.respawn(p); expect(zoneAt(p.x, p.z)).toBe('risky');   // kırmızı adlı: köy dışında doğar
+    p.x = 2; p.z = 2; rig.seconds(6); expect(p.deadUntil).toBe(0); expect(p.hp).toBe(p.stats.maxHp);              // muhafızlar vurur ama koruma sürerken hasar işlemez
     rig.seconds(4); expect(p.hp).toBeLessThan(p.stats.maxHp);                                   // koruma bitti: yurda kırmızı adla kalmak yine tehlikeli
-    const q = rig.add('yer'); q.x = 80; q.z = 0; const e = rig.add('ay'); e.x = 82; e.z = 0; q.protectUntil = w.now + 8000; q.focus = e.id; w.playerHit(q, e, 1); expect(q.protectUntil).toBe(0);
+    const q = rig.add('yer'); q.x = 130; q.z = 0; const e = rig.add('ay'); e.x = 132; e.z = 0; q.protectUntil = w.now + 8000; q.focus = e.id; w.playerHit(q, e, 1); expect(q.protectUntil).toBe(0);
   });
   test('zirve seviye (41–48) için yeterli kamp var: ≥12 kamp, kamplar arası ≥21 birim', () => {
     const c = genCamps(); expect(c.length).toBeGreaterThanOrEqual(60); expect(c.filter((x) => x.level >= 41).length).toBeGreaterThanOrEqual(12);

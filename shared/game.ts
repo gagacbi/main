@@ -31,8 +31,9 @@ export type MatKey = 'ore' | 'hide' | 'wood';
 
 // ───────────────────────── Dünya ─────────────────────────
 export const TICK_HZ = 20;
-export const WORLD_R = 160;
-export const HUB_R = 36;
+export const WORLD_R = 480;   // v2: 160 → 480 (alan ×9). Metin2'nin ~1000 m'lik ana haritalarına yakın ölçek.
+export const HUB_R = 84;      // güvenli bölge = surlu köy (iç yarıçap 80 + dış mahalle)
+export const HUB_PLAZA_R = 24; export const HUB_WALL_R = 80; export const HUB_GATE_HALF = 7;
 /** Şehir Muhafızı menzili (kırmızı adlı oyuncuya ateş eder) */
 export const GUARD_RANGE = 34;
 export const AOI_R = 75;
@@ -41,19 +42,28 @@ export const BAG_SIZE = 30;
 export const MAX_LEVEL = 50;
 export const BOY_ID = { gok: 0, yer: 1, ay: 2 } as const;
 
+/** Köy v2: merkezde taş meydan, dört yöne (D/B/K/G) yol ve surda kapı; mahalleler yollar arasında. */
 export const HUB = {
-  otag: { x: -15, z: -11, r: 6.8 },
-  demirhane: { x: 15, z: -13, r: 4.2 },
-  akSakal: { x: -15, z: -2.5 },
-  demirci: { x: 11, z: -6.5 },
+  otag: { x: -38, z: -28, r: 7.6 },
+  demirhane: { x: 40, z: -34, r: 4.6 },
+  akSakal: { x: -36, z: -9 },
+  demirci: { x: 29, z: -20 },
   fire: { x: 0, z: 0 },
-  stele: { x: 2, z: -21 },
-  spawn: { gok: { x: -7, z: 16 }, yer: { x: 0, z: 18 }, ay: { x: 7, z: 16 } },
-  banners: { gok: { x: -9, z: 6 }, yer: { x: 0, z: 9 }, ay: { x: 9, z: 6 } },
-  guards: [0, 1, 2, 3, 4, 5].map((i) => ({ x: Math.cos(i * 1.0472 + 0.5) * 30, z: Math.sin(i * 1.0472 + 0.5) * 30 })),
-  gate: { x: 15, z: 22 },
+  stele: { x: 14, z: -56 },
+  spawn: { gok: { x: -14, z: 34 }, yer: { x: 0, z: 39 }, ay: { x: 14, z: 34 } },
+  banners: { gok: { x: -19, z: 13 }, yer: { x: 0, z: 19 }, ay: { x: 19, z: 13 } },
+  /** iç halka 6 (meydanı kollar) + 4 sur kapısında ikişer (8) */
+  guards: [
+    ...[0, 1, 2, 3, 4, 5].map((i) => ({ x: Math.cos(i * 1.0472 + 0.5236) * 36, z: Math.sin(i * 1.0472 + 0.5236) * 36 })),
+    ...[0, 1, 2, 3].flatMap((k) => [-1, 1].map((sg) => { const a = k * Math.PI / 2 + sg * 0.15; return { x: Math.cos(a) * 75, z: Math.sin(a) * 75 }; })),
+  ],
+  gate: { x: 32, z: 58 },
+  pond: { x: -30, z: 52, r: 8.5 },
+  /** süs yurtları (çarpışmalı) ve pazar tezgâhları — yollardan uzak, meydandan sur içine dağılmış */
+  yurts: [[-62, -14], [-56, -52], [-22, -64], [-66, -40], [54, -48], [64, -20], [52, 24], [64, 40], [46, 54], [-56, 20], [-66, 38], [-48, 60], [-12, 62], [22, 70]] as [number, number][],
+  stalls: [[36, 11], [46, 11], [56, 11], [66, 11], [38, -11], [48, -11]] as [number, number][],
   interactGate: 8,
-  interactOtag: 14,
+  interactOtag: 16,
   interactDemirci: 9,
   interactAkSakal: 9,
   interactStele: 9,
@@ -329,16 +339,21 @@ export const mobGold = (lvl: number) => Math.max(1, Math.round((3 + 2 * (lvl <= 
 export const dropLevelMult = (diff: number) => (diff >= 0 ? Math.max(0.6, diff <= 5 ? 1 + 0.1 * diff : 1.5 - 0.1 * (diff - 5)) : Math.max(0.1, 1 + 0.15 * diff));
 export const MOB_RESPAWN: [number, number] = [10, 18];
 export const MAX_CAMP_LEVEL = 48;
-export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + (dist - 40) / 2.5)));
-export function campTypes(dist: number): MobType[] {
-  if (dist < 75) return ['tepegoz', 'cakal'];
-  if (dist < 115) return ['albasti', 'cakal', 'tepegoz'];
+/** Bozkır'da seviye merkezden uzaklıkla artar: köy dışından (sv 1) haritanın kenarına (sv 48) doğrusal. */
+export const CAMP_D0 = HUB_R + 8; export const CAMP_D1 = WORLD_R - 24;
+export const campLevel = (dist: number) => Math.max(1, Math.min(MAX_CAMP_LEVEL, Math.round(1 + ((dist - CAMP_D0) / (CAMP_D1 - CAMP_D0)) * (MAX_CAMP_LEVEL - 1))));
+/** Seviyenin Bozkır'daki uzaklığı (campLevel'in tersi) */
+export const levelDist = (level: number) => CAMP_D0 + ((level - 1) / (MAX_CAMP_LEVEL - 1)) * (CAMP_D1 - CAMP_D0);
+export function campTypesForLevel(level: number): MobType[] {
+  if (level < 15) return ['tepegoz', 'cakal'];
+  if (level < 31) return ['albasti', 'cakal', 'tepegoz'];
   return ['erlik', 'albasti', 'cakal'];
 }
+export const campTypes = (dist: number): MobType[] => campTypesForLevel(campLevel(dist));
 
 // ───────────────────────── Erlik çatlağı ─────────────────────────
 export const RIFT = {
-  maxActive: 2, spawnEverySec: [150, 300] as [number, number], lifeSec: 600, activateR: 20, rewardR: 34, minDist: 70, maxDist: 135,
+  maxActive: 2, spawnEverySec: [150, 300] as [number, number], lifeSec: 600, activateR: 20, rewardR: 34, minDist: HUB_R + 30, maxDist: WORLD_R - 40,
   waves: 3, waveBase: 5, wavePerPlayer: 1, hpPerExtra: 0.35, guardianHpMult: 1, rewardXpMult: 80, rewardGoldMult: 30, waveGapSec: 7, gapHealPct: 0.25,
 };
 

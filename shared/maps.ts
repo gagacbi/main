@@ -15,11 +15,11 @@ export interface MapDef {
   palette: { ground: string; ground2: string; sky: string; fog: string; tree: string };
 }
 export const MAPS: Record<MapId, MapDef> = {
-  bozkir: { id: 'bozkir', kind: 'field', minLv: 1, maxLv: 99, lv: [1, 48], pvp: 'optional', rifts: true, stones: true, r: 160, safeR: 36, seed: 20261004,
+  bozkir: { id: 'bozkir', kind: 'field', minLv: 1, maxLv: 99, lv: [1, 48], pvp: 'optional', rifts: true, stones: true, r: 480, safeR: 84, seed: 20261004,
     palette: { ground: '#6fbf4a', ground2: '#5aa83e', sky: '#bfe3ff', fog: '#cfe8ff', tree: '#3f9a4a' } },
-  otlak: { id: 'otlak', kind: 'field', minLv: 1, maxLv: 20, lv: [1, 14], pvp: 'off', rifts: false, stones: false, r: 105, safeR: 13, seed: 777001,
+  otlak: { id: 'otlak', kind: 'field', minLv: 1, maxLv: 20, lv: [1, 14], pvp: 'off', rifts: false, stones: false, r: 170, safeR: 20, seed: 777001,
     palette: { ground: '#8fd35a', ground2: '#7cc24a', sky: '#d6f0ff', fog: '#e4f6ff', tree: '#58b85a' } },
-  erlik: { id: 'erlik', kind: 'field', minLv: 38, maxLv: 99, lv: [38, 54], pvp: 'optional', rifts: true, stones: false, r: 150, safeR: 14, seed: 777002,
+  erlik: { id: 'erlik', kind: 'field', minLv: 38, maxLv: 99, lv: [38, 54], pvp: 'optional', rifts: true, stones: false, r: 320, safeR: 24, seed: 777002,
     palette: { ground: '#6a4f7a', ground2: '#58406a', sky: '#3a2250', fog: '#4a2e6a', tree: '#7a3a8a' } },
   demir: { id: 'demir', kind: 'dungeon', minLv: 41, maxLv: 99, lv: [43, 47], pvp: 'off', rifts: false, stones: false, r: 58, safeR: 0, seed: 777003,
     palette: { ground: '#5a5560', ground2: '#4a4650', sky: '#1c1824', fog: '#241e2e', tree: '#6a6068' } },

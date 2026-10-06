@@ -103,7 +103,7 @@ export function newCostume(rng: Rng, look: number, tier: CostumeTier, now: numbe
   return c;
 }
 /** Kostüm kapıdaki Dokuma Tezgâhı */
-export const LOOM_POS = { x: 20, z: -25, interact: 9 };
+export const LOOM_POS = { x: 56, z: -13, interact: 9 };
 
 /** Pazar referans değeri: üretim maliyeti × kalan süre payı × efsun satırı; kalan süre alıcıya aynen geçer */
 export const costumeRef = (c: Costume, now: number) => {

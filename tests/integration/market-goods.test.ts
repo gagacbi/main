@@ -59,9 +59,9 @@ describe('pazar: kostüm takası', () => {
     const c3 = mk(3); s.d.cos.bag = []; const fresh = [1, 2, 3, 4, 5].map((i) => mk(10 + i)); b.d.cos!.bag = fresh; s.d.cos.bag.push(c3); const r4 = rpc(s, 'market.list', { costume: c3.id, price: bd.min + 100 }); expect(fresh.length).toBe(COSTUME.bagMax); expect(() => rpc(b, 'market.buy', { id: r4.id })).toThrow();
   });
   test('sink delinmez: düşük seviyeli hesap pahalı kostümü ucuza uzatamaz (maliyet max(sahip, üretim seviyesi))', async () => {
-    const { newCostume, extendCost, costLevel } = await import('../../shared/costume'); const { mulberry32 } = await import('../../shared/rng');
+    const { newCostume, extendCost, costLevel, LOOM_POS } = await import('../../shared/costume'); const { mulberry32 } = await import('../../shared/rng');
     const c = newCostume(mulberry32(5), 0, 3, 0, 45); expect(costLevel(c, 10)).toBe(45); expect(extendCost(c, costLevel(c, 10), false)).toBe(extendCost(c, 45, false));
-    const { w, p, cos } = (() => { const rig = makeRig(61, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.level = 10; p.d.gold = 1e9; p.x = 20 - 3; p.z = -25; return { w, p, cos: (a: Record<string, unknown>) => w.rpcRun(p, 'cos', a) as unknown }; })();
+    const { w, p, cos } = (() => { const rig = makeRig(61, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.level = 10; p.d.gold = 1e9; p.x = LOOM_POS.x - 3; p.z = LOOM_POS.z; return { w, p, cos: (a: Record<string, unknown>) => w.rpcRun(p, 'cos', a) as unknown }; })();
     p.d.cos = { worn: null, bag: [newCostume(mulberry32(6), 0, 1, w.now, 45)], mats: { lif: 0, boya: 0, ipek: 0, nakis: 0 }, luck: { boncuk: 0, dugum: 0, nazar: 0, kagit: 0 }, loom: null, pity: 0, crafted: 0 };
     const g = p.d.gold; cos({ op: 'extend', id: p.d.cos.bag[0].id }); expect(g - p.d.gold).toBeGreaterThan(extendCost({ ...p.d.cos.bag[0], tier: 1 }, 10, false) * 3);
     expect(() => cos({ op: 'wear', id: newCostume(mulberry32(7), 0, 3, w.now, 45).id })).toThrow();   // olmayan kostüm

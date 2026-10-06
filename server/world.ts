@@ -1023,8 +1023,15 @@ export class World {
     const regs = new Set<string>(); for (const p of this.players.values()) { const g = regionAt(p.x, p.z); if (g && MAPS[g.map].rifts) regs.add(g.id); }
     const pool = regs.size ? [...regs] : ['bozkir']; const g = regionById(pool[Math.floor(this.ctx.rng() * pool.length)]);
     for (let i = 0; i < 40; i++) {
-      const a = this.ctx.rng() * 6.283; const d = g.id === 'bozkir' ? range(this.ctx.rng, RIFT.minDist, RIFT.maxDist) : range(this.ctx.rng, g.safeR + 30, g.r - 20);
-      const x = g.cx + Math.cos(a) * d, z = g.cz + Math.sin(a) * d;
+      const lo = g.id === 'bozkir' ? RIFT.minDist : g.safeR + 30, hi = g.id === 'bozkir' ? RIFT.maxDist : g.r - 20;
+      // büyük haritada çatlak keşfedilebilir olsun: bölgedeki bir oyuncunun 90–160 birim çevresinde açılır (oyuncu yoksa bölgede rastgele)
+      const near = [...this.players.values()].filter((q) => q.deadUntil === 0 && regionAt(q.x, q.z)?.id === g.id);
+      let x: number, z: number, d: number;
+      if (near.length && i < 30) {
+        const q = near[Math.floor(this.ctx.rng() * near.length)]; const a = this.ctx.rng() * 6.283; const dd = range(this.ctx.rng, 90, 160);
+        x = q.x + Math.cos(a) * dd; z = q.z + Math.sin(a) * dd; const dc = Math.hypot(x - g.cx, z - g.cz) || 1; d = Math.min(hi, Math.max(lo, dc));
+        x = g.cx + ((x - g.cx) / dc) * d; z = g.cz + ((z - g.cz) / dc) * d;
+      } else { const a = this.ctx.rng() * 6.283; d = range(this.ctx.rng, lo, hi); x = g.cx + Math.cos(a) * d; z = g.cz + Math.sin(a) * d; }
       let ok = true; for (const r of this.rifts.values()) if (dist(r, { x, z }) < 50) ok = false;
       if (!ok) continue;
       const r: Rift = { id: this.nid(), x, z, state: 0, wave: 0, mobs: new Set(), openedAt: this.now, lvl: 1, contrib: new Map(), totalHp: 1, scale: 1, closedAt: 0, gapUntil: 0 };

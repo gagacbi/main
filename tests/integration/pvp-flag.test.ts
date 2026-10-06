@@ -5,7 +5,7 @@ import { makeRig } from '../sim/rig';
 
 function pair() {
   const rig = makeRig(5, { spawnCamps: false }); const w = rig.world; const a = rig.add('gok'); const b = rig.add('yer');
-  for (const p of [a, b]) { p.d.level = 20; p.x = 80; p.z = 0; } b.x = 82; w.recalc(a); w.recalc(b);
+  for (const p of [a, b]) { p.d.level = 20; p.x = 130; p.z = 0; } b.x = 132; w.recalc(a); w.recalc(b);
   return { rig, w, a, b, rpc: (p: typeof a, on: boolean) => w.rpcRun(p, 'pvp', { on }) };
 }
 describe('isteğe bağlı PvP bayrağı', () => {
@@ -30,7 +30,7 @@ describe('isteğe bağlı PvP bayrağı', () => {
   test('güvenli bölgede PvP yok (bayraklı olsa da); bayrak snapshot bayrağında görünür', () => {
     const { w, a, b, rpc } = pair(); rpc(a, true); rpc(b, true);
     a.x = HUB.fire.x; a.z = HUB.fire.z; b.x = a.x + 1; b.z = a.z; expect(w.canHitPlayer(a, b, true)).toBe(false);
-    a.x = 80; a.z = 0; b.x = 82; b.z = 0; expect(w.pvpActive(a)).toBe(true);
+    a.x = 130; a.z = 0; b.x = 132; b.z = 0; expect(w.pvpActive(a)).toBe(true);
   });
   test('bayraklı alp yaratıklardan %15 fazla XP alır; Otlak’ta bonus yok', () => {
     const { w, a, b, rpc } = pair(); rpc(a, true);

@@ -42,7 +42,7 @@ describe('pazar', () => {
     rig.clock.advance(MARKET.newAccountH * H + 1000);
     const b = marketPriceBounds(it); expect(call('market.list', { id: it.id, price: b.min - 1 })).toBe('market_price_low'); expect(call('market.list', { id: it.id, price: b.max + 1 })).toBe('market_price_high');
     expect(call('market.list', { id: 'yok', price: b.min })).toBe('no_item');
-    p.x = 80; p.z = 0; expect(call('market.list', { id: it.id, price: b.min })).toBe('market_town'); p.x = 0; p.z = 5;
+    p.x = 130; p.z = 0; expect(call('market.list', { id: it.id, price: b.min })).toBe('market_town'); p.x = 0; p.z = 5;
     p.d.items.length = 0; for (let i = 0; i < MARKET.maxListings; i++) { const x = makeItem(() => 0.5, 'armor', 20, 1); p.d.items.push(x); expect(call('market.list', { id: x.id, price: marketPriceBounds(x).min + 5 })).toBe('ok'); }
     const extra = makeItem(() => 0.5, 'armor', 20, 1); p.d.items.push(extra); expect(call('market.list', { id: extra.id, price: marketPriceBounds(extra).min })).toBe('market_full');
   });
