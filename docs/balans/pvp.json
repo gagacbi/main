@@ -1,0 +1,566 @@
+{
+ "builds": [
+  "Dengeli Kılıç",
+  "Ağır Çift El",
+  "Hızlı Bıçak",
+  "Yay (Ay)",
+  "Büyü Çanı (Ay)",
+  "Kalkan Alp (Yer)",
+  "Blok Kalesi (Yer)",
+  "Kılıç Savunmalı Kalkan",
+  "Delici Kılıç (Gök)",
+  "Büyü Savunmalı (Ay)",
+  "Cam Top: Saf Saldırı",
+  "Emici: Can Çalma"
+ ],
+ "l20": {
+  "L": 20,
+  "up": 3,
+  "rows": [
+   {
+    "name": "Dengeli Kılıç",
+    "winRate": 64
+   },
+   {
+    "name": "Ağır Çift El",
+    "winRate": 67
+   },
+   {
+    "name": "Hızlı Bıçak",
+    "winRate": 53
+   },
+   {
+    "name": "Yay (Ay)",
+    "winRate": 50
+   },
+   {
+    "name": "Büyü Çanı (Ay)",
+    "winRate": 35
+   },
+   {
+    "name": "Kalkan Alp (Yer)",
+    "winRate": 74
+   },
+   {
+    "name": "Blok Kalesi (Yer)",
+    "winRate": 47
+   },
+   {
+    "name": "Kılıç Savunmalı Kalkan",
+    "winRate": 42
+   },
+   {
+    "name": "Delici Kılıç (Gök)",
+    "winRate": 64
+   },
+   {
+    "name": "Büyü Savunmalı (Ay)",
+    "winRate": 14
+   },
+   {
+    "name": "Cam Top: Saf Saldırı",
+    "winRate": 61
+   },
+   {
+    "name": "Emici: Can Çalma",
+    "winRate": 30
+   }
+  ],
+  "rate": [
+   [
+    null,
+    83,
+    67,
+    83,
+    100,
+    33,
+    33,
+    17,
+    83,
+    83,
+    50,
+    67
+   ],
+   [
+    17,
+    null,
+    50,
+    67,
+    67,
+    33,
+    83,
+    100,
+    50,
+    100,
+    67,
+    100
+   ],
+   [
+    33,
+    50,
+    null,
+    17,
+    67,
+    17,
+    33,
+    100,
+    50,
+    100,
+    50,
+    67
+   ],
+   [
+    17,
+    33,
+    83,
+    null,
+    83,
+    17,
+    50,
+    67,
+    33,
+    100,
+    17,
+    50
+   ],
+   [
+    0,
+    33,
+    33,
+    17,
+    null,
+    17,
+    50,
+    100,
+    33,
+    50,
+    0,
+    50
+   ],
+   [
+    67,
+    67,
+    83,
+    83,
+    83,
+    null,
+    67,
+    33,
+    50,
+    100,
+    83,
+    100
+   ],
+   [
+    67,
+    17,
+    67,
+    50,
+    50,
+    33,
+    null,
+    33,
+    17,
+    67,
+    33,
+    83
+   ],
+   [
+    83,
+    0,
+    0,
+    33,
+    0,
+    67,
+    67,
+    null,
+    17,
+    100,
+    0,
+    100
+   ],
+   [
+    17,
+    50,
+    50,
+    67,
+    67,
+    50,
+    83,
+    83,
+    null,
+    100,
+    67,
+    67
+   ],
+   [
+    17,
+    0,
+    0,
+    0,
+    50,
+    0,
+    33,
+    0,
+    0,
+    null,
+    33,
+    17
+   ],
+   [
+    50,
+    33,
+    50,
+    83,
+    100,
+    17,
+    67,
+    100,
+    33,
+    67,
+    null,
+    67
+   ],
+   [
+    33,
+    0,
+    33,
+    50,
+    50,
+    0,
+    17,
+    0,
+    33,
+    83,
+    33,
+    null
+   ]
+  ],
+  "avgSec": 21.6,
+  "hardCounter": [
+   {
+    "name": "Dengeli Kılıç",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Ağır Çift El",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Hızlı Bıçak",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Yay (Ay)",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Büyü Çanı (Ay)",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Kalkan Alp (Yer)",
+    "worstMatchup": 33
+   },
+   {
+    "name": "Blok Kalesi (Yer)",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Kılıç Savunmalı Kalkan",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Delici Kılıç (Gök)",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Büyü Savunmalı (Ay)",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Cam Top: Saf Saldırı",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Emici: Can Çalma",
+    "worstMatchup": 0
+   }
+  ]
+ },
+ "l40": {
+  "L": 40,
+  "up": 5,
+  "rows": [
+   {
+    "name": "Dengeli Kılıç",
+    "winRate": 61
+   },
+   {
+    "name": "Ağır Çift El",
+    "winRate": 62
+   },
+   {
+    "name": "Hızlı Bıçak",
+    "winRate": 41
+   },
+   {
+    "name": "Yay (Ay)",
+    "winRate": 52
+   },
+   {
+    "name": "Büyü Çanı (Ay)",
+    "winRate": 59
+   },
+   {
+    "name": "Kalkan Alp (Yer)",
+    "winRate": 61
+   },
+   {
+    "name": "Blok Kalesi (Yer)",
+    "winRate": 41
+   },
+   {
+    "name": "Kılıç Savunmalı Kalkan",
+    "winRate": 44
+   },
+   {
+    "name": "Delici Kılıç (Gök)",
+    "winRate": 64
+   },
+   {
+    "name": "Büyü Savunmalı (Ay)",
+    "winRate": 15
+   },
+   {
+    "name": "Cam Top: Saf Saldırı",
+    "winRate": 59
+   },
+   {
+    "name": "Emici: Can Çalma",
+    "winRate": 42
+   }
+  ],
+  "rate": [
+   [
+    null,
+    33,
+    83,
+    83,
+    50,
+    67,
+    50,
+    50,
+    67,
+    83,
+    50,
+    50
+   ],
+   [
+    67,
+    null,
+    67,
+    67,
+    50,
+    67,
+    50,
+    50,
+    50,
+    100,
+    50,
+    67
+   ],
+   [
+    17,
+    33,
+    null,
+    17,
+    50,
+    17,
+    17,
+    67,
+    50,
+    100,
+    33,
+    50
+   ],
+   [
+    17,
+    33,
+    83,
+    null,
+    33,
+    67,
+    83,
+    83,
+    17,
+    83,
+    50,
+    17
+   ],
+   [
+    50,
+    50,
+    50,
+    67,
+    null,
+    33,
+    67,
+    83,
+    67,
+    50,
+    67,
+    67
+   ],
+   [
+    33,
+    33,
+    83,
+    33,
+    67,
+    null,
+    67,
+    33,
+    67,
+    83,
+    100,
+    67
+   ],
+   [
+    50,
+    50,
+    83,
+    17,
+    33,
+    33,
+    null,
+    33,
+    17,
+    67,
+    0,
+    67
+   ],
+   [
+    50,
+    50,
+    33,
+    17,
+    17,
+    67,
+    67,
+    null,
+    0,
+    100,
+    0,
+    83
+   ],
+   [
+    33,
+    50,
+    50,
+    83,
+    33,
+    33,
+    83,
+    100,
+    null,
+    100,
+    67,
+    67
+   ],
+   [
+    17,
+    0,
+    0,
+    17,
+    50,
+    17,
+    33,
+    0,
+    0,
+    null,
+    0,
+    33
+   ],
+   [
+    50,
+    50,
+    67,
+    50,
+    33,
+    0,
+    100,
+    100,
+    33,
+    100,
+    null,
+    67
+   ],
+   [
+    50,
+    33,
+    50,
+    83,
+    33,
+    33,
+    33,
+    17,
+    33,
+    67,
+    33,
+    null
+   ]
+  ],
+  "avgSec": 27.8,
+  "hardCounter": [
+   {
+    "name": "Dengeli Kılıç",
+    "worstMatchup": 33
+   },
+   {
+    "name": "Ağır Çift El",
+    "worstMatchup": 50
+   },
+   {
+    "name": "Hızlı Bıçak",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Yay (Ay)",
+    "worstMatchup": 17
+   },
+   {
+    "name": "Büyü Çanı (Ay)",
+    "worstMatchup": 33
+   },
+   {
+    "name": "Kalkan Alp (Yer)",
+    "worstMatchup": 33
+   },
+   {
+    "name": "Blok Kalesi (Yer)",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Kılıç Savunmalı Kalkan",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Delici Kılıç (Gök)",
+    "worstMatchup": 33
+   },
+   {
+    "name": "Büyü Savunmalı (Ay)",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Cam Top: Saf Saldırı",
+    "worstMatchup": 0
+   },
+   {
+    "name": "Emici: Can Çalma",
+    "worstMatchup": 17
+   }
+  ]
+ }
+}

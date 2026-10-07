@@ -1,0 +1,52 @@
+{
+  "name": "kut",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "KUT — Türk mitolojisi temalı, tarayıcıda oynanan 3D MMORPG (Prototip aşaması)",
+  "scripts": {
+    "dev": "concurrently -k -n srv,web \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "start": "tsx server/index.ts",
+    "play": "node scripts/play.mjs",
+    "play:share": "node scripts/play.mjs --share",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:int": "vitest run tests/integration",
+    "e2e": "tsx tests/e2e/run.ts",
+    "test:json": "vitest run --reporter=json --outputFile=docs/evidence/vitest.json",
+    "report": "tsx scripts/make-report.ts",
+    "verify": "npm run typecheck && npm run build && npm run test:json && npm run e2e && npm run report",
+    "admin": "tsx scripts/admin.ts",
+    "sim": "tsx tests/sim/balance.ts && tsx scripts/make-balance-report.ts"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^9.29.0",
+    "@colyseus/core": "^0.16.26",
+    "@colyseus/schema": "^3.0.76",
+    "@colyseus/ws-transport": "^0.16.5",
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "colyseus.js": "^0.16.22",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "concurrently": "^10.0.5",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "optionalDependencies": {
+    "cloudflared": "^0.7.3"
+  }
+}
