@@ -67,6 +67,8 @@ check('F6.font', gfx.fonts.some((f) => f.startsWith('Fredoka')) && gfx.fonts.som
 // HUD
 const hud = await page.evaluate(() => ({ hp: !!document.querySelector('#hpbar'), skills: document.querySelectorAll('#skillbar .slot').length, map: !!document.querySelector('#mm'), chat: !!document.querySelector('#chat'), quest: !!document.querySelector('#quest'), tamga: document.querySelectorAll('svg').length }));
 check('F4.hud', hud.hp && hud.skills === 7 && hud.map && hud.chat && hud.quest && hud.tamga > 10, `HUD: can/xp, ${hud.skills - 1} yetenek, mini harita, sohbet, görev; ${hud.tamga} SVG ikon`);
+const sbPos = await page.evaluate(() => { const r = document.querySelector('.skillbar')!.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, vh: innerHeight }; });
+check('F4.yetenek-cubugu-altta', sbPos.top > sbPos.vh * 0.6 && sbPos.bottom <= sbPos.vh, `Yetenek çubuğu ekranın altında (üst=${Math.round(sbPos.top)}, alt=${Math.round(sbPos.bottom)}, yükseklik=${sbPos.vh})`);
 
 // ───────── 3. Ses (F5) ─────────
 await page.mouse.click(640, 360); await sleep(2500);

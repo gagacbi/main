@@ -244,7 +244,6 @@ button { font-family: var(--f-head); cursor: pointer; }
 .kimizslot kbd { position: absolute; left: 4px; top: 2px; font-size: 10px; color: #d8c49a; } .kimizslot.empty { opacity: .55; } .kimizslot.cd .ic { opacity: .4; } .kimizslot .cdt { position: absolute; font-family: var(--f-head); font-size: 20px; color: #fff; text-shadow: 0 2px 0 #1a1230; }
 
 /* skill zinciri */
-.skillbar { position: relative; }
 .skillbar .slot.nextc { box-shadow: 0 0 0 2px #ffd46a, 0 0 14px 3px rgba(255, 212, 106, .85); animation: nextc-pulse .7s ease-in-out infinite alternate; }
 @keyframes nextc-pulse { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 .combobadge { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); padding: 3px 14px 5px; border-radius: 12px; font: 800 15px 'Fredoka', sans-serif; letter-spacing: 1px; color: #ffe9a8; background: rgba(60, 28, 10, .88); border: 2px solid #ffd46a; text-shadow: 0 1px 0 #1a1230; white-space: nowrap; pointer-events: none; overflow: hidden; }
