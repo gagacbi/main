@@ -1,4 +1,5 @@
 import { COMBO, BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
+import { huntQuest } from '@shared/hunt';
 import { eraName } from '../chron';
 import { genRuins } from '@shared/chronicle';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
@@ -15,7 +16,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
 
 export class UI {
-  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
+  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; questHtml = ''; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
   slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
   constructor(public g: Game, root: HTMLElement) {
     this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root);
@@ -61,6 +62,7 @@ export class UI {
     });
     this.e.cin.addEventListener('blur', () => this.endTyping());
     this.e.respawn.addEventListener('click', () => { void this.g.respawn(); });
+    this.e.quest.addEventListener('click', (ev) => { if ((ev.target as HTMLElement).closest('[data-huntskip]')) void this.g.net.rpc('hunt.skip'); });
     this.e.duelyes.addEventListener('click', async () => { await this.g.net.rpc('duelAccept'); this.e.duelbox.style.display = 'none'; });
     (this.e.duelbox.querySelector('#duelno') as HTMLElement).addEventListener('click', () => (this.e.duelbox.style.display = 'none'));
     this.e.pvpbtn.addEventListener('click', () => void this.togglePvp()); this.e.kimizslot.addEventListener('click', () => void this.useKimiz());
@@ -227,7 +229,9 @@ export class UI {
     } else cp.style.display = 'none';
     // görev takibi
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
-    q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '');
+    let qh = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '');
+    if (m.hunt) { const hq = huntQuest(m.hunt.lv); qh += `<div class="h hunt">${t('ui.hunt')} · ${t('ui.level')} ${m.hunt.lv}</div>` + hq.goals.map((gl, i) => `<div class="row"><div>${t('mob.' + gl.type)} <span class="prog">${m.hunt!.prog[i]}/${gl.n}</span></div></div>`).join('') + `<div class="row"><button data-huntskip>${t('ui.huntSkip')}</button>${m.hunt.pending > 1 ? `<span>${t('ui.huntMore', { n: m.hunt.pending - 1 })}</span>` : ''}</div>`; }
+    if (qh !== this.questHtml) { this.questHtml = qh; q.innerHTML = qh; }
     // etkileşim ipucu
     const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm

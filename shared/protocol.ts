@@ -9,7 +9,7 @@ export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
   | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos' | 'kimiz.buy' | 'kimiz.use'
-  | 'chron' | 'ruin' | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
+  | 'hunt.skip' | 'chron' | 'ruin' | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
 export interface Welcome {
@@ -35,6 +35,7 @@ export interface Me {
   /** skill zinciri: son skill slotu (−1 yok), halka sayısı, bitiş (sunucu ms) */ combo: { s: number; n: number; u: number }; rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; kimiz: number; kimizAt: number; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
+  /** etkin av dileği (seviye, sayaçlar) ve bekleyen dilek sayısı */ hunt: { lv: number; prog: number[]; pending: number } | null;
   role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
 }
 /** bit bayrakları */

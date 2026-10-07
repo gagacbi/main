@@ -7,6 +7,7 @@ import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
+import { HUNT_MOB_SLACK, activeHunt, huntCounts, huntQuest, huntXp } from '../shared/hunt';
 import { ECON, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos } from '../shared/game';
 import { kimizPrice } from '../shared/goods';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
@@ -414,7 +415,7 @@ export class World {
         this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
-        this.tutorial(p, 'kill');
+        this.tutorial(p, 'kill'); this.huntKill(p, m);
         this.rollDrops(p, m, share);
       }
     }
@@ -428,6 +429,24 @@ export class World {
       let near = 0; if (m.campId >= 0) { const c = this.camps[m.campId]; for (const q of this.players.values()) if (q.deadUntil === 0 && (q.x - c.x) ** 2 + (q.z - c.z) ** 2 < 35 * 35) near++; }
       m.respawnAt = this.now + range(this.ctx.rng, MOB_RESPAWN[0], MOB_RESPAWN[1]) * 1000 * campRespawnMult(near);
     }
+  }
+
+  /** Av dileği ilerlemesi: etkin dileğin hedef türlerinden, dilek seviyesine yakın yaratık sayılır; tamamlanınca ödül kendiliğinden gelir. */
+  huntKill(p: Player, m: Mob) {
+    const d = p.d; const h = (d.hunt ??= { done: [], prog: [] });
+    const lv = activeHunt(d.level, h.done); if (lv === null) return;
+    const q = huntQuest(lv); const gi = q.goals.findIndex((g) => g.type === m.type);
+    if (gi < 0 || m.lvl < lv - HUNT_MOB_SLACK) return;
+    if (h.prog.length !== q.goals.length) h.prog = q.goals.map(() => 0);
+    if (h.prog[gi] >= q.goals[gi].n) return;
+    h.prog[gi]++; p.meDirty = true;
+    if (q.goals.some((g, i) => h.prog[i] < g.n)) return;
+    const xp = huntXp(lv, d.level);
+    h.done.push(lv); h.prog = [];
+    d.gold += q.gold; d.bag.charm += q.charm; d.bag.book += q.book;
+    this.addXp(p, xp, false);
+    this.ledger(p, 'hunt.done', { lv, xp, gold: q.gold, charm: q.charm, book: q.book });
+    this.sys(p, 'sys.hunt_done', { lvl: lv, xp, gold: q.gold });
   }
 
   killPlayer(p: Player, src: Player | Mob | null) {
@@ -781,6 +800,10 @@ export class World {
         this.alive(p); this.near(p, HUB.akSakal, HUB.interactAkSakal + 3);
         const got: string[] = []; ELDER_LEVELS.forEach((lv, i) => { if (d.level >= lv && this.discoverClue(p, `elder.${i + 1}`)) got.push(`elder.${i + 1}`); });
         return { got };
+      }
+      case 'hunt.skip': {
+        this.alive(p); const h = (d.hunt ??= { done: [], prog: [] }); const lv = activeHunt(d.level, h.done); if (lv === null) throw new GameError('no_hunt');
+        h.done.push(lv); h.prog = []; this.ledger(p, 'hunt.skip', { lv }); p.meDirty = true; return null;
       }
       case 'dreamSeen': {
         const n = d.pendingDream; if (!n) return null; d.pendingDream = 0; this.discoverClue(p, `dream.${n}`); return null;
@@ -1190,7 +1213,7 @@ export class World {
       companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
-      role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,
+      hunt: huntMe(d), role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,
     };
   }
   sendMe(p: Player) { p.send('me', this.buildMe(p)); p.meDirty = false; p.lastMeAt = this.now; }
@@ -1238,4 +1261,9 @@ export class World {
   }
 }
 
+const huntMe = (d: PlayerData): Me['hunt'] => {
+  const lv = activeHunt(d.level, d.hunt?.done ?? []); if (lv === null) return null;
+  const g = huntQuest(lv).goals; const pr = d.hunt?.prog ?? [];
+  return { lv, prog: g.map((_, i) => pr[i] ?? 0), pending: huntCounts(d.level, d.hunt?.done ?? []) };
+};
 const r2 = (n: number) => Math.round(n * 100) / 100;

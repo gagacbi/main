@@ -21,6 +21,8 @@ export interface PlayerData {
   /** kostüm sistemi (eski kayıtlarda yok) */
   cos?: CostumeState;
   /** kımız (şifa içeceği) adedi */
+  /** av dilekleri: tamamlanan/atlanan seviyeler ve etkin dileğin sayaçları (eski kayıtlarda yok) */
+  hunt?: { done: number[]; prog: number[] };
   kimiz?: number;
   /** günlük zindan hakkı ve toplam bitirme sayısı */
   dun?: { day: number; n: Record<string, number>; clears: Record<string, number> };

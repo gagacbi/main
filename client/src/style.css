@@ -248,3 +248,4 @@ button { font-family: var(--f-head); cursor: pointer; }
 @keyframes nextc-pulse { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 .combobadge { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); padding: 3px 14px 5px; border-radius: 12px; font: 800 15px 'Fredoka', sans-serif; letter-spacing: 1px; color: #ffe9a8; background: rgba(60, 28, 10, .88); border: 2px solid #ffd46a; text-shadow: 0 1px 0 #1a1230; white-space: nowrap; pointer-events: none; overflow: hidden; }
 .combobadge i { position: absolute; left: 0; bottom: 0; height: 3px; background: #ffd46a; }
+.quest .h.hunt { margin-top: 10px; } .quest button[data-huntskip] { font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 6px; border: 1px solid var(--gold-d); background: rgba(0,0,0,.35); color: var(--gold-l); } .quest .row span:not(.prog) { opacity: .7; font-size: 11px; }
