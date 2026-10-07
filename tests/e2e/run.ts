@@ -230,7 +230,7 @@ if (want('oba')) {
   await page.keyboard.press('Escape');
   me.x = HUB.stele.x - 3; me.z = HUB.stele.z + 4; await sleep(1500);
   const w = world(); w.addFrag(me, 41); await sleep(1200);
-  await page.keyboard.press('y'); await sleep(900); await shot('16-yazitlar');
+  await page.keyboard.press('y'); await sleep(900); await page.click('.tab2[data-v="insc"]'); await sleep(500); await shot('16-yazitlar');
   const open1 = await page.$$eval('.stele-card:not(.locked)', (e) => e.length); const lore = await page.textContent('.stele-card:not(.locked)');
   const announced = await ev<boolean>('g.ui.chatLog.some(m => m.key === "sys.inscription")');
   check('E7.yazit', open1 === 1 && /Mühür içeriden|seal was not broken/.test(lore ?? '') && announced && me.d.bag.frag >= 41, `Sunucu çapı 40 parça eşiği aşıldı: ${open1} yazıt çözüldü (“${(lore ?? '').trim().slice(-48)}”), tüm oyunculara duyuruldu=${announced}`);
