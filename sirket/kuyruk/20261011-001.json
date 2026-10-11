@@ -1,0 +1,11 @@
+{
+  "id": "20261011-001",
+  "takim": "denge",
+  "baslik": "Ekonomi simülasyonunu yeni eklemelerle yeniden koş",
+  "istek": "Ek kuşanma yuvaları, Göl Avı, Obanın Günlüğü ve Element yazısı eklendi; nüfus simülasyonunu (150 oyuncu, 30 gün, 3 tohum) baseline_heavy kilitli parametreleriyle koş. Bulguları docs/balans/ altına raporla; oyun sabitlerini DEĞİŞTİRME, yalnızca öneri yaz.",
+  "oncelik": 2,
+  "durum": "bekliyor",
+  "deneme": 0,
+  "olusturma": "2026-10-11T18:58:35.340Z",
+  "notlar": []
+}

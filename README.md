@@ -115,3 +115,6 @@ tests/    unit/ · integration/ (gerçek sunucu + gerçek istemci protokolü) ·
 * **Görsel:** bantlı cel-shade (serin gölge + sıcak ışık), ters-gövde kontur, kilim/tamga motifleri, tepe renkli ilkel parçalardan üretilmiş
   modeller (dış asset yok), parçacık efektleri, bloom + MSAA. Kalite ayarı: Yüksek/Orta/Düşük (düşük FPS'te otomatik düşer).
 * **Ses:** WebAudio ile üretilmiş kopuz esintili pentatonik ezgi, davul, höömey benzeri bordo ve efekt sesleri; dış ses dosyası yoktur.
+
+## Geliştirme şirketi (dağıtıcı · takımlar · bekçi · masa · hafıza)
+Dosya, kuyruk ve döngüyle geliştirme yönetimi: bkz. [docs/SIRKET.md](docs/SIRKET.md) ve `sirket/ANAYASA.md`. Özet: `npm run sirket`.

@@ -1,0 +1,282 @@
+{
+  "dugumler": [
+    {
+      "id": "alp-avi",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/hunt.ts",
+      "derece": 4
+    },
+    {
+      "id": "combo-sistemi",
+      "tur": "kavram",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/game.ts (COMBO)",
+      "derece": 1
+    },
+    {
+      "id": "ek-kusanma-yuvalari",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/game.ts (EXTRA_SLOTS)",
+      "derece": 3
+    },
+    {
+      "id": "element-yazisi",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/element.ts",
+      "derece": 5
+    },
+    {
+      "id": "esya-gorselleri-3b",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "client/src/game/itemart.ts",
+      "derece": 6
+    },
+    {
+      "id": "game-icons-net",
+      "tur": "varlik",
+      "durum": "aktif",
+      "guncelleme": "2026-10-12",
+      "kaynak": "https://game-icons.net",
+      "derece": 2
+    },
+    {
+      "id": "gol-avi",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/fishing.ts",
+      "derece": 7
+    },
+    {
+      "id": "ikon-kaynagi",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "docs/KREDILER.md",
+      "derece": 5
+    },
+    {
+      "id": "kimiz-baseline-heavy",
+      "tur": "karar",
+      "durum": "aktif; kilitli",
+      "guncelleme": "2026-10-12",
+      "kaynak": "docs/balans/KIMIZ_BASELINE_HEAVY.md",
+      "derece": 4
+    },
+    {
+      "id": "kut-oyunu",
+      "tur": "proje",
+      "durum": "aktif",
+      "guncelleme": "2026-10-12",
+      "kaynak": "README.md",
+      "derece": 15
+    },
+    {
+      "id": "kut-yilligi",
+      "tur": "kavram",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "docs/ozellikler/HIKAYE.md",
+      "derece": 4
+    },
+    {
+      "id": "metin2-wiki",
+      "tur": "varlik",
+      "durum": "aktif",
+      "guncelleme": "2026-10-12",
+      "kaynak": "docs/ozellikler/METIN2_WIKI_UYARLAMA.md",
+      "derece": 4
+    },
+    {
+      "id": "obanin-gunlugu",
+      "tur": "karar",
+      "durum": "yapıldı",
+      "guncelleme": "2026-10-12",
+      "kaynak": "shared/daily.ts",
+      "derece": 7
+    },
+    {
+      "id": "sink-oncelikleri",
+      "tur": "karar",
+      "durum": "beklemede",
+      "guncelleme": "2026-10-12",
+      "kaynak": "docs/balans/SINK_KOK_NEDEN.md",
+      "derece": 9
+    },
+    {
+      "id": "sirket-mimarisi",
+      "tur": "karar",
+      "durum": "aktif",
+      "guncelleme": "2026-10-12",
+      "kaynak": "sirket/ANAYASA.md",
+      "derece": 2
+    }
+  ],
+  "kenarlar": [
+    [
+      "alp-avi",
+      "obanin-gunlugu"
+    ],
+    [
+      "combo-sistemi",
+      "kut-oyunu"
+    ],
+    [
+      "ek-kusanma-yuvalari",
+      "esya-gorselleri-3b"
+    ],
+    [
+      "element-yazisi",
+      "sink-oncelikleri"
+    ],
+    [
+      "element-yazisi",
+      "esya-gorselleri-3b"
+    ],
+    [
+      "esya-gorselleri-3b",
+      "ikon-kaynagi"
+    ],
+    [
+      "esya-gorselleri-3b",
+      "ek-kusanma-yuvalari"
+    ],
+    [
+      "game-icons-net",
+      "ikon-kaynagi"
+    ],
+    [
+      "gol-avi",
+      "kut-yilligi"
+    ],
+    [
+      "gol-avi",
+      "sink-oncelikleri"
+    ],
+    [
+      "gol-avi",
+      "obanin-gunlugu"
+    ],
+    [
+      "ikon-kaynagi",
+      "game-icons-net"
+    ],
+    [
+      "ikon-kaynagi",
+      "esya-gorselleri-3b"
+    ],
+    [
+      "kimiz-baseline-heavy",
+      "sink-oncelikleri"
+    ],
+    [
+      "kimiz-baseline-heavy",
+      "kut-oyunu"
+    ],
+    [
+      "kut-oyunu",
+      "sirket-mimarisi"
+    ],
+    [
+      "kut-oyunu",
+      "kimiz-baseline-heavy"
+    ],
+    [
+      "kut-oyunu",
+      "sink-oncelikleri"
+    ],
+    [
+      "kut-oyunu",
+      "gol-avi"
+    ],
+    [
+      "kut-oyunu",
+      "obanin-gunlugu"
+    ],
+    [
+      "kut-oyunu",
+      "alp-avi"
+    ],
+    [
+      "kut-oyunu",
+      "element-yazisi"
+    ],
+    [
+      "kut-oyunu",
+      "ek-kusanma-yuvalari"
+    ],
+    [
+      "kut-oyunu",
+      "kut-yilligi"
+    ],
+    [
+      "kut-oyunu",
+      "esya-gorselleri-3b"
+    ],
+    [
+      "kut-oyunu",
+      "ikon-kaynagi"
+    ],
+    [
+      "kut-yilligi",
+      "gol-avi"
+    ],
+    [
+      "kut-yilligi",
+      "kut-oyunu"
+    ],
+    [
+      "metin2-wiki",
+      "alp-avi"
+    ],
+    [
+      "metin2-wiki",
+      "obanin-gunlugu"
+    ],
+    [
+      "metin2-wiki",
+      "gol-avi"
+    ],
+    [
+      "metin2-wiki",
+      "element-yazisi"
+    ],
+    [
+      "obanin-gunlugu",
+      "sink-oncelikleri"
+    ],
+    [
+      "obanin-gunlugu",
+      "alp-avi"
+    ],
+    [
+      "sink-oncelikleri",
+      "element-yazisi"
+    ],
+    [
+      "sink-oncelikleri",
+      "gol-avi"
+    ],
+    [
+      "sink-oncelikleri",
+      "obanin-gunlugu"
+    ],
+    [
+      "sink-oncelikleri",
+      "kimiz-baseline-heavy"
+    ],
+    [
+      "sirket-mimarisi",
+      "kut-oyunu"
+    ]
+  ]
+}
