@@ -193,6 +193,7 @@ if (want('demirci')) {
   me.x = HUB.demirci.x - 2.5; me.z = HUB.demirci.z + 1; me.deadUntil = 0; await sleep(1500);
   await page.keyboard.press('e'); await sleep(1000);
   const open = await page.$('.panel .smith'); check('D3.demirci-paneli', !!open, 'Demirci’ye yaklaşıp E: yükseltme paneli açıldı');
+  await page.click('.tab2[data-v="up"]'); await sleep(300);   // önceki bölüm (Element sekmesi) sekmeyi değiştirmiş olabilir
   await page.click(`.irow[data-id="${it.id}"]`); await sleep(500);
   const rates = await page.$$eval('.ratetable div', (e) => e.map((d) => parseInt(d.textContent!.split('\n').pop()!.replace(/\D/g, '').slice(-3) || '0')));
   const txt = await page.$$eval('.ratetable div', (e) => e.map((d) => d.textContent));
