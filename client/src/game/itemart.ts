@@ -1,5 +1,6 @@
 import { Color3, Color4, Engine, FreeCamera, Mesh, Scene, TransformNode, Vector3 } from '@babylonjs/core';
 import { TIER_COLORS, type DmgKind, type Item } from '@shared/game';
+import { EL, type ElKey } from '@shared/element';
 import { build, type PartSpec, type V3 } from './meshkit';
 import { addOutline, toonMaterial } from './toon';
 
@@ -8,7 +9,7 @@ import { addOutline, toonMaterial } from './toon';
  * ayrı bir minik sahnede bir kez çizilip PNG olarak önbelleğe alınır. Bant = malzeme (deri/ahşap → bronz → çelik → mithril → altın),
  * kademe = taş/aura rengi, silah türü = biçim.
  */
-type ItemKey = Pick<Item, 'slot' | 'band' | 'tier' | 'wk'>;
+type ItemKey = Pick<Item, 'slot' | 'band' | 'tier' | 'wk'> & { el?: { k: ElKey } };
 interface Pal { m: string; d: string; l: string; w: string; k: string }   // ana, koyu, açık, ahşap/deri, bağ rengi
 const PALS: Pal[] = [
   { m: '#b39368', d: '#7a5c38', l: '#d8c197', w: '#6d4a2c', k: '#8a5a32' }, { m: '#dd9a52', d: '#935a2a', l: '#f6c98a', w: '#6d4a2c', k: '#6a3c1c' },
@@ -186,7 +187,7 @@ function earring(b: number, p: Pal, g: string): PartSpec[] {
 }
 
 export function itemSpecs(it: ItemKey): PartSpec[] {
-  const b = Math.max(0, Math.min(4, it.band)); const p = PALS[b]; const g = it.tier <= 0 ? p.l : TIER_COLORS[it.tier];
+  const b = Math.max(0, Math.min(4, it.band)); const p = PALS[b]; const g = it.el ? EL.colors[it.el.k] : it.tier <= 0 ? p.l : TIER_COLORS[it.tier];
   if (it.slot === 'weapon') { const k = (it.wk as DmgKind | undefined) ?? 'kilic'; return k === 'cift' ? axe(b, p, g) : k === 'bicak' ? dagger(b, p, g) : k === 'yay' ? bow(b, p, g) : k === 'buyu' ? staff(b, p, g) : sword(b, p, g); }
   switch (it.slot) { case 'armor': return armor(b, p, g); case 'helmet': return helmet(b, p, g); case 'shield': return shield(b, p, g); case 'boots': return boots(b, p, g); case 'bracelet': return bracelet(b, p, g); case 'earring': return earring(b, p, g); default: return amulet(b, p, g); }
 }
@@ -211,7 +212,7 @@ function ensure(): Studio | null {
   } catch { studio = false; return null; }
 }
 const cache = new Map<string, string>(); const frameCache = new Map<string, string[]>();
-const keyOf = (it: ItemKey) => `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}`;
+const keyOf = (it: ItemKey) => `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}|${it.el?.k ?? ''}`;
 /** Eşyayı verilen y dönüşleriyle çizer. uniform=true: tüm kareler aynı kadraj (döner önizleme), değilse tek kare sıkı kadraj. */
 function shoot(it: ItemKey, yaws: number[], uniform: boolean): string[] | null {
   const st = ensure(); if (!st) return null;

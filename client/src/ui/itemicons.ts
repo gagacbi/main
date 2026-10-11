@@ -32,7 +32,7 @@ const iconName = (it: Pick<Item, 'slot' | 'band' | 'wk'>): string => {
   return KINDS[it.slot][b];
 };
 /** Bir eşyanın renkli ikonu */
-export function itemIcon(it: Pick<Item, 'slot' | 'band' | 'tier' | 'wk'>, cls = 'ico rich'): string {
+export function itemIcon(it: Pick<Item, 'slot' | 'band' | 'tier' | 'wk'> & { el?: { k: import('@shared/element').ElKey } }, cls = 'ico rich'): string {
   const art = itemArtUrl(it); if (art) return `<img class="${cls} art" src="${art}" alt="" draggable="false">`;   // 3B eşya görseli; WebGL yoksa SVG simgeye düşer
   const p = PALS[Math.max(0, Math.min(4, it.band))]; return paint(iconName(it), p.t, p.m, p.b, cls);
 }

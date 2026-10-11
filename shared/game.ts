@@ -24,6 +24,8 @@ export interface Item {
   /** efsun yenileme sayısı (maliyeti artırır) */
   rr?: number;
   id: string; slot: Slot; band: number; ilvl: number; tier: Tier; up: number; ench: Ench[]; lvlReq: number;
+  /** element yazısı (yalnızca +7 ve üstü silah; shared/element.ts) */
+  el?: import('./element').ItemEl;
   /** silah türü (yalnızca silah; eski kayıtlarda yok = kılıç) */
   wk?: DmgKind;
   /** temel efsun: her parçada slota göre garanti gelen sabit özellik (eski kayıtlarda yok) */

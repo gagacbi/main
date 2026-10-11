@@ -1,5 +1,5 @@
 {
- "at": "2026-10-11T17:05:13.351Z",
+ "at": "2026-10-11T17:33:20.195Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,17 +294,17 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt414"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt464"
   },
   {
    "id": "F1.toon",
    "ok": true,
-   "detail": "Toon materyal=44, kontur ağı=934, toplam ShaderMaterial=97"
+   "detail": "Toon materyal=44, kontur ağı=935, toplam ShaderMaterial=97"
   },
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 95 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 92 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -329,12 +329,12 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=3.65 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=5.99 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
   },
   {
    "id": "D5.envanter",
@@ -379,7 +379,7 @@
   {
    "id": "S2.wiki",
    "ok": true,
-   "detail": "Oyun içi Wiki (U): 13 makale, Alp Avı kuralları ve örnek tablo görünür"
+   "detail": "Oyun içi Wiki (U): 14 makale, Alp Avı kuralları ve örnek tablo görünür"
   },
   {
    "id": "S3.alp-avi-hud",
@@ -402,9 +402,14 @@
    "detail": "Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor"
   },
   {
+   "id": "S7.element",
+   "ok": true,
+   "detail": "Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=10.14 ms; aktif mesh=177/2603; üçgen=521204; (yazılım rasterleştirmede FPS=4)"
+   "detail": "Kare başına JS/CPU maliyeti=8.93 ms; aktif mesh=179/2605; üçgen=523804; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -413,15 +418,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 3.6474609375,
+  "audioPeak": 5.994140625,
   "dropsSeenDuringLoot": 3,
   "perf": {
    "fps": 4,
-   "meshes": 2603,
-   "active": 177,
+   "meshes": 2605,
+   "active": 179,
    "draw": 0,
-   "tris": 521204,
-   "cpuMs": 10.14
+   "tris": 523804,
+   "cpuMs": 8.93
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

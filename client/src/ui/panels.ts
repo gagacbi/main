@@ -16,6 +16,8 @@ import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LU
 import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice, ALL_SLOTS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
+import { EL, EL_KEYS, type ElKey } from '@shared/element';
+import type { MobType } from '@shared/game';
 import { FISH, FISH_DEFS, EDIBLE, fishOf, type FishId } from '@shared/fishing';
 import { DAILY } from '@shared/daily';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
@@ -44,6 +46,7 @@ export function itemTip(it: Item, cmp?: Item): string {
   return `<div class="tn" style="--tc:${TIER_COLORS[it.tier]}">${esc(itemName(it))}${it.up ? ` <b>+${it.up}</b>` : ''}</div><div class="ts">${tierName(it.tier)} · ${t('slot.' + it.slot)} · ${t('ui.ilvl')} ${it.ilvl}</div>`
     + ln(t('ui.atk'), s.atk, c ? c.atk : null) + ln(t('ui.def'), s.def, c ? c.def : null) + ln(t('ui.hp'), s.hp, c ? c.hp : null) + ln(t('ui.crit'), s.critPct, c ? c.critPct : null, '%') + ln(t('ui.atk') + '%', s.atkPct, c ? c.atkPct : null, '%')
     + (it.slot === 'weapon' ? `<div class="ln"><span>${t('ui.weaponKind')}</span><b>${t('dk.' + (it.wk ?? 'kilic'))}</b></div>` : '')
+    + (it.el ? `<div class="en el" style="color:${EL.colors[it.el.k]}">◈ ${t('el.' + it.el.k)} +${it.el.p} <span class="muted">(${t('el.weak')}: ${(Object.keys(EL.weak) as MobType[]).filter((mt) => EL.weak[mt].includes(it.el!.k)).map((mt) => t('mob.' + mt)).join(', ')})</span></div>` : '')
     + (it.base ? `<div class="en base">◆ ${t('ui.baseEnch')}: ${enchLine(it.base)}</div>` : '')
     + it.ench.map((e) => `<div class="en">✦ ${enchLine(e)}</div>`).join('') + `<div class="ts" style="margin-top:4px">${t('ui.lvlReq')}: ${it.lvlReq}</div>`;
 }
@@ -53,7 +56,7 @@ export class Panels {
   mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'deal' | 'price' | 'new' = 'deal'; mkMine2 = true; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
   mkQty = '1';
   lmTier = 1; lmLook = 0; lmBoncuk = 0; lmDugum = false; lmNazar = false;
-  selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
+  selUp = ''; smithTab: 'up' | 'craft' | 'reroll' | 'element' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   wikiId = 'basics'; codexTab: Thread | 'chron' = 'insc'; chron: ChronView | null = null; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
@@ -284,6 +287,19 @@ export class Panels {
             return `<div class="card rr-row"><div class="grow">${l.line === 'base' ? '◆ ' + t('ui.baseEnch') + ': ' : '✦ '}<b>${t('ench.' + l.k)} +${l.v}%</b></div><button class="btn small" data-act="rr" data-line="${l.line}" ${m.gold >= rc ? '' : 'disabled'}>${t('rr.random')} ${icon('akce')}${num(rc)}</button><select class="rrsel" data-sel="${l.line}">${opts}</select><button class="btn small primary" data-act="rrt" data-line="${l.line}" ${m.gold >= tc ? '' : 'disabled'}>${t('rr.pick')} ${icon('akce')}${num(tc)}</button></div>`; }).join('')
           + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
       }
+    } else if (this.smithTab === 'element') {
+      if (!sel) right = `<div class="card muted">${t('ui.chooseItem')}</div>`;
+      else if (sel.slot !== 'weapon' || sel.up < EL.minUp) right = `<div class="bigitem">${itemCell(sel)}<div class="grow"><div class="nm">${esc(itemName(sel))} ${sel.up ? '+' + sel.up : ''}</div></div></div><div class="card bad">${t('el.need', { n: EL.minUp })}</div><div class="muted">${t('el.hint')}</div>`;
+      else {
+        const e = sel.el; const btn = (k: ElKey, op: 'add' | 'swap', cost: number) => `<button class="btn small" data-act="elop" data-op="${op}" data-v="${k}" style="border-color:${EL.colors[k]}" ${m.gold >= cost && !(e && e.k === k) ? '' : 'disabled'}>◈ ${t('el.' + k)}</button>`;
+        const wk = (k: ElKey) => (Object.keys(EL.weak) as MobType[]).filter((mt) => EL.weak[mt].includes(k)).map((mt) => t('mob.' + mt)).join(', ');
+        right = `<div class="bigitem">${itemCell(sel)}<div class="grow"><div class="nm" style="color:${TIER_COLORS[sel.tier]}">${esc(itemName(sel))} +${sel.up}</div>${e ? `<div style="color:${EL.colors[e.k]};font-weight:800">◈ ${t('el.' + e.k)} +${e.p}/${EL.maxPower}</div><div class="muted">${t('el.weak')}: ${wk(e.k)}</div>` : `<div class="muted">${t('el.none')}</div>`}</div></div>`
+          + (e ? `<div class="ratebar ${e.p >= 16 ? '' : 'mid'}"><i style="width:${Math.round((e.p / EL.maxPower) * 100)}%"></i><b>${e.p}/${EL.maxPower}</b></div>
+            <div class="card"><b>${t('el.raise')}</b><div class="row" style="margin-top:6px"><span class="chip ${m.gold >= EL.raiseCost(sel.ilvl, e.p) ? 'need-ok' : 'need-no'}">${icon('akce')}${num(EL.raiseCost(sel.ilvl, e.p))}</span><span class="chip">%${Math.round(EL.raiseRate(e.p) * 100)}</span><span class="grow"></span><button class="btn primary small" data-act="elop" data-op="raise" ${e.p < EL.maxPower && m.gold >= EL.raiseCost(sel.ilvl, e.p) ? '' : 'disabled'}>${t('el.raise.go')}</button></div><div class="muted">${t('el.raise.note')}</div></div>
+            <div class="card"><b>${t('el.swap')}</b> <span class="chip ${m.gold >= EL.swapCost(sel.ilvl) ? 'need-ok' : 'need-no'}">${icon('akce')}${num(EL.swapCost(sel.ilvl))}</span><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">${EL_KEYS.map((k) => btn(k, 'swap', EL.swapCost(sel.ilvl))).join('')}</div></div>`
+            : `<div class="card"><b>${t('el.add')}</b> <span class="chip ${m.gold >= EL.addCost(sel.ilvl) ? 'need-ok' : 'need-no'}">${icon('akce')}${num(EL.addCost(sel.ilvl))}</span><div class="muted">${t('el.add.note', { n: EL.addMax })}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">${EL_KEYS.map((k) => `${btn(k, 'add', EL.addCost(sel.ilvl))}`).join('')}</div></div>`)
+          + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
+      }
     } else {
       const rec = [
         { k: 'book', ic: 'book', need: { ore: CRAFT.book.ore }, gold: CRAFT.book.gold }, { k: 'charm', ic: 'charm', need: { ore: CRAFT.charm.ore, hide: CRAFT.charm.hide }, gold: CRAFT.charm.gold },
@@ -296,8 +312,8 @@ export class Panels {
       }).join('') + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
     }
     const kp = kimizPrice(m.level); const kimizCard = `<div class="card" style="margin-bottom:8px"><div class="row">${icon('kimiz')}<b style="margin-left:6px">${t('kimiz.name')}</b><span class="muted grow"> ${t('kimiz.desc', { p: KIMIZ.healPct * 100, s: KIMIZ.healSec, c: KIMIZ.cooldownSec })}</span><span class="chip">${t('kimiz.stock')}: ${m.kimiz ?? 0}/${KIMIZ.maxStack}</span></div><div class="row" style="margin-top:6px;gap:6px">${[1, 5, 10].map((n) => `<button class="btn small" data-act="kimizbuy" data-n="${n}" ${m.gold < kp * n || (m.kimiz ?? 0) + n > KIMIZ.maxStack ? 'disabled' : ''}>+${n} <i class="gp">${num(kp * n)}</i></button>`).join('')}<span class="muted">${t('kimiz.price', { p: num(kp) })}</span></div></div>`;
-    return this.shell(t('npc.demirci'), 'weapon', `${kimizCard}<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div></div>
-      <div class="smith"><div>${this.smithTab === 'up' ? `<div class="sub">${t('ui.bag')}</div><div class="itemlist">${list}</div>${this.matChips()}` : this.matChips()}</div><div>${right}</div></div>`);
+    return this.shell(t('npc.demirci'), 'weapon', `${kimizCard}<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div><div class="tab2 ${this.smithTab === 'element' ? 'on' : ''}" data-act="tab" data-v="element">${t('el.tab')}</div></div>
+      <div class="smith"><div>${this.smithTab === 'up' || this.smithTab === 'element' ? `<div class="sub">${t('ui.bag')}</div><div class="itemlist">${list}</div>${this.matChips()}` : this.matChips()}</div><div>${right}</div></div>`);
   }
 
   // ─── oba ───
@@ -561,6 +577,11 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
+      case 'elop': {
+        const op = d.op as 'add' | 'swap' | 'raise'; const r = await this.act('element', { id: this.selUp, op, el: d.v });
+        if (r.ok) { const x = r.data as { ok?: boolean; power?: number; el?: { k: ElKey; p: number } }; this.g.audio.sfx(op === 'raise' && x.ok === false ? 'err' : 'upok'); this.lastResult = op === 'raise' ? (x.ok ? { cls: 'good', text: t('el.raise.ok', { n: x.power ?? 0 }) } : { cls: 'bad', text: t('el.raise.fail') }) : { cls: 'good', text: t('el.done', { e: t('el.' + (x.el?.k ?? 'ates')), n: x.el?.p ?? 0 }) }; }
+        break;
+      }
       case 'fishbuy': { const r = await this.act('fish.buy', { what: d.v, n: 5 }); if (r.ok) this.g.audio.sfx('coin'); break; }
       case 'fishbait': this.fishBait = (d.v === 'solucan' ? 'solucan' : 'hamur'); break;
       case 'fishcast': await this.fishCast(); return;
@@ -593,7 +614,7 @@ export class Panels {
       case 'toUp': this.selUp = d.id!; this.smithTab = 'up'; await this.show('smith'); break;
       case 'spec': { const r = await this.act('spec', { choice: d.v }); if (r.ok) { this.g.audio.sfx('levelup'); } break; }
       case 'rank': { const r = await this.act('rankSkill', { slot: Number(d.i) }); if (r.ok) this.g.audio.sfx('upok'); break; }
-      case 'tab': this.smithTab = d.v as 'up' | 'craft' | 'reroll'; this.lastResult = null; break;
+      case 'tab': this.smithTab = d.v as 'up' | 'craft' | 'reroll' | 'element'; this.lastResult = null; break;
       case 'rr': case 'rrt': { const line = d.line === 'base' ? 'base' : Number(d.line); const key = act === 'rrt' ? (this.el.querySelector<HTMLSelectElement>(`select[data-sel="${d.line}"]`)?.value ?? '') : undefined; const r = await this.act('reroll', { id: this.selUp, line, key }); if (r.ok) { const x = r.data as { line: { k: string; v: number }; cost: number }; this.lastResult = { cls: 'ok', text: `${t('ench.' + x.line.k)} +${x.line.v}%` }; this.g.audio.sfx('upok'); } break; }
       case 'pickUp': this.selUp = d.id!; this.lastResult = null; break;
       case 'upgrade': {

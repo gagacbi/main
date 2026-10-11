@@ -21,6 +21,7 @@ import { irange, mulberry32, range } from '../shared/rng';
 import { goodAdd } from '../shared/goods';
 import * as oba from './oba';
 import { chronOf } from './chronicle';
+import { EL, EL_KEYS, elMult, type ElKey } from '../shared/element';
 import { FISH, EDIBLE, fishOf, newFishState, nearShore, rollFish, type Buff, type FishId } from '../shared/fishing';
 import { DAILY, dailyRoll, type DailyKind, type DailyState } from '../shared/daily';
 import { eqCode } from '../shared/appearance';
@@ -338,6 +339,7 @@ export class World {
     const roll = 0.92 + this.ctx.rng() * 0.16;
     const lv = tgt.kind === 'mob' && !tgt.dummy ? lvlDiffOut(tgt.lvl - p.d.level) : 1;
     let dmg = hitDamage(p.stats.atk, mult * extra * lv * (crit ? p.stats.critMult : 1), tgt.kind === 'player' ? tgt.stats.def : tgt.def, pvp, this.hasStatus(p, 'curse'), roll);
+    if (tgt.kind === 'mob') { const em = elMult(p.d.equip.weapon?.el, tgt.type); if (em !== 1) dmg = Math.max(1, Math.round(dmg * em)); }   // element: yalnızca PvE
     if (extra !== 1) dmg = Math.round(dmg); // beceri çarpanı zaten ekte
     if (tgt.kind === 'player') {
       // ilk saldıran: karşı taraf son 15 sn'de kimseye saldırmamışsa ve düello değilse, 30 sn 'saldırgan' bayrağı alır (karşılık veren sorumlu sayılmaz)
@@ -867,6 +869,22 @@ export class World {
         d.gold -= cost; if (isBase) it.base = line; else it.ench[li] = line; it.rr = (it.rr ?? 0) + 1;
         this.ledger(p, 'reroll', { item: it.id, line: a.line, key, v: line.v, gold: cost, targeted, n: it.rr });
         this.recalc(p); p.meDirty = true; this.save(p); return { line, cost, rr: it.rr };
+      }
+      case 'element': {
+        this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci);
+        const f = this.findItem(p, a.id); if (!f) throw new GameError('no_item'); const it = f.it; const op = String(a.op);
+        if (it.slot !== 'weapon' || it.up < EL.minUp) throw new GameError('el_need_up', { n: EL.minUp });
+        if (op === 'add') {
+          if (it.el) throw new GameError('el_has'); const el = a.el as ElKey; if (!EL_KEYS.includes(el)) throw new GameError('bad_args'); const cost = EL.addCost(it.ilvl); if (d.gold < cost) throw new GameError('no_gold');
+          d.gold -= cost; it.el = { k: el, p: irange(this.ctx.rng, 1, EL.addMax) }; this.ledger(p, 'element', { op, item: it.id, el, gold: cost, power: it.el.p });
+        } else if (op === 'swap') {
+          if (!it.el) throw new GameError('el_none'); const el = a.el as ElKey; if (!EL_KEYS.includes(el) || el === it.el.k) throw new GameError('bad_args'); const cost = EL.swapCost(it.ilvl); if (d.gold < cost) throw new GameError('no_gold');
+          d.gold -= cost; it.el = { k: el, p: it.el.p }; this.ledger(p, 'element', { op, item: it.id, el, gold: cost });
+        } else if (op === 'raise') {
+          if (!it.el) throw new GameError('el_none'); if (it.el.p >= EL.maxPower) throw new GameError('max_rank'); const cost = EL.raiseCost(it.ilvl, it.el.p); if (d.gold < cost) throw new GameError('no_gold');
+          d.gold -= cost; const ok = this.ctx.rng() < EL.raiseRate(it.el.p); if (ok) it.el.p++; this.ledger(p, 'element', { op, item: it.id, ok, gold: cost, power: it.el.p }); this.recalc(p); p.meDirty = true; this.save(p); return { ok, power: it.el.p };
+        } else throw new GameError('bad_args');
+        this.recalc(p); p.meDirty = true; this.save(p); return { ok: true, el: it.el };
       }
       case 'market.browse': case 'market.mine': case 'market.claim': case 'market.list': case 'market.cancel': case 'market.buy': return marketRpc(this, p, op, a);
       case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }

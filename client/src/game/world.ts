@@ -6,6 +6,7 @@ import { MAPS, REGIONS, regionAt, type MapId } from '@shared/maps';
 import { LOOM_POS } from '@shared/costume';
 import { mulberry32 } from '@shared/rng';
 import { genRuins } from '@shared/chronicle';
+import { FISH } from '@shared/fishing';
 import { ROAD_HALF, ROAD_LEN, genStones, roadDist, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
@@ -199,7 +200,7 @@ export class World3D {
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRuins(); this.makeRegions(); this.makeLoom();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRuins(); this.makeRegions(); this.makeLoom(); this.makeFishDock();
   }
   isGround(m: { name?: string } | null | undefined) { return !!m && (m === (this.ground as unknown) || this.grounds.includes(m as Mesh)); }
 
@@ -548,6 +549,18 @@ export class World3D {
   }
   gates: Mesh[] = [];
   /** Dokuma Tezgâhı: kostüm üretimi (yurdun kuzeydoğusu) */
+  /** Göl iskelesi: balıkçılık noktası (yürünebilir kıyıdan suya uzanan tahta iskele, korkuluk direkleri ve balıklı tabela) */
+  private makeFishDock() {
+    const sc = this.scene; const pd = FISH.pond; const L = Math.hypot(pd.x, pd.z); const ux = -pd.x / L, uz = -pd.z / L;   // gölden Yurt merkezine doğru
+    const specs: PartSpec[] = [];
+    for (let i = 0; i < 12; i++) specs.push({ k: 'box', w: 2.2, h: 0.14, dp: 0.46, p: [0, 0.3, -5.6 + i * 0.58], c: i % 2 ? '#a9784a' : '#b98a58', c2: '#8a5d35' });
+    for (const sx of [-1.15, 1.15]) for (const zz of [-5.6, -2.8, 0, 1.2]) specs.push({ k: 'cyl', d: 0.2, h: 1.5, p: [sx, 0.8, zz], c: '#6b4326', c2: '#8a5a32' });
+    for (const sx of [-1.15, 1.15]) specs.push({ k: 'box', w: 0.1, h: 0.1, dp: 6.9, p: [sx, 1.35, -2.2], c: '#7a4f2e' });
+    specs.push({ k: 'cyl', d: 0.16, h: 2.4, p: [2.0, 1.2, 1.9], c: '#6b4326', c2: '#8a5a32' }, { k: 'box', w: 1.5, h: 0.8, dp: 0.1, p: [2.0, 2.3, 1.9], c: '#d9b57a', c2: '#c9a060' },
+      { k: 'sphere', d: 0.5, s: [1.6, 0.8, 0.4], p: [2.0, 2.3, 1.82], c: '#4aa8ff', c2: '#bfe2ff' }, { k: 'cone', db: 0.3, dt: 0, h: 0.34, p: [2.55, 2.3, 1.82], r: [0, 0, -Math.PI / 2], c: '#4aa8ff' }, { k: 'sphere', d: 0.07, p: [1.8, 2.34, 1.76], c: '#1a1230' });
+    specs.push({ k: 'cyl', d: 0.5, h: 0.5, p: [-1.7, 0.25, 0.7], c: '#8a5a32', c2: '#a9784a' }, { k: 'cyl', d: 0.46, h: 0.06, p: [-1.7, 0.52, 0.7], c: '#5a3a1c' });   // yem kovası
+    const m = build(sc, 'fishdock', specs); m.material = this.mat; m.position.set(pd.x + ux * (pd.r + 0.4), 0, pd.z + uz * (pd.r + 0.4)); m.rotation.y = Math.atan2(ux, uz); addOutline(m, sc).parent = m; this.root.addChild(m);
+  }
   private makeLoom() {
     const sc = this.scene; const { x, z } = LOOM_POS; const rot = Math.atan2(-x, -z);
     const specs: PartSpec[] = [

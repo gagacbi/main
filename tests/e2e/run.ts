@@ -180,6 +180,9 @@ if (want('paneller')) {
     await page.keyboard.press('j'); await sleep(900); await shot('12-gunluk'); const dTxt = (await page.textContent('.overlay.open')) ?? ''; check('S4.gunluk', /Yaratık kes/.test(dTxt) && /Günlük Hediye/.test(dTxt), 'Obanın Günlüğü (J): 4 görev, ilerleme çubukları, ödül türleri ve Günlük Hediye görünür'); await page.keyboard.press('Escape'); await sleep(300);
     await page.evaluate("window.__game.ui.open('fish')"); await sleep(900); await shot('12b-gol-avi'); const fTxt = (await page.textContent('.overlay.open')) ?? ''; check('S5.gol-avi', /Olta At/.test(fTxt) && /Sazan/.test(fTxt) && /Altın Sudak/.test(fTxt), 'Göl Avı paneli: olta seviyesi, yemler, olta at düğmesi, balık envanteri ve pişirme');
     await page.click('[data-act="fishcast"]'); await sleep(900); await shot('12c-zamanlama'); check('S6.zamanlama-oyunu', (await page.$$('.fgame .fbar')).length === 1, 'Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor'); await page.keyboard.press('Escape'); await sleep(400); }
+  { const mm = pl(NAME); const sw = makeItem(mulberry32(8), 'weapon', 14, 2, 'cift'); sw.up = 8; sw.lvlReq = 1; sw.el = { k: 'ates', p: 5 }; mm.d.items.unshift(sw); mm.d.gold = 900000; mm.meDirty = true; await sleep(1200);
+    await page.evaluate("window.__game.ui.open('smith')"); await sleep(900); await page.click('.tab2[data-v="element"]'); await sleep(700); await page.click('.irow:has-text("+8")'); await sleep(500); await shot('13-element'); const elTxt = (await page.textContent('.overlay.open')) ?? '';
+    check('S7.element', /Element/.test(elTxt) && /Ateş/.test(elTxt) && /Gücü yükselt/.test(elTxt), 'Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri'); await page.keyboard.press('Escape'); await sleep(300); }
   await page.keyboard.press('Escape');
 }
 

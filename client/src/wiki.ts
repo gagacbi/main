@@ -3,6 +3,7 @@ import { DUNGEONS } from '@shared/dungeon';
 import { ERA_AT, ERA_STEP, CHRON_PTS, RUIN_LEVELS } from '@shared/chronicle';
 import { HUNT, huntFor } from '@shared/hunt';
 import { FISH, FISH_DEFS } from '@shared/fishing';
+import { EL, EL_KEYS } from '@shared/element';
 import { DAILY } from '@shared/daily';
 import { getLang, t } from './i18n';
 
@@ -118,6 +119,26 @@ ${rates}
 - Luck items: Enchant Swap Scroll, evil-eye beads, costume luck items
 ## Philosophy
 Upgrading is risk and reward: high plusses cost a lot and many items burn on the way, which keeps the market and material economy alive.`] },
+
+  { id: 'element', ic: 'weapon', cat: 'grow', title: ['Element yazısı (silah)', 'Element scripts (weapons)'], body: () => [
+`Demirci’de ${EL.minUp} ve üstü silaha 6 elementten biri eklenir: ${EL_KEYS.map((k) => t('el.' + k)).join(', ')}.
+## Etki
+- Güç 1–${EL.addMax} arasında rastgele gelir, sonra en çok ${EL.maxPower}’e yükseltilir
+- Yaratığın zayıf olduğu elementte hasar güç başına +%${EL.weakPerPower * 100} (en çok +%${Math.round(EL.maxPower * EL.weakPerPower * 100)}), diğerlerinde +%${EL.neutralPerPower * 100}. PvP’de etkisi yoktur
+## Zayıflıklar
+${(Object.keys(EL.weak) as import('@shared/game').MobType[]).filter((m) => EL.weak[m].length).map((m) => `- ${t('mob.' + m)}: ${EL.weak[m].map((k) => t('el.' + k)).join(', ')}`).join('\n')}
+## Maliyet (akçe sink’i)
+- Ekleme: +9 artı basma maliyetinin %60’ı; değiştirme: iki katı (güç korunur); yükseltme: güce bağlı, başarı %${Math.round(EL.raiseRate(0) * 100)}→%${Math.round(EL.raiseRate(20) * 100)}
+- Başarısız yükseltmede eşya kaybolmaz, yalnızca akçe gider`,
+`At the Blacksmith a weapon at ${EL.minUp} or higher can take one of 6 elements: ${EL_KEYS.map((k) => t('el.' + k)).join(', ')}.
+## Effect
+- Power rolls 1–${EL.addMax}, then can be raised up to ${EL.maxPower}
+- Against creatures weak to the element, damage rises +${EL.weakPerPower * 100}% per power (max +${Math.round(EL.maxPower * EL.weakPerPower * 100)}%), otherwise +${EL.neutralPerPower * 100}%. No effect in PvP
+## Weaknesses
+${(Object.keys(EL.weak) as import('@shared/game').MobType[]).filter((m) => EL.weak[m].length).map((m) => `- ${t('mob.' + m)}: ${EL.weak[m].map((k) => t('el.' + k)).join(', ')}`).join('\n')}
+## Cost (a gold sink)
+- Add: 60% of the +9 upgrade cost; change: double (power kept); raise: scales with power, success ${Math.round(EL.raiseRate(0) * 100)}%→${Math.round(EL.raiseRate(20) * 100)}%
+- A failed raise never destroys the item; only the gold is lost`] },
 
   { id: 'market', ic: 'akce', cat: 'world', title: ['Pazar, akçe ve Kımız', 'Market, gold & Kımız'], body: () => [
 `- Pazar (P): her şey takas edilir; satış vergisi %${Math.round(MARKET.taxPct * 100)}, ilan ücreti %${Math.round(MARKET.listFeePct * 100)} (en az ${MARKET.listFeeMin}), en çok ${MARKET.maxListings} ilan, süre ${MARKET.durationH} saat
@@ -237,13 +258,9 @@ ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.
 
   { id: 'soon', ic: 'wood', cat: 'soon', title: ['Yol haritası (yakında)', 'Roadmap (coming soon)'], body: () => [
 `Bunlar henüz oyunda DEĞİL; tasarımı docs/ozellikler/METIN2_WIKI_UYARLAMA.md içinde:
-## Element yazısı
-- +7 üstü silaha 6 elementten biri; yüksek akçe maliyeti (akçe sink’i)
 ## Sonrası
 - Kut Taşları (ejderha taşı simyası benzeri), Yoldaş evrimi ve ömrü, kalan çizgi ikonların yenilenmesi`,
 `These are NOT in the game yet; the design is in docs/ozellikler/METIN2_WIKI_UYARLAMA.md:
-## Element script
-- One of 6 elements on a +7 weapon; high gold cost (a gold sink)
 ## Later
 - Kut Stones (dragon-stone alchemy style), companion evolution and lifespan, refreshing the remaining line icons`] },
 ];
