@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, append
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 export const KOK = resolve(dirname(fileURLToPath(import.meta.url)), '..');          // sirket/
 export const PROJE = resolve(KOK, '..');                                              // proje kökü
@@ -32,3 +33,24 @@ export const uyar = (g, p) => (g.endsWith('/') ? p.startsWith(g) : globRe(g).tes
 export const sayac = (takim) => { const d = okuJson(yol('takimlar', takim, 'durum.json'), {}); if (d.gun !== bugun()) { d.gun = bugun(); d.bugunKosu = 0; } return d; };
 export const sayacYaz = (takim, d) => yazJson(yol('takimlar', takim, 'durum.json'), d);
 export const KUYRUK_DURUM = ['bekliyor', 'kosuyor', 'kabul', 'askida'];
+
+/**
+ * MÜHÜR: takımlar birbirine mesaj atmaz, yalnızca dosya yazar. Koşu başında korunan dosyaların özeti alınır; bekçi koşu sonunda karşılaştırır.
+ * Korunan: anayasa, sirket.json, bin/, tüm takımların takim.md + kurallar.md (kendi sınırını gevşetemez), diğer takımların her dosyası,
+ * kendi durum.json'u (dağıtıcı yazdıktan sonra), masa/, başka işlerin kuyruk ve çalışma dosyaları. Serbest: kendi calisma/<id>.* dosyaları, hafiza/, yeni kuyruk dosyaları (devir), kendi defter.md'si.
+ */
+const hashle = (f) => createHash('sha256').update(readFileSync(f)).digest('hex');
+function tara(dir, out = []) { if (!existsSync(dir)) return out; for (const e of readdirSync(dir, { withFileTypes: true })) { const f = join(dir, e.name); if (e.isDirectory()) tara(f, out); else out.push(f); } return out; }
+export function korunanlar(takim, id) {
+  const rel = (f) => f.slice(KOK.length + 1).replace(/\\/g, '/'); const hepsi = tara(KOK).map(rel).filter((f) => !f.startsWith('hafiza/') && !f.endsWith('.gitkeep'));
+  return hepsi.filter((f) => {
+    if (f.startsWith(`calisma/${id}.`)) return false;                                 // kendi çıktıları serbest
+    if (f === `takimlar/${takim}/defter.md`) return false;                             // kendi defteri
+    if (f === `kuyruk/${id}.json`) return false;                                       // kendi iş kaydı (dağıtıcı/bekçi yönetir)
+    return true;
+  });
+}
+export const muhurAl = (takim, id) => Object.fromEntries(korunanlar(takim, id).map((f) => [f, hashle(join(KOK, f))]));
+export const muhurFarki = (eski) => {
+  const sorun = []; for (const [f, h] of Object.entries(eski)) { const yol_ = join(KOK, f); if (!existsSync(yol_)) sorun.push(`silindi: sirket/${f}`); else if (hashle(yol_) !== h) sorun.push(`değişti: sirket/${f}`); } return sorun;
+};

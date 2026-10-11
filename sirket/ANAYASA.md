@@ -5,7 +5,7 @@ Her koşu önce bunu okur. Yayın düğmesi insanın; kaynaksız sayı yok; bek�
 ## Kurallar
 1. **Yayın düğmesi insanda.** Takımlar kod yazar, bekçi denetler, `masa` listesine düşer. Oyuna "yayınlama" (ana dala birleştirme, PR, sunucuya alma) insan "evet" dedikten sonradır.
 2. **Kaynaksız sayı yok.** Raporda her sayısal iddia `SAYI: ... KAYNAK: dosya/komut/commit` biçiminde yazılır. Bekçi `KAYNAK:` eksik satırı reddeder.
-3. **Takımlar birbirine mesaj atmaz.** Dosya yazar, okuyan okur: iş emri `kuyruk/`, çıktı `calisma/`, kalıcı bilgi `hafiza/`, takım notu `defter.md`.
+3. **Takımlar birbirine mesaj atmaz; dosya yazar, okuyan okur.** Başka takıma iş gerekirse kuyruğa yeni iş yazılır (`dagitici.mjs ekle --takim <hedef> --kimden <iş-id>`); sırayı ve tavanı dağıtıcı belirler. Başka takımın dosyası, kendi `kurallar.md`'si, anayasa, `bin/` ve `masa/` düzenlenmez. Bekçi bunu **mühürle** zorlar: koşu başında korunan dosyaların özeti alınır, sonunda değişen varsa koşu reddedilir. Kalıcı bilgi `hafiza/` sayfasına yazılır.
 4. **Dağıtıcı LLM çağırmaz**; kuyruktan sıradaki işi seçer, tavanları uygular (günlük koşu, deneme tavanı). Tavan aşılırsa iş `askida` olur ve insana kalır.
 5. **Bekçi her koşuyu denetler:** izinli/yasaklı yollar, kapılar (typecheck, test, derleme, e2e), rapor biçimi. Kabul → `masa/<gün>.jsonl`, red → kuyruk (neden notlanır).
 6. **Dürüst rapor:** geçmeyen test, atlanan adım, ölçülemeyen şey açıkça yazılır. "Çalışıyor" demek için kanıt gerekir.
