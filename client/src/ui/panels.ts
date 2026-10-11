@@ -13,8 +13,9 @@ import { DUNGEONS } from '@shared/dungeon';
 import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '@shared/goods';
 import { LOOM_POS } from '@shared/costume';
 import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LUCK_KEYS, addLineCost, baseLine, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, rerollLineCost, type Costume, type CostumeTier } from '@shared/costume';
-import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS } from '@shared/game';
+import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice } from '@shared/game';
 import { emblemSvg } from './emblems';
+import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
 import { icon } from './icons';
 
 const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd9ef"/></linearGradient></defs>
@@ -31,8 +32,8 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
 export function itemCell(it: Item | null, slot?: Slot, opts: { sel?: boolean; id?: boolean } = {}) {
-  if (!it) return `<div class="cell empty" ${slot ? `data-slot="${slot}"` : ''}><span class="sl">${slot ? t('slot.' + slot) : ''}</span>${icon(slot ?? 'bag')}</div>`;
-  return `<div class="cell item ${opts.sel ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-item="${it.id}">${icon(it.slot)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`;
+  if (!it) return `<div class="cell empty" ${slot ? `data-slot="${slot}"` : ''}><span class="sl">${slot ? t('slot.' + slot) : ''}</span>${slot ? slotGhost(slot) : icon('bag')}</div>`;
+  return `<div class="cell item ${opts.sel ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-item="${it.id}">${itemIcon(it)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`;
 }
 export function itemTip(it: Item, cmp?: Item): string {
   const s = itemStats(it); const c = cmp ? itemStats(cmp) : null;
@@ -56,6 +57,14 @@ export class Panels {
     this.tipEl = document.createElement('div'); this.tipEl.className = 'tip'; root.appendChild(this.tipEl);
     this.el.addEventListener('mousedown', (e) => { if (e.target === this.el) this.close(); });
     this.el.addEventListener('click', (e) => this.onClick(e));
+    this.el.addEventListener('dragstart', (e) => { const c = (e.target as HTMLElement).closest('[data-item]') as HTMLElement | null; if (c && e.dataTransfer) { e.dataTransfer.setData('text/plain', c.dataset.item!); e.dataTransfer.effectAllowed = 'move'; } });
+    this.el.addEventListener('dragover', (e) => { if ((e.target as HTMLElement).closest('.eqs .cell, .bag')) e.preventDefault(); });
+    this.el.addEventListener('drop', (e) => {
+      const id = e.dataTransfer?.getData('text/plain'); if (!id || this.open !== 'inv') return; const tgt = e.target as HTMLElement; const m = this.me; e.preventDefault();
+      const eqSlot = SLOTS.find((x) => m.equip[x]?.id === id);
+      if (tgt.closest('.eqs .cell') && !eqSlot) void this.act('equip', { id }).then(() => { this.g.ui.sfx('ui'); });
+      else if (tgt.closest('.bag') && eqSlot) void this.act('unequip', { slot: eqSlot });
+    });
     this.el.addEventListener('contextmenu', (e) => { const c = (e.target as HTMLElement).closest('[data-item]') as HTMLElement | null; if (c) { e.preventDefault(); this.quick(c.dataset.item!); } });
     root.addEventListener('mouseover', (e) => this.hover(e)); root.addEventListener('mousemove', (e) => this.moveTip(e)); root.addEventListener('mouseout', () => (this.tipEl.style.display = 'none'));
     this.el.addEventListener('change', (e) => this.onChange(e));
@@ -111,19 +120,35 @@ export class Panels {
   // ─── çanta ───
   private matChips() {
     const m = this.me; const k: [string, number][] = [['gold', m.gold], ['ore', m.bag.ore], ['hide', m.bag.hide], ['wood', m.bag.wood], ['book', m.bag.book], ['charm', m.bag.charm], ['frag', m.bag.frag]];
-    return `<div class="mats">${k.map(([n, v]) => `<span class="chip" data-mat="${n}">${icon(n === 'gold' ? 'akce' : n)}${num(v)}</span>`).join('')}</div>`;
+    return `<div class="mats">${k.map(([n, v]) => `<span class="chip" data-mat="${n}">${hasMatIcon(n === 'gold' ? 'akce' : n) ? matIcon(n === 'gold' ? 'akce' : n, 'ico rich') : icon(n)}${num(v)}</span>`).join('')}</div>`;
   }
+  lastBagClick = { id: '', at: 0 }; invFilter: Slot | 'all' = 'all'; invSort: 'new' | 'tier' | 'ilvl' | 'slot' = 'new';
+  /** Çanta: kuşanma bebeği (sürükle-bırak), filtre/sıralama, 30 gözlü ızgara, seçili eşya ayrıntısı, malzemeler */
   inv() {
-    const m = this.me; const bc = BOY_COLORS[m.boy];
-    const bag = Array.from({ length: 30 }, (_, i) => itemCell(m.items[i] ?? null, undefined, { sel: m.items[i]?.id === this.selBag })).join('');
-    const eq = SLOTS.map((s) => itemCell(m.equip[s] ?? null, s)).join('');
+    const m = this.me; const bc = BOY_COLORS[m.boy]; const s = m.stats;
+    let list = m.items.filter((i) => this.invFilter === 'all' || i.slot === this.invFilter);
+    const ord = SLOTS; if (this.invSort === 'tier') list = [...list].sort((a, b) => b.tier - a.tier || b.ilvl - a.ilvl); else if (this.invSort === 'ilvl') list = [...list].sort((a, b) => b.ilvl - a.ilvl || b.tier - a.tier); else if (this.invSort === 'slot') list = [...list].sort((a, b) => ord.indexOf(a.slot) - ord.indexOf(b.slot) || b.ilvl - a.ilvl);
+    const bag = Array.from({ length: 30 }, (_, i) => { const it = list[i]; return it ? itemCell(it, undefined, { sel: it.id === this.selBag }).replace('class="cell item', 'draggable="true" class="cell item') : '<div class="cell empty"></div>'; }).join('');
+    const eqc = (sl: Slot) => `<div class="eqs">${itemCell(m.equip[sl] ?? null, sl).replace(/^<div class="cell(?: item)?/, (x) => (m.equip[sl] ? `<div draggable="true" class="cell item` : x))}</div>`;
     const sel = m.items.find((i) => i.id === this.selBag); const near = this.nearSmith();
-    const act = sel ? `<div class="card row" style="margin-top:10px"><div class="grow"><b>${esc(itemName(sel))}</b><div class="muted">${t('ui.lvlReq')}: ${sel.lvlReq}</div></div>
-      <button class="btn primary small" data-act="equip" data-id="${sel.id}" ${sel.lvlReq > m.level ? 'disabled' : ''}>${t('ui.equip')}</button>
-      <button class="btn small" data-act="sell" data-id="${sel.id}" ${near ? '' : 'disabled'} title="${near ? '' : t('npc.demirci')}">${t('ui.sell')}</button>
-      <button class="btn small" data-act="toUp" data-id="${sel.id}">${t('ui.upgrade')}</button></div>` : '';
-    return this.shell(t('ui.inventory'), 'bag', `<div class="inv"><div class="eqcol"><div class="paper" style="--b1:${bc.main};--b2:${bc.dark}">${emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.35)')}<div class="nm">${esc(m.name)}</div></div><div class="eqslots">${eq}</div></div>
-      <div><div class="sub">${t('ui.bag')} <span class="muted">${m.items.length}/30</span></div><div class="bag">${bag}</div>${act}${this.matChips()}<div class="muted" style="margin-top:8px">${getLang() === 'tr' ? 'Sağ tık: hızlı kuşan' : 'Right-click: quick equip'}</div></div></div>`);
+    const filt = (['all', ...SLOTS] as const).map((f) => `<div class="tab2 ${f === this.invFilter ? 'on' : ''}" data-act="invf" data-v="${f}">${f === 'all' ? t('inv.all') : t('slot.' + f)}</div>`).join('');
+    const sorts = (['new', 'tier', 'ilvl', 'slot'] as const).map((k) => `<button class="btn small ${this.invSort === k ? 'primary' : ''}" data-act="invs" data-v="${k}">${t('inv.sort.' + k)}</button>`).join('');
+    const eqSel = sel ? m.equip[sel.slot] : undefined;
+    const st0 = sel ? itemStats(sel) : null; const st1 = eqSel ? itemStats(eqSel) : null;
+    const chip = (lab: string, v: number, c: number | null, unit = '') => (v || (c ?? 0)) ? `<span class="dc">${lab} <b>${v}${unit}</b>${c === null ? '' : v === c ? '' : ` <i class="${v > c ? 'up' : 'dn'}">${v > c ? '▲+' : '▼'}${Math.round((v - c) * 10) / 10}</i>`}</span>` : '';
+    const detail = sel && st0 ? `<div class="card invdet" style="--tc:${TIER_COLORS[sel.tier]}"><div class="cell item" style="--tc:${TIER_COLORS[sel.tier]}">${itemIcon(sel)}${sel.up > 0 ? `<span class="up">+${sel.up}</span>` : ''}</div>
+      <div class="grow dt"><div class="tn">${esc(itemName(sel))}${sel.up ? ` <b>+${sel.up}</b>` : ''}</div><div class="ts">${tierName(sel.tier)} · ${t('slot.' + sel.slot)} · ${t('ui.ilvl')} ${sel.ilvl} · ${t('ui.lvlReq')} ${sel.lvlReq}${sel.slot === 'weapon' ? ` · ${t('dk.' + (sel.wk ?? 'kilic'))}` : ''}</div>
+      <div class="dls">${chip(t('ui.atk'), st0.atk, st1 ? st1.atk : null)}${chip(t('ui.def'), st0.def, st1 ? st1.def : null)}${chip(t('ui.hp'), st0.hp, st1 ? st1.hp : null)}${chip(t('ui.crit'), st0.critPct, st1 ? st1.critPct : null, '%')}${sel.ench.length + (sel.base ? 1 : 0) ? `<span class="dc en">✦ ${sel.ench.length + (sel.base ? 1 : 0)} ${t('inv.ench')}</span>` : ''}</div></div>
+      <div class="acts"><button class="btn primary small" data-act="equip" data-id="${sel.id}" ${sel.lvlReq > m.level ? 'disabled' : ''}>${t('ui.equip')}</button><button class="btn small" data-act="toUp" data-id="${sel.id}">${t('ui.upgrade')}</button>
+      <button class="btn small" data-act="sell" data-id="${sel.id}" ${near ? '' : 'disabled'} title="${near ? '' : t('npc.demirci')}">${t('ui.sell')} <i class="gp">${num(vendorPrice(sel))}</i></button></div></div>`
+      : `<div class="card muted invdet">${t('inv.pick')}</div>`;
+    const pct = Math.round((m.items.length / BAG_SIZE) * 100);
+    const power = (a: string, v: string | number) => `<div class="ln"><span>${a}</span><b>${v}</b></div>`;
+    return this.shell(t('ui.inventory'), 'bag', `<div class="inv2"><div class="eqcol"><div class="doll"><div class="d-h">${eqc('helmet')}</div><div class="d-w">${eqc('weapon')}</div>
+      <div class="paper" style="--b1:${bc.main};--b2:${bc.dark}">${emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.35)')}<div class="nm">${esc(m.name)}</div></div><div class="d-a">${eqc('amulet')}</div><div class="d-r">${eqc('armor')}</div></div>
+      <div class="stats mini">${power(t('ui.hp'), num(s.maxHp))}${power(t('ui.atk'), num(s.atk))}${power(t('ui.def'), num(s.def))}${power(t('ui.crit'), s.crit.toFixed(1) + '%')}</div></div>
+      <div class="invmain"><div class="invbar"><div class="tabs2">${filt}</div><div class="sorts">${sorts}</div></div>
+      <div class="capbar"><i style="width:${pct}%"></i><b>${m.items.length}/${BAG_SIZE}</b></div><div class="bag">${bag}</div>${detail}${this.matChips()}<div class="muted" style="margin-top:6px">${t('inv.hint')}</div></div></div>`);
   }
   nearSmith() { const d = Math.hypot(this.g.pos.x - 11, this.g.pos.z + 6.5); return d < 13; }
 
@@ -157,7 +182,7 @@ export class Panels {
       if (l.costume) { const c = l.costume; return `<div class="card mk-row"><div class="cell item">${icon('loom')}</div><div class="grow"><b>${this.cosName(c)}</b><div class="muted">${t('cos.left', { t: fmtDur(c.expiresAt - this.g.net.now()) })} · ${[baseLine(c), ...c.ench].map((e) => `${t('ench.' + e.k)} +${e.v}%`).join(' · ')} · ${esc(l.seller)}</div></div><div class="mk-price ${cls}">${icon('akce')}${num(l.price)}<small>${t('mk.ref')} ${num(l.ref)}</small></div>${own ? `<button class="btn small" data-act="mkcancel" data-id="${l.id}">${t('mk.cancel')}</button>` : `<button class="btn primary small" data-act="mkbuy" data-id="${l.id}" ${m.gold < l.price || !inTown ? 'disabled' : ''}>${t('mk.buy')}</button>`}</div>`; }
       if (l.good) return `<div class="card mk-row"><div class="cell item">${icon(l.good.k)}<span class="up">×${num(l.good.qty)}</span></div><div class="grow"><b>${this.goodName(l.good.k)} ×${num(l.good.qty)}</b><div class="muted">${t('mk.goods')} · ${num(Math.round(l.price / l.good.qty))} / ${t('mk.unit')} · ${esc(l.seller)}</div></div><div class="mk-price ${cls}">${icon('akce')}${num(l.price)}<small>${t('mk.ref')} ${num(l.ref)}</small></div>${own ? `<button class="btn small" data-act="mkcancel" data-id="${l.id}">${t('mk.cancel')}</button>` : `<button class="btn primary small" data-act="mkbuy" data-id="${l.id}" ${m.gold < l.price || !inTown ? 'disabled' : ''}>${t('mk.buy')}</button>`}</div>`;
       const it = l.item!;
-      return `<div class="card mk-row"><div class="cell item" style="--tc:${TIER_COLORS[it.tier]}" data-item-tip="${l.id}">${icon(it.slot)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>
+      return `<div class="card mk-row"><div class="cell item" style="--tc:${TIER_COLORS[it.tier]}" data-item-tip="${l.id}">${itemIcon(it)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>
         <div class="grow"><b>${esc(itemName(it))}</b><div class="muted">${t('slot.' + it.slot)} · ${t('ui.ilvl')} ${it.ilvl}${it.slot === 'weapon' ? ' · ' + t('dk.' + (it.wk ?? 'kilic')) : ''} · ${esc(l.seller)}</div></div>
         <div class="mk-price ${cls}">${icon('akce')}${num(l.price)}<small>${t('mk.ref')} ${num(l.ref)}</small></div>
         ${own ? `<button class="btn small" data-act="mkcancel" data-id="${l.id}">${t('mk.cancel')}</button>` : `<button class="btn primary small" data-act="mkbuy" data-id="${l.id}" ${m.gold < l.price || !inTown ? 'disabled' : ''}>${t('mk.buy')}</button>`}</div>`;
@@ -168,7 +193,7 @@ export class Panels {
       return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${chips}<span class="grow"></span><div class="chip ${this.mkMine2 ? 'on' : ''}" data-act="mkfit" title="${t('mk.fitHint')}">${t('mk.fit')}</div><div class="chip" data-act="mksort">${this.mkSort === 'deal' ? t('mk.sortDeal') : this.mkSort === 'price' ? t('mk.sortPrice') : t('mk.sortNew')}</div></div><div class="itemlist" style="max-height:380px;overflow:auto">${list}</div><div class="muted" style="margin-top:6px">${t('mk.note', { tax: Math.round(MARKET.taxPct * 100), fee: Math.round(MARKET.listFeePct * 100), h: MARKET.durationH })}</div></div>`);
     }
     const mail = this.mkMine.mail.length ? `<div class="sub">${t('mk.mail')}</div>` + this.mkMine.mail.map((x) => `<div class="card">${x.kind === 'gold' ? `${icon('akce')} +${num(x.gold)}` : x.good ? `${this.goodName(x.good.k)} ×${num(x.good.qty)}` : esc(itemName(x.item!))} <span class="muted">${x.note.startsWith('sold') ? t('mk.sold') : t('mk.expired')}</span></div>`).join('') + `<button class="btn primary small" data-act="mkclaim" style="margin-top:6px">${t('mk.claim')}</button>` : '';
-    const bag = m.items.map((it) => `<div class="cell item ${this.mkSel === it.id ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-act="mkpick" data-id="${it.id}" title="${esc(itemName(it))}">${icon(it.slot)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`).join('');
+    const bag = m.items.map((it) => `<div class="cell item ${this.mkSel === it.id ? 'sel' : ''}" style="--tc:${TIER_COLORS[it.tier]}" data-act="mkpick" data-id="${it.id}" title="${esc(itemName(it))}">${itemIcon(it)}${it.up > 0 ? `<span class="up">+${it.up}</span>` : ''}</div>`).join('');
     const goods = GOOD_KEYS.filter((k) => goodGet(m, k) > 0).map((k) => `<div class="cell item ${this.mkSel === 'good:' + k ? 'sel' : ''}" data-act="mkgood" data-k="${k}" title="${esc(this.goodName(k))}">${icon(k)}<span class="up">×${num(goodGet(m, k))}</span></div>`).join('');
     const nowC = this.g.net.now(); const cbag = (m.cos?.bag ?? []).filter((c) => c.expiresAt - nowC > 3600000);
     const coss = cbag.map((c) => `<div class="cell item ${this.mkSel === 'cos:' + c.id ? 'sel' : ''}" data-act="mkcos" data-id="${c.id}" title="${esc(this.cosName(c))}">${icon('loom')}<span class="up">${t('cos.tier.' + c.tier).slice(0, 2)}</span></div>`).join('');
@@ -430,7 +455,10 @@ export class Panels {
     const act = el.dataset.act;
     if (!act && el.dataset.item) { // çantada eşya seç / kuşanılmışı çıkar
       const id = el.dataset.item; const eq = SLOTS.find((s) => this.me.equip[s]?.id === id);
-      if (this.open === 'inv') { if (eq) { await this.act('unequip', { slot: eq }); } else { this.selBag = id; this.render(true); } }
+      if (this.open === 'inv') {
+        if (eq) { await this.act('unequip', { slot: eq }); }
+        else { const now = performance.now(); if (this.lastBagClick.id === id && now - this.lastBagClick.at < 450) { this.lastBagClick = { id: '', at: 0 }; await this.quick(id); this.selBag = ''; this.g.ui.sfx('ui'); this.render(true); return; } this.lastBagClick = { id, at: now }; this.selBag = id; this.render(true); }
+      }
       return;
     }
     const d = el.dataset;
@@ -451,6 +479,8 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
+      case 'invf': this.invFilter = (d.v ?? 'all') as Slot | 'all'; break;
+      case 'invs': this.invSort = (d.v ?? 'new') as typeof this.invSort; break;
       case 'wk': this.wikiId = d.v ?? 'basics'; break;
       case 'cx': this.codexTab = d.v as Thread | 'chron'; if (this.codexTab === 'chron') { const r = await this.g.net.rpc('chron'); if (r.ok) this.chron = r.data as ChronView; } break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
