@@ -63,6 +63,9 @@ describe('Obanın Günlüğü', () => {
     rig.seconds(86400 + 60); const next = w.dailyOf(p); expect(next.day).not.toBe(st.day); expect(next.tasks.every((t) => !t.claimed)).toBe(true);
     p.d.level = 4; const day2 = w.dailyOf(p); w.daily(p, 'kill', 999); expect(day2.tasks.some((t) => t.claimed)).toBe(false);
   });
+  test('çok düşük seviyeli yaratık günlük "kill" sayacına sayılmaz', () => {
+    const { w, p } = shore(40); p.x = 0; p.z = 130; const k = w.dailyOf(p).tasks.find((t) => t.k === 'kill')!; const m = w.makeMob('cakal', 5, p.x + 2, p.z, -1); m.contrib.set(p.id, 1); w.killMob(m); expect(k.done).toBe(0);
+  });
   test('gerçek olaylar ilerletir: yaratık öldürme günlük "kill" sayacını artırır', () => {
     const { w, p } = shore(15); p.x = 0; p.z = 130; const k = w.dailyOf(p).tasks.find((t) => t.k === 'kill')!; const m = w.makeMob('cakal', 15, p.x + 2, p.z, -1); m.contrib.set(p.id, 1); w.killMob(m); expect(k.done).toBe(1);
   });

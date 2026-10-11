@@ -78,14 +78,14 @@ export function donate(ctx: Ctx, a: Actor, amounts: Partial<Record<MatKey, numbe
   const o = loadOymak(ctx, a.oymakId);
   let total = 0;
   for (const k of ['ore', 'hide', 'wood'] as MatKey[]) {
-    const n = Math.floor(amounts[k] ?? 0);
-    if (n < 0) throw new GameError('bad_amount');
+    const n = Math.floor(Number(amounts[k] ?? 0));
+    if (!Number.isFinite(n) || n < 0) throw new GameError('bad_amount');   // NaN/Infinity/dize: sızdırılırsa Oba deposu ve oyuncu çantası NaN ile bozulurdu
     if (n > a.d.bag[k]) throw new GameError('not_enough');
     total += n;
   }
   if (total <= 0) throw new GameError('bad_amount');
   for (const k of ['ore', 'hide', 'wood'] as MatKey[]) {
-    const n = Math.floor(amounts[k] ?? 0); a.d.bag[k] -= n; o.storage[k] += n;
+    const n = Math.floor(Number(amounts[k] ?? 0)); a.d.bag[k] -= n; o.storage[k] += n;
   }
   a.points += total; saveOymak(ctx, o);
   ctx.db.ledger(ctx.clock.now(), a.dbId, 'oba.donate', { amounts, points: total });

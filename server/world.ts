@@ -461,7 +461,7 @@ export class World {
         this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
-        this.tutorial(p, 'kill'); this.huntKill(p, m); this.daily(p, 'kill');
+        this.tutorial(p, 'kill'); this.huntKill(p, m); if (m.lvl >= p.d.level - 10) this.daily(p, 'kill');   // çok düşük seviye yaratık günlük göreve sayılmaz (kasma)
         this.rollDrops(p, m, share);
       }
     }
@@ -796,7 +796,7 @@ export class World {
       }
       // ───── Göl Avı ─────
       case 'fish.buy': {
-        const f = (d.fish ??= newFishState()); this.alive(p); if (!nearShore(p.x, p.z)) throw new GameError('fish_far'); const what = String(a.what); const n = Math.max(1, Math.min(50, Math.floor(a.n ?? 1)));
+        const f = (d.fish ??= newFishState()); this.alive(p); if (!nearShore(p.x, p.z)) throw new GameError('fish_far'); const what = String(a.what); const n = Math.max(1, Math.min(50, Math.floor(Number(a.n ?? 1)) || 1));
         if (what === 'rod') { if (f.rod >= 1) throw new GameError('fish_has_rod'); if (d.gold < FISH.rodPrice) throw new GameError('no_gold'); d.gold -= FISH.rodPrice; f.rod = 1; this.ledger(p, 'fish.buy', { what, gold: FISH.rodPrice }); }
         else if (what === 'hamur' || what === 'solucan') { const cost = FISH.bait[what] * n; if (d.gold < cost) throw new GameError('no_gold'); d.gold -= cost; f[what] += n; this.ledger(p, 'fish.buy', { what, n, gold: cost }); }
         else throw new GameError('bad_args');
