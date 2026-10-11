@@ -1,5 +1,5 @@
 {
- "at": "2026-10-11T14:01:52.991Z",
+ "at": "2026-10-11T14:14:26.505Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,7 +294,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt579"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt664"
   },
   {
    "id": "F1.toon",
@@ -304,7 +304,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 98 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 100 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -324,12 +324,12 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=5.91 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=4.04 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00019918938050977886, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.0001579149393364787, sessizlikte enerji=0.000"
   },
   {
    "id": "D5.envanter",
@@ -374,7 +374,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=8.39 ms; aktif mesh=176/2599; üçgen=518408; (yazılım rasterleştirmede FPS=3)"
+   "detail": "Kare başına JS/CPU maliyeti=9.24 ms; aktif mesh=175/2599; üçgen=518352; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -383,15 +383,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 5.9140625,
+  "audioPeak": 4.03515625,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 3,
+   "fps": 4,
    "meshes": 2599,
-   "active": 176,
+   "active": 175,
    "draw": 0,
-   "tris": 518408,
-   "cpuMs": 8.39
+   "tris": 518352,
+   "cpuMs": 9.24
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

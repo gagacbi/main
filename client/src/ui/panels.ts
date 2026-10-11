@@ -122,7 +122,7 @@ export class Panels {
     const m = this.me; const k: [string, number][] = [['gold', m.gold], ['ore', m.bag.ore], ['hide', m.bag.hide], ['wood', m.bag.wood], ['book', m.bag.book], ['charm', m.bag.charm], ['frag', m.bag.frag]];
     return `<div class="mats">${k.map(([n, v]) => `<span class="chip" data-mat="${n}">${hasMatIcon(n === 'gold' ? 'akce' : n) ? matIcon(n === 'gold' ? 'akce' : n, 'ico rich') : icon(n)}${num(v)}</span>`).join('')}</div>`;
   }
-  lastBagClick = { id: '', at: 0 }; invFilter: Slot | 'all' = 'all'; invSort: 'new' | 'tier' | 'ilvl' | 'slot' = 'new';
+  lastBagClick = { id: '', at: 0 }; invPage: 'items' | 'mats' | 'cos' = 'items'; invFilter: Slot | 'all' = 'all'; invSort: 'new' | 'tier' | 'ilvl' | 'slot' = 'new';
   /** Çanta: kuşanma bebeği (sürükle-bırak), filtre/sıralama, 30 gözlü ızgara, seçili eşya ayrıntısı, malzemeler */
   inv() {
     const m = this.me; const bc = BOY_COLORS[m.boy]; const s = m.stats;
@@ -144,11 +144,23 @@ export class Panels {
       : `<div class="card muted invdet">${t('inv.pick')}</div>`;
     const pct = Math.round((m.items.length / BAG_SIZE) * 100);
     const power = (a: string, v: string | number) => `<div class="ln"><span>${a}</span><b>${v}</b></div>`;
-    return this.shell(t('ui.inventory'), 'bag', `<div class="inv2"><div class="eqcol"><div class="doll"><div class="d-h">${eqc('helmet')}</div><div class="d-w">${eqc('weapon')}</div>
-      <div class="paper" style="--b1:${bc.main};--b2:${bc.dark}">${emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.35)')}<div class="nm">${esc(m.name)}</div></div><div class="d-a">${eqc('amulet')}</div><div class="d-r">${eqc('armor')}</div></div>
+    const pages: [typeof this.invPage, string][] = [['items', 'I'], ['mats', 'II'], ['cos', 'III']];
+    const tabsP = pages.map(([k, r]) => `<div class="pgtab ${k === this.invPage ? 'on' : ''}" data-act="invp" data-v="${k}" title="${t('inv.page.' + k)}">${r}</div>`).join('');
+    const rail: [string, PanelName, string][] = [['char', 'char', 'ui.character'], ['skills', 'skills', 'ui.skills'], ['oba', 'oba', 'ui.obaPanel'], ['akce', 'market', 'mk.title'], ['stele', 'inscr', 'ui.codex'], ['book', 'wiki', 'ui.wiki']];
+    const railH = `<div class="rail">${rail.map(([ic, pn, tt]) => `<button class="btn icon" data-act="goto" data-v="${pn}" title="${t(tt)}">${icon(ic)}</button>`).join('')}</div>`;
+    const matRows: [string, number, string][] = [['akce', m.gold, 'mat.gold'], ['ore', m.bag.ore, 'mat.ore'], ['hide', m.bag.hide, 'mat.hide'], ['wood', m.bag.wood, 'mat.wood'], ['book', m.bag.book, 'mat.book'], ['charm', m.bag.charm, 'mat.charm'], ['frag', m.bag.frag, 'mat.frag'], ['kimiz', m.kimiz, 'mat.kimiz']];
+    const matCells = matRows.map(([k, v, tk]) => `<div class="cell item mat ${v ? '' : 'zero'}" style="--tc:#e8b53c" title="${esc(t(tk))}">${matIcon(k)}<span class="cnt">${num(v)}</span><span class="mlab">${esc(t(tk))}</span></div>`).join('') + Array.from({ length: 30 - matRows.length }, () => '<div class="cell empty"></div>').join('');
+    const cosIcons: [string, string, number][] = [...(['lif', 'boya', 'ipek', 'nakis'] as const).map((k): [string, string, number] => [k, 'cos.mat.' + k, m.cos.mats[k]]), ...(['boncuk', 'dugum', 'nazar', 'kagit'] as const).map((k): [string, string, number] => [k, 'cos.luck.' + k, m.cos.luck[k]])];
+    const cosCells = cosIcons.map(([k, tk, v]) => `<div class="cell item mat ${v ? '' : 'zero'}" style="--tc:#b46bff" title="${esc(t(tk))}">${icon(k)}<span class="cnt">${num(v)}</span><span class="mlab">${esc(t(tk))}</span></div>`).join('') + Array.from({ length: 22 }, () => '<div class="cell empty"></div>').join('');
+    const pageBody = this.invPage === 'items' ? `<div class="invwrap"><div><div class="capbar"><i style="width:${pct}%"></i><b>${m.items.length}/${BAG_SIZE}</b></div><div class="bag">${bag}</div></div><div class="invside">${detail}</div></div>`
+      : this.invPage === 'mats' ? `<div class="sub">${t('inv.page.mats')}</div><div class="bag">${matCells}</div>`
+      : `<div class="sub">${t('inv.page.cos')}</div><div class="card" style="margin-bottom:8px">${m.cos.worn ? `<b>${t('cos.worn')}</b>` : `<span class="muted">${t('cos.none')}</span>`} · ${t('cos.bagN', { n: m.cos.bag.length })}</div><div class="bag">${cosCells}</div>`;
+    return this.shell(t('ui.inventory'), 'bag', `<div class="inv3">${railH}<div class="eqcol"><div class="dollwin"><div class="doll"><svg class="body" viewBox="0 0 100 160"><g fill="none" stroke="rgba(255,233,168,.28)" stroke-width="1.6" stroke-linejoin="round"><circle cx="50" cy="20" r="11"/><path d="M38 36 Q50 32 62 36 L74 50 L68 84 L62 82 L60 120 L62 154 L52 154 L50 124 L48 154 L38 154 L40 120 L38 82 L32 84 L26 50 Z"/></g></svg>
+      <div class="d-h">${eqc('helmet')}</div><div class="d-w">${eqc('weapon')}</div><div class="d-a">${eqc('amulet')}</div><div class="d-r">${eqc('armor')}</div>
+      <div class="d-n">${emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.35)')}<span style="color:${bc.main}">${esc(m.name)} · ${t('ui.level')} ${m.level}</span></div></div></div>
       <div class="stats mini">${power(t('ui.hp'), num(s.maxHp))}${power(t('ui.atk'), num(s.atk))}${power(t('ui.def'), num(s.def))}${power(t('ui.crit'), s.crit.toFixed(1) + '%')}</div></div>
-      <div class="invmain"><div class="invbar"><div class="tabs2">${filt}</div><div class="sorts">${sorts}</div></div>
-      <div class="capbar"><i style="width:${pct}%"></i><b>${m.items.length}/${BAG_SIZE}</b></div><div class="bag">${bag}</div>${detail}${this.matChips()}<div class="muted" style="margin-top:6px">${t('inv.hint')}</div></div></div>`);
+      <div class="invmain"><div class="invtop"><div class="pgtabs">${tabsP}</div>${this.invPage === 'items' ? `<div class="invbar"><div class="tabs2">${filt}</div><div class="sorts">${sorts}</div></div>` : ''}</div>
+      ${pageBody}${this.matChips()}<div class="muted" style="margin-top:6px">${t('inv.hint')}</div></div></div>`);
   }
   nearSmith() { const d = Math.hypot(this.g.pos.x - 11, this.g.pos.z + 6.5); return d < 13; }
 
@@ -438,7 +450,7 @@ export class Panels {
       <div class="setrow"><span class="l">${t('ui.quality')}</span><div class="seg">${(['high', 'medium', 'low'] as const).map((k) => `<button data-act="q" data-v="${k}" class="${q === k ? 'on' : ''}">${t('ui.q.' + k)}</button>`).join('')}</div></div>
       <div class="setrow"><span class="l">${t('ui.view')}</span><div class="seg">${(['near', 'mid', 'far'] as const).map((k) => `<button data-act="vd" data-v="${k}" class="${this.g.gs.viewDist === k ? 'on' : ''}">${t('ui.v.' + k)}</button>`).join('')}</div></div>
       <div class="sub" style="margin-top:2px">${t('ui.view.hint')}</div>
-      <div class="gap"></div>${this.helpBody()}</div>`);
+      <div class="gap"></div>${this.helpBody()}<div class="muted" style="margin-top:10px;font-size:11px">${t('ui.credits')}</div></div>`);
   }
   helpBody() { return `<div class="sub">${t('help.title')}</div><div class="helpgrid"><div>${t('help.move')}</div><div>${t('help.fight')}</div><div>${t('help.panels')}</div><div>${t('help.zones')}</div></div>`; }
   help() { return this.shell(t('ui.help'), 'skills', `<div style="min-width:480px;max-width:620px">${this.helpBody()}</div>`); }
@@ -479,6 +491,8 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
+      case 'invp': this.invPage = (d.v ?? 'items') as typeof this.invPage; break;
+      case 'goto': await this.show(d.v as PanelName); return;
       case 'invf': this.invFilter = (d.v ?? 'all') as Slot | 'all'; break;
       case 'invs': this.invSort = (d.v ?? 'new') as typeof this.invSort; break;
       case 'wk': this.wikiId = d.v ?? 'basics'; break;
