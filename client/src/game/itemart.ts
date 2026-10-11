@@ -1,0 +1,188 @@
+import { Color3, Color4, Engine, FreeCamera, Mesh, Scene, TransformNode, Vector3 } from '@babylonjs/core';
+import { TIER_COLORS, type DmgKind, type Item } from '@shared/game';
+import { build, type PartSpec, type V3 } from './meshkit';
+import { addOutline, toonMaterial } from './toon';
+
+/**
+ * Eşya görselleri: oyunun kendi toon/kontur stiliyle modellenmiş küçük 3B eşyalar (kılıç, balta, hançer, yay, asa, zırh, miğfer, tılsım),
+ * ayrı bir minik sahnede bir kez çizilip PNG olarak önbelleğe alınır. Bant = malzeme (deri/ahşap → bronz → çelik → mithril → altın),
+ * kademe = taş/aura rengi, silah türü = biçim.
+ */
+type ItemKey = Pick<Item, 'slot' | 'band' | 'tier' | 'wk'>;
+interface Pal { m: string; d: string; l: string; w: string; k: string }   // ana, koyu, açık, ahşap/deri, bağ rengi
+const PALS: Pal[] = [
+  { m: '#b39368', d: '#7a5c38', l: '#d8c197', w: '#6d4a2c', k: '#8a5a32' }, { m: '#dd9a52', d: '#935a2a', l: '#f6c98a', w: '#6d4a2c', k: '#6a3c1c' },
+  { m: '#b8c3d3', d: '#697689', l: '#eef3fa', w: '#5a4330', k: '#3c2a1c' }, { m: '#9cc3f7', d: '#4f6aaf', l: '#e2f0ff', w: '#3f3550', k: '#2c2440' },
+  { m: '#f5c648', d: '#ad6d1a', l: '#fff0a6', w: '#4a2a1a', k: '#7a1f1f' },
+];
+const B = (w: number, h: number, dp: number, p: V3, c: string, c2?: string, gloss = 0.35, r?: V3): PartSpec => ({ k: 'box', w, h, dp, p, c, c2, gloss, r });
+const C = (d: number, h: number, p: V3, c: string, c2?: string, gloss = 0.3, r?: V3, seg = 14): PartSpec => ({ k: 'cyl', d, h, p, c, c2, gloss, r, seg });
+const CN = (db: number, h: number, p: V3, c: string, c2?: string, gloss = 0.3, r?: V3, dt = 0, sc?: V3): PartSpec => ({ k: 'cone', db, dt, h, p, c, c2, gloss, r, s: sc, seg: 12 });
+const SP = (d: number, p: V3, c: string, s?: V3, gloss = 0.4): PartSpec => ({ k: 'sphere', d, p, c, s, gloss });
+const TR = (d: number, th: number, p: V3, c: string, r: V3 = [Math.PI / 2, 0, 0], gloss = 0.4): PartSpec => ({ k: 'torus', d, th, p, c, r, gloss, seg: 28 });
+const gemAt = (g: string, d: number, p: V3): PartSpec[] => [{ k: 'icos', d, p, c: g, sub: 1, flat: true, gloss: 0.6 }, SP(d * 0.3, [p[0] - d * 0.12, p[1] + d * 0.16, p[2] - d * 0.32], '#ffffff', undefined, 0.2)];
+
+/** Eğik/düz bıçak: n dilimli, tepe konik; ortada açık renk sırt */
+function blade(len: number, w0: number, w1: number, curve: number, y0: number, p: Pal, thick = 0.11): PartSpec[] {
+  const out: PartSpec[] = []; const n = 6;
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n; const x = curve * t * t * len; const ang = -Math.atan(2 * curve * t); const w = w0 + (w1 - w0) * t;
+    out.push(B(w, len / n + 0.04, thick, [x, y0 + t * len, 0], p.m, p.l, 0.7, [0, 0, ang]), B(w * 0.28, len / n + 0.045, thick * 1.5, [x, y0 + t * len, 0], p.l, p.l, 0.8, [0, 0, ang]));
+  }
+  const tx = curve * len; out.push(CN(w1, len * 0.2, [tx + curve * 0.04, y0 + len + len * 0.09, 0], p.m, p.l, 0.7, [0, 0, -Math.atan(2 * curve)], 0.0));
+  return out;
+}
+const wraps = (x: number, y0: number, y1: number, n: number, d: number, c: string): PartSpec[] => Array.from({ length: n }, (_, i) => TR(d, 0.045, [x, y0 + ((i + 0.5) / n) * (y1 - y0), 0], c, [0, 0, 0], 0.1));
+
+function sword(b: number, p: Pal, g: string): PartSpec[] {
+  const L = [1.25, 1.5, 1.85, 1.85, 2.05][b]; const W = [0.3, 0.4, 0.24, 0.42, 0.46][b]; const curve = b === 2 ? 0.1 : 0;
+  const s: PartSpec[] = [C(0.1, 0.5, [0, 0.0, 0], p.k, p.w, 0.1), ...wraps(0, -0.2, 0.2, 5, 0.12, p.w), SP(0.2, [0, -0.3, 0], b >= 3 ? p.l : p.d, undefined, 0.6), ...blade(L, W, W * 0.82, curve, 0.28, p)];
+  if (b === 2) s.push(C(0.42, 0.07, [0, 0.27, 0], p.d, p.m, 0.6), TR(0.44, 0.05, [0, 0.27, 0], p.l, [0, 0, 0], 0.7));
+  else if (b <= 1) s.push(B(b ? 0.8 : 0.55, 0.1, 0.14, [0, 0.27, 0], p.d, p.m, 0.5), SP(0.14, [b ? 0.4 : 0.28, 0.27, 0], p.m), SP(0.14, [b ? -0.4 : -0.28, 0.27, 0], p.m));
+  else { s.push(B(0.7, 0.1, 0.14, [0, 0.27, 0], p.d, p.m, 0.6), CN(0.18, 0.55, [0.55, 0.42, 0], p.m, p.l, 0.6, [0, 0, -0.9]), CN(0.18, 0.55, [-0.55, 0.42, 0], p.m, p.l, 0.6, [0, 0, 0.9]), ...gemAt(g, 0.26, [0, 0.27, -0.1]));
+    if (b === 4) s.push(...[0.7, 1.0, 1.3, 1.6].map((y) => B(0.07, 0.1, 0.1, [0, y, -0.06], g, g, 0.7))); }
+  if (b >= 2) s.push(...gemAt(g, 0.18, [0, -0.32, -0.04]));
+  return s;
+}
+/** Balta ağzı: ay çizgisi (yarım daire) boyunca dizili dilimler; dış kenar parlak */
+function bit(side: number, hy: number, R: number, p: Pal): PartSpec[] {
+  const out: PartSpec[] = []; const n = 7;
+  for (let i = 0; i < n; i++) {
+    const t = -1 + (2 * i) / (n - 1); const a = t * 1.0; const x = side * (0.12 + R * Math.cos(a) - R * 0.35); const y = hy + R * Math.sin(a);
+    const th = 0.42 - 0.12 * Math.abs(t);
+    out.push(B(th, (2 * R * 1.0) / (n - 1) * 1.25, 0.13, [x, y, 0], p.m, p.l, 0.65, [0, 0, side * a]), B(0.07, (2 * R) / (n - 1) * 1.3, 0.15, [x + side * Math.cos(a) * th * 0.46, y + Math.sin(a) * th * 0.46, 0], p.l, p.l, 0.85, [0, 0, side * a]));
+  }
+  return out;
+}
+function axe(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [C(0.15, 2.2, [0, 0.5, 0], p.w, p.k, 0.15), ...wraps(0, -0.45, 0.1, 4, 0.19, p.d), SP(0.26, [0, -0.62, 0], p.d)];
+  const hy = 1.2; const R = 0.62 + b * 0.05;
+  s.push(B(0.3, 0.7, 0.24, [0, hy, 0], p.d, p.m, 0.5), ...bit(1, hy, R, p));
+  if (b >= 2) s.push(...bit(-1, hy, R, p)); else s.push(CN(0.22, 0.55, [-0.34, hy, 0], p.d, p.m, 0.5, [0, 0, Math.PI / 2]));
+  s.push(CN(0.28, 0.55, [0, hy + 0.62, 0], p.m, p.l, 0.7));
+  if (b >= 3) s.push(...gemAt(g, 0.3, [0, hy, -0.2]));
+  if (b >= 1) s.push(TR(0.4, 0.08, [0, 0.4, 0], p.l, [0, 0, 0], 0.6));
+  return s;
+}
+function dagger(b: number, p: Pal, g: string): PartSpec[] {
+  const L = [0.85, 1.0, 1.1, 1.15, 1.25][b];
+  const s: PartSpec[] = [C(0.12, 0.42, [0, 0, 0], p.k, p.w, 0.1), ...wraps(0, -0.17, 0.17, 4, 0.14, p.w), SP(0.2, [0, -0.28, 0], p.d, undefined, 0.6), ...blade(L, 0.3, 0.22, [0.12, 0.1, 0.16, 0.2, 0.0][b] * 0.5, 0.24, p), B(0.5, 0.09, 0.14, [0, 0.22, 0], p.d, p.m, 0.6), CN(0.12, 0.22, [0.27, 0.3, 0], p.m, p.l, 0.6, [0, 0, -0.5]), CN(0.12, 0.22, [-0.27, 0.3, 0], p.m, p.l, 0.6, [0, 0, 0.5])];
+  if (b >= 2) s.push(...gemAt(g, 0.2, [0, 0.22, -0.1]));
+  if (b >= 3) for (let i = 0; i < 4; i++) s.push(CN(0.09, 0.14, [0.13, 0.5 + i * 0.18, 0], p.m, p.l, 0.6, [0, 0, -Math.PI / 2]));
+  return s;
+}
+function bow(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = []; const R = 1.0; const n = 10; const a0 = -1.0, a1 = 1.0;
+  for (let i = 0; i < n; i++) {
+    const a = a0 + ((i + 0.5) / n) * (a1 - a0); const x = -R * Math.cos(a) + R; const y = R * Math.sin(a);
+    s.push(C(0.17 - Math.abs(a) * 0.06, (a1 - a0) / n * R + 0.09, [x, y, 0], b >= 2 ? p.m : p.w, b >= 2 ? p.d : p.k, 0.35, [0, 0, -a]));
+  }
+  const tx = -R * Math.cos(a1) + R, ty = R * Math.sin(a1);
+  s.push(C(0.04, ty * 2, [tx, 0, 0], '#f4efd8', undefined, 0.1));
+  for (const sd of [-1, 1]) s.push(CN(0.12, 0.3, [tx + 0.08, sd * (ty + 0.1), 0], b >= 3 ? g : p.l, p.l, 0.5, [0, 0, -sd * 0.7]));
+  s.push(C(0.17, 0.5, [0, 0, 0], p.k, p.w, 0.1), ...wraps(0, -0.2, 0.2, 4, 0.19, p.d), TR(0.22, 0.05, [0, 0.28, 0], p.l, [0, 0, 0], 0.6), TR(0.22, 0.05, [0, -0.28, 0], p.l, [0, 0, 0], 0.6));
+  if (b >= 1) s.push(...gemAt(g, 0.2, [-0.05, 0, -0.1]));
+  // ok: yayın çekilmiş kirişinde, öne uzanır
+  s.push(C(0.07, 1.5, [tx * 0.5 + 0.25, 0, 0], p.w, p.k, 0.1, [0, 0, Math.PI / 2]), CN(0.26, 0.4, [tx * 0.5 + 1.2, 0, 0], p.l, p.m, 0.7, [0, 0, -Math.PI / 2]));
+  for (const k of [0, 1, 2]) s.push(B(0.2, 0.2, 0.02, [tx * 0.5 - 0.62 + k * 0.1, 0, 0], k === 1 ? g : '#f4efd8', undefined, 0.2, [0.4, 0, 0.4]));
+  return s;
+}
+function staff(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [C(0.17 + (b === 0 ? 0.04 : 0), 2.0, [0, 0.4, 0], p.w, p.k, 0.15), ...wraps(0, -0.3, 0.3, 3, 0.22, p.d), CN(0.2, 0.3, [0, -0.7, 0], p.m, p.d, 0.5, [Math.PI, 0, 0])];
+  const hy = 1.6;
+  if (b === 0) { s.push(SP(0.34, [0, hy, 0], p.w, [1, 1.2, 1], 0.1), CN(0.1, 0.5, [0.18, hy + 0.3, 0], p.w, p.k, 0.1, [0, 0, -0.5]), CN(0.1, 0.5, [-0.18, hy + 0.3, 0], p.w, p.k, 0.1, [0, 0, 0.5]), ...gemAt(g, 0.26, [0, hy + 0.15, -0.14])); }
+  else {
+    s.push(SP(0.7, [0, hy + 0.1, 0], g, undefined, 0.75), SP(0.2, [-0.12, hy + 0.25, -0.3], '#ffffff', undefined, 0.2));
+    for (let i = 0; i < 3 + (b >= 3 ? 1 : 0); i++) { const a = (i / (3 + (b >= 3 ? 1 : 0))) * Math.PI * 2 + 0.6; s.push(CN(0.16, 0.7, [Math.cos(a) * 0.3, hy - 0.2, Math.sin(a) * 0.3], p.m, p.l, 0.65, [Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5])); }
+    s.push(TR(1.0, 0.1, [0, hy + 0.1, 0], p.l, [Math.PI / 2, 0, 0], 0.65), TR(0.3, 0.06, [0, hy - 0.45, 0], p.m, [Math.PI / 2, 0, 0], 0.6));
+    if (b >= 3) s.push(TR(0.95, 0.05, [0, hy + 0.1, 0], g, [Math.PI / 2, 0.5, 0.3], 0.7), SP(0.14, [0.5, hy + 0.35, -0.1], g, undefined, 0.7), SP(0.12, [-0.45, hy - 0.1, 0.2], g, undefined, 0.7));
+    if (b === 4) s.push(CN(0.14, 0.5, [0.28, hy + 0.55, 0], p.m, p.l, 0.7, [0, 0, -0.35]), CN(0.14, 0.5, [-0.28, hy + 0.55, 0], p.m, p.l, 0.7, [0, 0, 0.35]));
+  }
+  return s;
+}
+function armor(b: number, p: Pal, g: string): PartSpec[] {
+  const cloth = b === 0 ? '#9a6f45' : b === 1 ? '#8a4a2a' : b === 2 ? '#4a5568' : b === 3 ? '#38489a' : '#8a1f1f';
+  const s: PartSpec[] = [
+    { k: 'cyl', dt: 1.0, db: 0.78, h: 1.15, p: [0, 0.1, 0], c: p.m, c2: p.d, gloss: b >= 1 ? 0.45 : 0.1, seg: 18 },
+    { k: 'cyl', dt: 0.8, db: 1.05, h: 0.55, p: [0, -0.7, 0], c: cloth, c2: p.d, gloss: 0.1, seg: 18 },
+    TR(0.9, 0.12, [0, -0.45, 0], p.k, [0, 0, 0], 0.3), B(0.22, 0.2, 0.08, [0, -0.45, -0.46], p.l, p.l, 0.7),
+    TR(0.62, 0.14, [0, 0.72, 0], p.d, [0, 0, 0], 0.4),
+    SP(0.72, [0, 0.2, -0.3], p.l, [1.0, 0.95, 0.42], b ? 0.6 : 0.15),
+    C(0.34, 0.7, [0.72, 0.1, 0], cloth, p.d, 0.1, [0, 0, 0.42]), C(0.34, 0.7, [-0.72, 0.1, 0], cloth, p.d, 0.1, [0, 0, -0.42]),
+  ];
+  if (b >= 1) s.push(SP(0.62, [0.6, 0.62, 0], p.m, [1.1, 0.7, 1.0], 0.5), SP(0.62, [-0.6, 0.62, 0], p.m, [1.1, 0.7, 1.0], 0.5));
+  if (b >= 2) s.push(B(0.12, 0.9, 0.08, [0, 0.15, -0.55], p.d, p.d, 0.5), B(0.7, 0.1, 0.08, [0, 0.32, -0.52], p.d, p.d, 0.5));
+  if (b >= 3) for (const sd of [-1, 1]) s.push(CN(0.2, 0.55, [sd * 0.66, 0.95, 0], p.l, p.m, 0.7, [0, 0, -sd * 0.35]), CN(0.14, 0.4, [sd * 0.82, 0.78, -0.1], p.l, p.m, 0.7, [0, 0, -sd * 0.9]));
+  if (b >= 1) s.push(...gemAt(g, b >= 3 ? 0.3 : 0.22, [0, 0.22, -0.52]));
+  if (b === 4) s.push(TR(1.05, 0.06, [0, 0.6, 0], p.l, [0, 0, 0], 0.7), TR(0.88, 0.05, [0, -0.1, 0], p.l, [0, 0, 0], 0.7));
+  return s;
+}
+function helmet(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [
+    SP(1.2, [0, 0.12, 0], p.m, [1, 0.88, 1.08], b ? 0.55 : 0.1), TR(1.22, 0.14, [0, -0.27, 0], p.d, [0, 0, 0], 0.5),
+    SP(0.62, [0, -0.2, -0.46], '#1a1020', [1, 0.62, 0.3], 0.1), B(0.14, 0.6, 0.12, [0, -0.04, -0.6], p.d, p.m, 0.5),
+    B(0.16, 0.5, 0.5, [0.56, -0.28, -0.05], p.d, p.m, 0.4), B(0.16, 0.5, 0.5, [-0.56, -0.28, -0.05], p.d, p.m, 0.4),
+  ];
+  if (b === 0) s.push(B(1.15, 0.1, 0.12, [0, 0.0, -0.52], p.k, p.w, 0.1), SP(0.2, [0, 0.74, 0], p.k));
+  if (b >= 1) s.push(B(0.14, 0.4, 1.0, [0, 0.62, 0], p.d, p.m, 0.5));
+  if (b >= 2) s.push(B(0.12, 0.5, 1.2, [0, 0.84, 0], p.l, p.m, 0.6), TR(1.0, 0.07, [0, 0.12, 0], p.l, [Math.PI / 2, 0, 0], 0.6));
+  if (b >= 3) for (const sd of [-1, 1]) s.push(CN(0.26, 0.95, [sd * 0.7, 0.6, 0], '#f3ecd8', '#c9b98a', 0.3, [0, 0, -sd * 0.55]));
+  if (b === 4) s.push(CN(0.5, 0.9, [0, 0.95, 0.35], '#d83a3a', '#7a1f1f', 0.2, [-0.8, 0, 0]), TR(1.34, 0.07, [0, -0.1, 0], p.l, [0, 0, 0], 0.7));
+  if (b >= 1) s.push(...gemAt(g, 0.22, [0, 0.38, -0.6]));
+  return s;
+}
+function amulet(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [TR(1.7, b === 0 ? 0.1 : 0.07, [0, 0.55, 0], b === 0 ? p.k : p.m, [Math.PI / 2, 0, 0], b ? 0.6 : 0.1)];
+  if (b === 0) for (let i = 0; i < 7; i++) { const a = Math.PI * (0.18 + 0.64 * (i / 6)) + Math.PI; s.push(SP(0.2, [Math.cos(a) * 0.85, 0.55 + Math.sin(a) * 0.85, 0], i % 2 ? p.l : p.w, undefined, 0.3)); }
+  const py = -0.35;
+  s.push(TR(0.78 + b * 0.04, 0.1, [0, py, 0], p.m, [Math.PI / 2, 0, 0], 0.6), ...gemAt(g, 0.46 + b * 0.04, [0, py, -0.05]));
+  if (b >= 1) for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; s.push(CN(0.12, 0.22 + (b >= 3 ? 0.08 : 0), [Math.cos(a) * 0.5, py + Math.sin(a) * 0.5, 0], p.l, p.m, 0.6, [0, 0, a - Math.PI / 2])); }
+  if (b >= 3) s.push(TR(1.16, 0.05, [0, py, 0.04], p.l, [Math.PI / 2, 0, 0], 0.7), SP(0.18, [0, 0.92, -0.1], g, undefined, 0.7));
+  if (b === 4) s.push(CN(0.3, 0.7, [0.62, py + 0.34, 0], p.l, p.m, 0.7, [0, 0, -1.0]), CN(0.3, 0.7, [-0.62, py + 0.34, 0], p.l, p.m, 0.7, [0, 0, 1.0]));
+  return s;
+}
+
+export function itemSpecs(it: ItemKey): PartSpec[] {
+  const b = Math.max(0, Math.min(4, it.band)); const p = PALS[b]; const g = it.tier <= 0 ? p.l : TIER_COLORS[it.tier];
+  if (it.slot === 'weapon') { const k = (it.wk as DmgKind | undefined) ?? 'kilic'; return k === 'cift' ? axe(b, p, g) : k === 'bicak' ? dagger(b, p, g) : k === 'yay' ? bow(b, p, g) : k === 'buyu' ? staff(b, p, g) : sword(b, p, g); }
+  return it.slot === 'armor' ? armor(b, p, g) : it.slot === 'helmet' ? helmet(b, p, g) : amulet(b, p, g);
+}
+/** Sahnedeki duruş: silahlar eğik (uç sağ-yukarı), zırh/miğfer/tılsım hafif döndürülmüş */
+const POSE: Record<string, V3> = { kilic: [0, -0.5, -0.78], cift: [0, -0.4, -0.7], bicak: [0, -0.5, -0.78], yay: [0, 0.55, 0], buyu: [0, -0.4, -0.55], armor: [-0.12, 0.5, 0], helmet: [0.18, 0.55, 0], amulet: [0.05, 0.45, 0] };
+
+const SIZE = 192;
+interface Studio { engine: Engine; scene: Scene; cam: FreeCamera; mat: ReturnType<typeof toonMaterial>; canvas: HTMLCanvasElement }
+let studio: Studio | null | false = null;
+function ensure(): Studio | null {
+  if (studio !== null) return studio || null;
+  try {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = SIZE;
+    const engine = new Engine(canvas, true, { alpha: true, preserveDrawingBuffer: true, antialias: true, stencil: false }, false);
+    const scene = new Scene(engine); scene.clearColor = new Color4(0, 0, 0, 0);
+    const cam = new FreeCamera('ic', new Vector3(0, 0, -10), scene); cam.mode = FreeCamera.ORTHOGRAPHIC_CAMERA; cam.setTarget(Vector3.Zero()); cam.minZ = 0.1; cam.maxZ = 40;
+    const mat = toonMaterial(scene, { vertexColors: true, rim: 0.5, emissive: new Color3(0.2, 0.19, 0.17) });
+    studio = { engine, scene, cam, mat, canvas };
+    // kontur kalınlığı: ana sahne gözlemcisinden SONRA ayarlanır (simgede daha kalın kontur okunur)
+    scene.onBeforeRenderObservable.add(() => { for (const m of scene.materials) if (m.name === 'outline') (m as unknown as { setFloat(n: string, v: number): void }).setFloat('uWidth', 5.5); });
+    return studio;
+  } catch { studio = false; return null; }
+}
+const cache = new Map<string, string>();
+/** Eşya görselinin PNG veri adresi (WebGL yoksa null). Aynı slot/tür/bant/kademe için bir kez çizilir. */
+export function itemArtUrl(it: ItemKey): string | null {
+  const key = `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}`;
+  const hit = cache.get(key); if (hit) return hit;
+  const st = ensure(); if (!st) return null;
+  const { scene, cam, canvas, engine } = st; const pose = POSE[it.slot === 'weapon' ? it.wk ?? 'kilic' : it.slot];
+  const mesh: Mesh = build(scene, 'item', itemSpecs(it)); mesh.material = st.mat; addOutline(mesh, scene);
+  const pivot = new TransformNode('pv', scene); mesh.parent = pivot; pivot.rotation.set(...pose);
+  pivot.computeWorldMatrix(true); mesh.computeWorldMatrix(true); mesh.refreshBoundingInfo();
+  const bb = mesh.getBoundingInfo().boundingBox; const mn = bb.minimumWorld, mx = bb.maximumWorld;
+  const cx = (mn.x + mx.x) / 2, cy = (mn.y + mx.y) / 2; const h = Math.max(mx.x - mn.x, mx.y - mn.y) / 2 * 1.03 + 0.04;
+  cam.orthoLeft = cx - h; cam.orthoRight = cx + h; cam.orthoTop = cy + h; cam.orthoBottom = cy - h; cam.position.set(cx, cy, -10); cam.setTarget(new Vector3(cx, cy, 0));
+  engine.setSize(SIZE, SIZE); scene.render();
+  const url = canvas.toDataURL('image/png'); cache.set(key, url);
+  mesh.dispose(false, false); pivot.dispose();
+  return url;
+}
+export const itemArtReady = () => ensure() !== null;

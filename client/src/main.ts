@@ -16,6 +16,7 @@ const params = new URLSearchParams(location.search);
 async function boot() {
   setLang(getLang());
   if (params.has('gallery')) { startGallery(canvas); return; }
+  if (params.has('items')) { const { itemSheet } = await import('./itemsheet'); itemSheet(); return; }
   const test = document.createElement('canvas'); if (!test.getContext('webgl2') && !test.getContext('webgl')) { uiRoot.innerHTML = `<div class="conn on"><div class="felt" style="padding:28px 40px"><h2 style="font-family:var(--f-head)">${t('err.webgl')}</h2></div></div>`; return; }
   let q: Quality = 'high'; try { q = (params.get('q') as Quality) || (localStorage.getItem('kut.q') as Quality) || 'high'; } catch { /* */ }
   const loading = document.createElement('div'); loading.className = 'loading on'; loading.innerHTML = `<div style="text-align:center"><div class="spin"></div>${t('ui.loading')}</div>`; uiRoot.appendChild(loading);

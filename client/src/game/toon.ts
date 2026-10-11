@@ -110,16 +110,16 @@ export function setFlash(m: ShaderMaterial, amount: number, color?: Color3) {
   m.setFloat('uFlash', amount); if (color) m.setColor3('uFlashColor', color);
 }
 
-let outlineMat: ShaderMaterial | null = null;
+const outlineMats = new WeakMap<Scene, ShaderMaterial>();
 export function outlineMaterial(scene: Scene): ShaderMaterial {
-  if (outlineMat && outlineMat.getScene() === scene) return outlineMat;
+  const cached = outlineMats.get(scene); if (cached) return cached;
   const m = new ShaderMaterial('outline', scene, 'outline', {
     attributes: ['position', 'snormal'], uniforms: ['world', 'worldViewProjection', 'viewProjection', 'uWidth', 'uRes', 'uOutline', 'uFogColor', 'uFog', 'cameraPosition'],
   });
   m.setFloat('uWidth', 2.1); m.setColor3('uOutline', Color3.FromHexString('#1a1230')); m.setColor3('uFogColor', FOG_COLOR); registerFog(m, 110, 300);
   m.setVector2('uRes', { x: 1280, y: 720 } as never);
   m.backFaceCulling = true; (m as unknown as { cullBackFaces: boolean }).cullBackFaces = false; // ön yüzleri kes, arka yüzleri çiz
-  outlineMat = m;
+  outlineMats.set(scene, m);
   const eng = scene.getEngine();
   scene.onBeforeRenderObservable.add(() => {
     m.setVector2('uRes', { x: eng.getRenderWidth(), y: eng.getRenderHeight() } as never);

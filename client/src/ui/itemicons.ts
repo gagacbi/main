@@ -1,5 +1,6 @@
 import { type DmgKind, type Item, type Slot } from '@shared/game';
 import { GI } from './gameicons.generated';
+import { itemArtUrl } from '../game/itemart';
 
 /**
  * Eşya ikonları: game-icons.net silüetleri (CC BY 3.0, bkz. docs/KREDILER.md) + oyuna özel boyama:
@@ -39,6 +40,7 @@ const iconName = (it: Pick<Item, 'slot' | 'band' | 'wk'>): string => {
 };
 /** Bir eşyanın renkli ikonu */
 export function itemIcon(it: Pick<Item, 'slot' | 'band' | 'tier' | 'wk'>, cls = 'ico rich'): string {
+  const art = itemArtUrl(it); if (art) return `<img class="${cls} art" src="${art}" alt="" draggable="false">`;   // 3B eşya görseli; WebGL yoksa SVG simgeye düşer
   const p = PALS[Math.max(0, Math.min(4, it.band))]; return paint(iconName(it), p.t, p.m, p.b, cls);
 }
 /** Boş yuva silueti (kuşanma alanı) */
