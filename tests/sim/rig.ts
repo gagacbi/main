@@ -42,7 +42,7 @@ const SK_PRIORITY = [0, 1, 5, 4, 3, 2];
 const slotScore = (it: Item): number => {
   const s = itemStats(it);
   // gerçek oyuncu gibi: yürürken vuramayan menzilli silahı bot koşarken kullanamaz, seçmez
-  switch (it.slot) { case 'weapon': return WEAPON_MODS[it.wk ?? 'kilic'].range > RANGED_MIN_RANGE ? 0 : s.atk * 3 * (1 + WEAPON_MODS[it.wk ?? 'kilic'].atk) / (1 + WEAPON_MODS[it.wk ?? 'kilic'].aspd); case 'armor': case 'helmet': return s.def * 2 + s.hp / 12; case 'amulet': return s.critPct * 6 + s.atkPct * 4; }
+  switch (it.slot) { default: return 0; case 'weapon': return WEAPON_MODS[it.wk ?? 'kilic'].range > RANGED_MIN_RANGE ? 0 : s.atk * 3 * (1 + WEAPON_MODS[it.wk ?? 'kilic'].atk) / (1 + WEAPON_MODS[it.wk ?? 'kilic'].aspd); case 'armor': case 'helmet': return s.def * 2 + s.hp / 12; case 'amulet': return s.critPct * 6 + s.atkPct * 4; }
 };
 
 /** Makul bir oyuncunun yaptığını yapan bot: kamp seç, yaklaş, vur, yetenek kullan, can azalırsa çekil, ara sıra demirciye uğra. */

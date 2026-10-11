@@ -3,7 +3,7 @@ import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, randomExtraSlot, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
@@ -521,6 +521,7 @@ export class World {
       const it = makeItem(r, randomSlot(r), m.lvl, rollTier(r));
       this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
     }
+    if (r() < 0.028 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
     if (r() < 0.012 * dm) this.spawnDrop(p, 'book', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'charm', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'frag', m.x, m.z);

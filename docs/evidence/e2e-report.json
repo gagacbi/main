@@ -1,5 +1,5 @@
 {
- "at": "2026-10-11T16:06:46.853Z",
+ "at": "2026-10-11T16:53:03.093Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,7 +294,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt603"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt218"
   },
   {
    "id": "F1.toon",
@@ -304,7 +304,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 92 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 93 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -329,12 +329,12 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=3.14 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=2.86 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00021109450608491898, sessizlikte enerji=0.000"
   },
   {
    "id": "D5.envanter",
@@ -347,9 +347,14 @@
    "detail": "Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)"
   },
   {
+   "id": "D5d.ek-yuvalar",
+   "ok": true,
+   "detail": "Ek kuşanma yuvaları (kalkan, çizme, bilezik, küpe) kuşanılabiliyor: 5 yuva dolu"
+  },
+  {
    "id": "D5b.envanter-v2",
    "ok": true,
-   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=1), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=622592)"
+   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=74022912)"
   },
   {
    "id": "B4.uzmanlik-ui",
@@ -384,7 +389,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=10.03 ms; aktif mesh=178/2601; üçgen=528400; (yazılım rasterleştirmede FPS=4)"
+   "detail": "Kare başına JS/CPU maliyeti=8.59 ms; aktif mesh=180/2603; üçgen=535180; (yazılım rasterleştirmede FPS=6)"
   },
   {
    "id": "G.konsol",
@@ -393,15 +398,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 3.138671875,
+  "audioPeak": 2.8642578125,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 4,
-   "meshes": 2601,
-   "active": 178,
+   "fps": 6,
+   "meshes": 2603,
+   "active": 180,
    "draw": 0,
-   "tris": 528400,
-   "cpuMs": 10.03
+   "tris": 535180,
+   "cpuMs": 8.59
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

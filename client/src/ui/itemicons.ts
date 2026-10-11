@@ -20,6 +20,10 @@ const KINDS: Record<string, string[]> = {
   buyu: ['wood-stick', 'crystal-wand', 'wizard-staff', 'crescent-staff', 'skull-staff'],
   armor: ['leather-armor', 'chain-mail', 'breastplate', 'abdominal-armor', 'spiked-shoulder-armor'],
   helmet: ['light-helm', 'spartan-helmet', 'centurion-helmet', 'horned-helm', 'overlord-helm'],
+  shield: ['round-shield', 'viking-shield', 'bordered-shield', 'spiked-shield', 'dragon-shield'],
+  boots: ['leather-boot', 'fur-boot', 'metal-boot', 'steeltoe-boots', 'greaves'],
+  bracelet: ['bracer', 'bracers', 'gauntlet', 'bracer', 'gauntlet'],
+  earring: ['pearl-earring', 'drop-earrings', 'earrings', 'crystal-earrings', 'drop-earrings'],
   amulet: ['primitive-necklace', 'pearl-necklace', 'gem-pendant', 'necklace', 'ankh'],
 };
 const iconName = (it: Pick<Item, 'slot' | 'band' | 'wk'>): string => {
@@ -34,7 +38,7 @@ export function itemIcon(it: Pick<Item, 'slot' | 'band' | 'tier' | 'wk'>, cls = 
 }
 /** Boş yuva silueti (kuşanma alanı) */
 export function slotGhost(slot: Slot): string {
-  return paint(slot === 'weapon' ? 'broadsword' : slot === 'armor' ? 'chest-armor' : slot === 'helmet' ? 'viking-helmet' : 'gem-pendant', '#e8d4a8', '#e8d4a8', '#e8d4a8', 'ico ghost');
+  return paint(({ weapon: 'broadsword', armor: 'chest-armor', helmet: 'viking-helmet', amulet: 'gem-pendant', shield: 'round-shield', boots: 'leather-boot', bracelet: 'bracer', earring: 'pearl-earring' } as Record<Slot, string>)[slot], '#e8d4a8', '#e8d4a8', '#e8d4a8', 'ico ghost');
 }
 const MATS: Record<string, [string, string, string, string]> = {   // ad → [simge, üst, orta, alt]
   ore: ['ore', '#d6e2f2', '#8b9bb5', '#4a566e'], hide: ['animal-hide', '#e0b27c', '#b07a45', '#6f4623'], wood: ['wood-pile', '#d7a56e', '#a4713c', '#5e3b1b'],

@@ -169,7 +169,9 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
         { k: 'box', w: 0.14, h: 1.0, dp: 0.045, p: [0, 0.72, 0], c: STEEL, gloss: 0.85 }, { k: 'cone', db: 0.14, dt: 0, h: 0.28, p: [0, 1.36, 0], c: STEEL, gloss: 0.85 }, { k: 'sphere', d: 0.13, p: [0, -0.2, 0], c: GOLD });
       rig.part('weapon', sword, [0, -0.58, 0.08], 'armR');
     }
-    if (kind === 'player' && spec !== 'kilic') {
+    if (kind === 'player' && o.eq?.shield) {   // kuşanılan kalkan: eşyanın kendi modeli
+      const sp = rig.part('shield', scaleSpecs(itemSpecs({ slot: 'shield', ...o.eq.shield }), 0.5), [-0.1, -0.5, 0.3], 'armL'); sp.rotation.y = Math.PI;
+    } else if (kind === 'player' && spec !== 'kilic') {
       const big = spec === 'kalkan'; const D = big ? 1.15 : 0.78;
       rig.part('shield', [
         { k: 'cyl', d: D, h: 0.09, p: [0, 0, 0], r: [Math.PI / 2, 0, 0], c: bc.main, c2: bc.main },

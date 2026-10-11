@@ -304,3 +304,7 @@ button { font-family: var(--f-head); cursor: pointer; }
 .eqs .cell .ico.art { width: 94%; height: 94%; } .invdet > .cell .ico.art { width: 94%; height: 94%; }
 .invside .invdet > .cell { width: 116px; height: 116px; } .invside .invdet > .cell .ico.art { width: 96%; height: 96%; }
 .cell.spin { cursor: grab; } .cell .ico.gi, .btn .ico .gi, .slot .ico .gi { width: 100%; height: 100%; filter: drop-shadow(0 1px 0 rgba(0,0,0,.5)); }
+
+/* ek kuşanma yuvaları: küpe (baş yanı), kalkan (sol el), bilezik, çizme */
+.inv3 .doll .d-e { grid-column: 1; grid-row: 1; } .inv3 .doll .d-s { grid-column: 3; grid-row: 3; } .inv3 .doll .d-b { grid-column: 1; grid-row: 3; } .inv3 .doll .d-f { grid-column: 2; grid-row: 4; }
+.inv3 .doll .d-w { grid-row: 2; } .inv3 .doll .d-a { grid-row: 1; grid-column: 3; }

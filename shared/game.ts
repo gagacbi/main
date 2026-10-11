@@ -4,8 +4,11 @@ import { regionAt, regionById, type MapId } from './maps';
 // ───────────────────────── Temel tipler ─────────────────────────
 export type Boy = 'gok' | 'yer' | 'ay';
 export const BOYS: Boy[] = ['gok', 'yer', 'ay'];
-export type Slot = 'weapon' | 'armor' | 'helmet' | 'amulet';
+export type Slot = 'weapon' | 'armor' | 'helmet' | 'amulet' | 'shield' | 'boots' | 'bracelet' | 'earring';
+/** Çekirdek yuvalar (denge testleri/simülasyon ve zanaat bunlarla çalışır). Ek yuvalar tamamlayıcıdır: yarım güçte, ek (bağımsız) düşüşle gelir. */
 export const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
+export const EXTRA_SLOTS: Slot[] = ['shield', 'boots', 'bracelet', 'earring'];
+export const ALL_SLOTS: Slot[] = [...SLOTS, ...EXTRA_SLOTS];
 export type Tier = 0 | 1 | 2 | 3; // sıradan, nadir, destansı, efsanevi
 export const TIER_KEYS = ['common', 'rare', 'epic', 'legendary'] as const;
 export type Spec = 'none' | 'kalkan' | 'kilic';
@@ -190,6 +193,10 @@ export function itemBase(it: Pick<Item, 'slot' | 'ilvl' | 'tier'>): ItemStats {
     case 'weapon': o.atk = Math.round((5 + it.ilvl * 3.4) * m); break;
     case 'armor': o.def = Math.round((3 + it.ilvl * 1.6) * m); o.hp = Math.round((30 + it.ilvl * 14) * m); break;
     case 'helmet': o.def = Math.round((2 + it.ilvl * 1.0) * m); o.hp = Math.round((18 + it.ilvl * 8) * m); break;
+    case 'shield': o.def = Math.round((2 + it.ilvl * 0.9) * m); o.hp = Math.round((10 + it.ilvl * 4) * m); break;
+    case 'boots': o.def = Math.round((1 + it.ilvl * 0.5) * m); o.hp = Math.round((14 + it.ilvl * 7) * m); break;
+    case 'bracelet': o.atk = Math.round((2 + it.ilvl * 1.2) * m); o.hp = Math.round((8 + it.ilvl * 3) * m); break;
+    case 'earring': o.critPct = Math.round((1 + it.ilvl * 0.08) * m * 10) / 10; o.atkPct = Math.round((0.5 + it.ilvl * 0.1) * m * 10) / 10; break;
     case 'amulet': o.critPct = Math.round((2 + it.ilvl * 0.15) * m * 10) / 10; o.atkPct = Math.round((1 + it.ilvl * 0.2) * m * 10) / 10; break;
   }
   return o;
@@ -208,6 +215,7 @@ export const BASE_ENCH_POOL: Record<Slot, EnchKey[]> = {
   armor: ['defKilic', 'defCift', 'defBicak', 'defYay', 'defBuyu'],
   helmet: ['blockHit', 'blockSkill', 'hpPct', 'defPct'],
   amulet: ['leech', 'xpPct', 'mspd', 'crit'],
+  shield: ['blockHit', 'blockSkill', 'defPct'], boots: ['mspd', 'hpPct', 'defPct'], bracelet: ['atkPct', 'aspd', 'hpPct'], earring: ['crit', 'leech', 'xpPct'],
 };
 export const ENCH_KEYS = Object.keys(ENCH_TABLE) as EnchKey[];
 
@@ -238,6 +246,7 @@ export function makeItem(r: Rng, slot: Slot, ilvl: number, tier: Tier, wk?: DmgK
   return it;
 }
 export const randomSlot = (r: Rng): Slot => SLOTS[Math.floor(r() * SLOTS.length)];
+export const randomExtraSlot = (r: Rng): Slot => EXTRA_SLOTS[Math.floor(r() * EXTRA_SLOTS.length)];
 
 // ───────────────────────── Oyuncu istatistikleri ─────────────────────────
 export interface StatInput { level: number; boy: Boy; spec: Spec; equip: Partial<Record<Slot, Item>>; kut: number; /** etkin kostüm satırları (temel + efsunlar) */ costume?: Ench[] }

@@ -13,7 +13,7 @@ import { DUNGEONS } from '@shared/dungeon';
 import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '@shared/goods';
 import { LOOM_POS } from '@shared/costume';
 import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LUCK_KEYS, addLineCost, baseLine, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, rerollLineCost, type Costume, type CostumeTier } from '@shared/costume';
-import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice } from '@shared/game';
+import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice, ALL_SLOTS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
@@ -71,7 +71,7 @@ export class Panels {
     this.el.addEventListener('dragover', (e) => { if ((e.target as HTMLElement).closest('.eqs .cell, .bag')) e.preventDefault(); });
     this.el.addEventListener('drop', (e) => {
       const id = e.dataTransfer?.getData('text/plain'); if (!id || this.open !== 'inv') return; const tgt = e.target as HTMLElement; const m = this.me; e.preventDefault();
-      const eqSlot = SLOTS.find((x) => m.equip[x]?.id === id);
+      const eqSlot = ALL_SLOTS.find((x) => m.equip[x]?.id === id);
       if (tgt.closest('.eqs .cell') && !eqSlot) void this.act('equip', { id }).then(() => { this.g.ui.sfx('ui'); });
       else if (tgt.closest('.bag') && eqSlot) void this.act('unequip', { slot: eqSlot });
     });
@@ -137,11 +137,11 @@ export class Panels {
   inv() {
     const m = this.me; const bc = BOY_COLORS[m.boy]; const s = m.stats;
     let list = m.items.filter((i) => this.invFilter === 'all' || i.slot === this.invFilter);
-    const ord = SLOTS; if (this.invSort === 'tier') list = [...list].sort((a, b) => b.tier - a.tier || b.ilvl - a.ilvl); else if (this.invSort === 'ilvl') list = [...list].sort((a, b) => b.ilvl - a.ilvl || b.tier - a.tier); else if (this.invSort === 'slot') list = [...list].sort((a, b) => ord.indexOf(a.slot) - ord.indexOf(b.slot) || b.ilvl - a.ilvl);
+    const ord = ALL_SLOTS; if (this.invSort === 'tier') list = [...list].sort((a, b) => b.tier - a.tier || b.ilvl - a.ilvl); else if (this.invSort === 'ilvl') list = [...list].sort((a, b) => b.ilvl - a.ilvl || b.tier - a.tier); else if (this.invSort === 'slot') list = [...list].sort((a, b) => ord.indexOf(a.slot) - ord.indexOf(b.slot) || b.ilvl - a.ilvl);
     const bag = Array.from({ length: 30 }, (_, i) => { const it = list[i]; return it ? itemCell(it, undefined, { sel: it.id === this.selBag }).replace('class="cell item', 'draggable="true" class="cell item') : '<div class="cell empty"></div>'; }).join('');
     const eqc = (sl: Slot) => `<div class="eqs">${itemCell(m.equip[sl] ?? null, sl).replace(/^<div class="cell(?: item)?/, (x) => (m.equip[sl] ? `<div draggable="true" class="cell item` : x))}</div>`;
     const sel = m.items.find((i) => i.id === this.selBag); const near = this.nearSmith();
-    const filt = (['all', ...SLOTS] as const).map((f) => `<div class="tab2 ${f === this.invFilter ? 'on' : ''}" data-act="invf" data-v="${f}">${f === 'all' ? t('inv.all') : t('slot.' + f)}</div>`).join('');
+    const filt = (['all', ...ALL_SLOTS] as const).map((f) => `<div class="tab2 ${f === this.invFilter ? 'on' : ''}" data-act="invf" data-v="${f}">${f === 'all' ? t('inv.all') : t('slot.' + f)}</div>`).join('');
     const sorts = (['new', 'tier', 'ilvl', 'slot'] as const).map((k) => `<button class="btn small ${this.invSort === k ? 'primary' : ''}" data-act="invs" data-v="${k}">${t('inv.sort.' + k)}</button>`).join('');
     const eqSel = sel ? m.equip[sel.slot] : undefined;
     const st0 = sel ? itemStats(sel) : null; const st1 = eqSel ? itemStats(eqSel) : null;
@@ -166,7 +166,7 @@ export class Panels {
       : this.invPage === 'mats' ? `<div class="sub">${t('inv.page.mats')}</div><div class="bag">${matCells}</div>`
       : `<div class="sub">${t('inv.page.cos')}</div><div class="card" style="margin-bottom:8px">${m.cos.worn ? `<b>${t('cos.worn')}</b>` : `<span class="muted">${t('cos.none')}</span>`} · ${t('cos.bagN', { n: m.cos.bag.length })}</div><div class="bag">${cosCells}</div>`;
     return this.shell(t('ui.inventory'), 'bag', `<div class="inv3">${railH}<div class="eqcol"><div class="dollwin"><div class="doll"><svg class="body" viewBox="0 0 100 160"><g fill="none" stroke="rgba(255,233,168,.28)" stroke-width="1.6" stroke-linejoin="round"><circle cx="50" cy="20" r="11"/><path d="M38 36 Q50 32 62 36 L74 50 L68 84 L62 82 L60 120 L62 154 L52 154 L50 124 L48 154 L38 154 L40 120 L38 82 L32 84 L26 50 Z"/></g></svg>
-      <div class="d-h">${eqc('helmet')}</div><div class="d-w">${eqc('weapon')}</div><div class="d-a">${eqc('amulet')}</div><div class="d-r">${eqc('armor')}</div>
+      <div class="d-h">${eqc('helmet')}</div><div class="d-w">${eqc('weapon')}</div><div class="d-a">${eqc('amulet')}</div><div class="d-r">${eqc('armor')}</div><div class="d-e">${eqc('earring')}</div><div class="d-s">${eqc('shield')}</div><div class="d-b">${eqc('bracelet')}</div><div class="d-f">${eqc('boots')}</div>
       <div class="d-n">${emblemSvg(m.boy, '#fff6df', 'rgba(0,0,0,.35)')}<span style="color:${bc.main}">${esc(m.name)} · ${t('ui.level')} ${m.level}</span></div></div></div>
       <div class="stats mini">${power(t('ui.hp'), num(s.maxHp))}${power(t('ui.atk'), num(s.atk))}${power(t('ui.def'), num(s.def))}${power(t('ui.crit'), s.crit.toFixed(1) + '%')}</div></div>
       <div class="invmain"><div class="invtop"><div class="pgtabs">${tabsP}</div>${this.invPage === 'items' ? `<div class="invbar"><div class="tabs2">${filt}</div><div class="sorts">${sorts}</div></div>` : ''}</div>
@@ -210,7 +210,7 @@ export class Panels {
         ${own ? `<button class="btn small" data-act="mkcancel" data-id="${l.id}">${t('mk.cancel')}</button>` : `<button class="btn primary small" data-act="mkbuy" data-id="${l.id}" ${m.gold < l.price || !inTown ? 'disabled' : ''}>${t('mk.buy')}</button>`}</div>`;
     };
     if (this.mkTab === 'browse') {
-      const chips = ['', ...SLOTS, 'good', 'costume'].map((s) => `<div class="chip ${this.mkSlot === s ? 'on' : ''}" data-act="mkslot" data-v="${s}">${s === 'good' ? t('mk.goods') : s === 'costume' ? t('mk.costumes') : s ? t('slot.' + s) : t('mk.all')}</div>`).join('');
+      const chips = ['', ...ALL_SLOTS, 'good', 'costume'].map((s) => `<div class="chip ${this.mkSlot === s ? 'on' : ''}" data-act="mkslot" data-v="${s}">${s === 'good' ? t('mk.goods') : s === 'costume' ? t('mk.costumes') : s ? t('slot.' + s) : t('mk.all')}</div>`).join('');
       const list = this.mkData.listings.length ? this.mkData.listings.map((l) => row(l, false)).join('') : `<div class="muted" style="padding:14px">${t('mk.empty')}</div>`;
       return this.shell(t('mk.title'), 'akce', `<div style="min-width:640px">${warn}<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${tabs}<span class="grow"></span>${gold}</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">${chips}<span class="grow"></span><div class="chip ${this.mkMine2 ? 'on' : ''}" data-act="mkfit" title="${t('mk.fitHint')}">${t('mk.fit')}</div><div class="chip" data-act="mksort">${this.mkSort === 'deal' ? t('mk.sortDeal') : this.mkSort === 'price' ? t('mk.sortPrice') : t('mk.sortNew')}</div></div><div class="itemlist" style="max-height:380px;overflow:auto">${list}</div><div class="muted" style="margin-top:6px">${t('mk.note', { tax: Math.round(MARKET.taxPct * 100), fee: Math.round(MARKET.listFeePct * 100), h: MARKET.durationH })}</div></div>`);
     }
@@ -248,11 +248,11 @@ export class Panels {
   }
 
   // ─── demirci ───
-  allItems(): Item[] { const m = this.me; return [...SLOTS.map((s) => m.equip[s]).filter(Boolean) as Item[], ...m.items]; }
+  allItems(): Item[] { const m = this.me; return [...ALL_SLOTS.map((s) => m.equip[s]).filter(Boolean) as Item[], ...m.items]; }
   smith() {
     const m = this.me; const items = this.allItems(); let sel = items.find((i) => i.id === this.selUp);
     if (!sel && items.length) { sel = items[0]; this.selUp = sel.id; }
-    const eqIds = new Set(SLOTS.map((s) => m.equip[s]?.id));
+    const eqIds = new Set(ALL_SLOTS.map((s) => m.equip[s]?.id));
     const list = items.length ? items.map((it) => `<div class="irow ${it.id === this.selUp ? 'sel' : ''}" data-act="pickUp" data-id="${it.id}">${itemCell(it)}<div><div class="nm" style="color:${TIER_COLORS[it.tier] === '#c9c2b0' ? 'inherit' : TIER_COLORS[it.tier]}">${esc(itemName(it))}${it.up ? ` +${it.up}` : ''}</div><div class="ds">${t('slot.' + it.slot)}${eqIds.has(it.id) ? ' · ' + t('ui.equipped') : ''}</div></div></div>`).join('') : `<div class="muted">${t('ui.chooseItem')}</div>`;
     let right = '';
     if (this.smithTab === 'up') {
@@ -476,7 +476,7 @@ export class Panels {
     const el = (e.target as HTMLElement).closest('[data-act],[data-item]') as HTMLElement | null; if (!el) return;
     const act = el.dataset.act;
     if (!act && el.dataset.item) { // çantada eşya seç / kuşanılmışı çıkar
-      const id = el.dataset.item; const eq = SLOTS.find((s) => this.me.equip[s]?.id === id);
+      const id = el.dataset.item; const eq = ALL_SLOTS.find((s) => this.me.equip[s]?.id === id);
       if (this.open === 'inv') {
         if (eq) { await this.act('unequip', { slot: eq }); }
         else { const now = performance.now(); if (this.lastBagClick.id === id && now - this.lastBagClick.at < 450) { this.lastBagClick = { id: '', at: 0 }; await this.quick(id); this.selBag = ''; this.g.ui.sfx('ui'); this.render(true); return; } this.lastBagClick = { id, at: now }; this.selBag = id; this.render(true); }
@@ -570,7 +570,7 @@ export class Panels {
     let html = ''; let tc = '';
     if (el.dataset.item) {
       const id = el.dataset.item; const m = this.me; const it = m.items.find((i) => i.id === id) ?? SLOTS.map((s) => m.equip[s]).find((i) => i?.id === id); if (!it) return;
-      const isEq = SLOTS.some((s) => m.equip[s]?.id === id); html = itemTip(it, isEq ? undefined : m.equip[it.slot]); tc = TIER_COLORS[it.tier];
+      const isEq = ALL_SLOTS.some((s) => m.equip[s]?.id === id); html = itemTip(it, isEq ? undefined : m.equip[it.slot]); tc = TIER_COLORS[it.tier];
     } else if (el.dataset.skill) { const i = Number(el.dataset.skill); const s = SKILLS[i]; if (!s) { this.tipEl.style.display = 'none'; return; } html = `<div class="tn" style="--tc:#ffe9a8">${t('skill.' + s.id)}</div><div class="ts">${t('ui.cd')} ${s.cd}${getLang() === 'tr' ? 'sn' : 's'}</div>${t('skill.' + s.id + '.d')}`; }
     else if (el.dataset.mat) { const k = el.dataset.mat; html = `<div class="tn" style="--tc:#ffe9a8">${t('mat.' + k)}</div>`; }
     else if (el.dataset.slot) { html = `<div class="tn" style="--tc:#ffe9a8">${t('slot.' + el.dataset.slot)}</div>`; }

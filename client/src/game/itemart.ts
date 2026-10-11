@@ -143,13 +143,55 @@ function amulet(b: number, p: Pal, g: string): PartSpec[] {
   return s;
 }
 
+function shield(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [C(1.75, 0.18, [0, 0, 0], p.m, p.d, 0.4, [Math.PI / 2, 0, 0], 28), TR(1.75, 0.16, [0, 0, 0], b === 0 ? p.k : p.d, [Math.PI / 2, 0, 0], 0.5)];
+  if (b >= 1) s.push(B(1.5, 0.14, 0.07, [0, 0, -0.1], p.d, p.d, 0.4), B(0.14, 1.5, 0.07, [0, 0, -0.1], p.d, p.d, 0.4));
+  if (b >= 2) s.push(TR(1.12, 0.08, [0, 0, -0.1], p.l, [Math.PI / 2, 0, 0], 0.65));
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; s.push(SP(0.13, [Math.cos(a) * 0.74, Math.sin(a) * 0.74, -0.12], p.l, undefined, 0.6)); }
+  if (b >= 3) for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + 0.3; s.push(CN(0.16, 0.34, [Math.cos(a) * 0.44, Math.sin(a) * 0.44, -0.22], p.l, p.m, 0.7, [-Math.PI / 2, 0, 0])); }
+  s.push(SP(0.52, [0, 0, -0.14], b === 0 ? p.w : p.l, [1, 1, 0.5], 0.6), ...gemAt(g, 0.3, [0, 0, -0.34]));
+  if (b === 4) s.push(CN(0.3, 0.5, [0, 1.0, 0], p.l, p.m, 0.7), CN(0.3, 0.5, [0, -1.0, 0], p.l, p.m, 0.7, [Math.PI, 0, 0]));
+  return s;
+}
+function boots(b: number, p: Pal, g: string): PartSpec[] {
+  const leather = b === 0 ? '#8a6a44' : b === 1 ? '#7a4a28' : b === 2 ? '#4a5568' : b === 3 ? '#38489a' : '#8a1f1f';
+  const s: PartSpec[] = [
+    { k: 'cyl', dt: 0.62, db: 0.5, h: 1.0, p: [0, 0.3, 0.1], c: leather, c2: p.d, gloss: 0.15, seg: 14 },
+    { k: 'sphere', d: 0.78, s: [0.78, 0.62, 1.55], p: [0, -0.4, -0.22], c: leather, c2: p.d, gloss: 0.2 },
+    B(0.62, 0.12, 1.25, [0, -0.7, -0.2], p.d, p.d, 0.2), TR(0.7, 0.13, [0, 0.82, 0.1], p.m, [0, 0, 0], 0.5), SP(0.4, [0, -0.5, -0.78], p.m, [1, 0.8, 0.7], 0.5),
+  ];
+  if (b >= 1) s.push(B(0.5, 0.1, 0.5, [0, 0.2, -0.22], p.l, p.m, 0.5, [-0.35, 0, 0]));
+  if (b >= 2) s.push(B(0.34, 0.62, 0.08, [0, 0.35, -0.28], p.m, p.l, 0.65, [0.1, 0, 0]));
+  if (b >= 3) s.push(CN(0.16, 0.36, [0, -0.62, 0.52], p.l, p.m, 0.7, [-Math.PI / 2, 0, 0]));
+  if (b === 4) for (const sd of [-1, 1]) s.push(CN(0.22, 0.7, [sd * 0.36, 0.55, 0.28], p.l, p.m, 0.7, [0.5, 0, -sd * 0.6]));
+  if (b >= 1) s.push(...gemAt(g, 0.22, [0, 0.82, -0.2]));
+  return s;
+}
+function bracelet(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [TR(1.0, 0.36, [0, 0, 0], p.m, [0, 0, 0], 0.6), TR(1.0, 0.1, [0, 0.14, 0], p.l, [0, 0, 0], 0.7)];
+  const n = 8; for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; s.push(SP(0.13, [Math.cos(a) * 0.5, 0.18, Math.sin(a) * 0.5], i % 2 ? p.l : p.d, undefined, 0.5)); }
+  if (b >= 2) s.push(TR(0.74, 0.1, [0, -0.1, 0], p.l, [0, 0, 0], 0.7));
+  if (b >= 3) for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; s.push(CN(0.14, 0.3, [Math.cos(a) * 0.62, 0.05, Math.sin(a) * 0.62], p.l, p.m, 0.7, [Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2])); }
+  s.push(...gemAt(g, b >= 3 ? 0.42 : 0.32, [0, 0.3, -0.5]));
+  if (b === 4) for (const sd of [-1, 1]) s.push(...gemAt(g, 0.2, [sd * 0.4, 0.28, -0.32]));
+  return s;
+}
+function earring(b: number, p: Pal, g: string): PartSpec[] {
+  const s: PartSpec[] = [TR(0.95, 0.1, [0, 0.25, 0], p.m, [Math.PI / 2, 0, 0], 0.65), SP(0.2, [0, 0.76, 0], p.l, undefined, 0.7), C(0.04, 0.5, [0, -0.45, 0], p.m, p.m, 0.6), ...gemAt(g, 0.5 + b * 0.04, [0, -0.85, 0])];
+  if (b >= 1) s.push(CN(0.22, 0.3, [0, -0.5, 0], p.l, p.m, 0.7, [Math.PI, 0, 0]));
+  if (b >= 2) s.push(TR(0.55, 0.07, [0, 0.25, 0], p.l, [Math.PI / 2, 0, 0], 0.7));
+  if (b >= 3) for (const sd of [-1, 1]) s.push(SP(0.2, [sd * 0.34, -0.55, 0], '#f6f1e2', undefined, 0.6), C(0.03, 0.36, [sd * 0.34, -0.38, 0], p.m, p.m, 0.6));
+  if (b === 4) for (const sd of [-1, 1]) s.push(CN(0.22, 0.6, [sd * 0.5, 0.55, 0], p.l, p.m, 0.7, [0, 0, -sd * 0.7]));
+  return s;
+}
+
 export function itemSpecs(it: ItemKey): PartSpec[] {
   const b = Math.max(0, Math.min(4, it.band)); const p = PALS[b]; const g = it.tier <= 0 ? p.l : TIER_COLORS[it.tier];
   if (it.slot === 'weapon') { const k = (it.wk as DmgKind | undefined) ?? 'kilic'; return k === 'cift' ? axe(b, p, g) : k === 'bicak' ? dagger(b, p, g) : k === 'yay' ? bow(b, p, g) : k === 'buyu' ? staff(b, p, g) : sword(b, p, g); }
-  return it.slot === 'armor' ? armor(b, p, g) : it.slot === 'helmet' ? helmet(b, p, g) : amulet(b, p, g);
+  switch (it.slot) { case 'armor': return armor(b, p, g); case 'helmet': return helmet(b, p, g); case 'shield': return shield(b, p, g); case 'boots': return boots(b, p, g); case 'bracelet': return bracelet(b, p, g); case 'earring': return earring(b, p, g); default: return amulet(b, p, g); }
 }
 /** Sahnedeki duruş: silahlar eğik (uç sağ-yukarı), zırh/miğfer/tılsım hafif döndürülmüş */
-const POSE: Record<string, V3> = { kilic: [0, -0.5, -0.78], cift: [0, -0.4, -0.7], bicak: [0, -0.5, -0.78], yay: [0, 0.55, 0], buyu: [0, -0.4, -0.55], armor: [-0.12, 0.5, 0], helmet: [0.18, 0.55, 0], amulet: [0.05, 0.45, 0] };
+const POSE: Record<string, V3> = { kilic: [0, -0.5, -0.78], cift: [0, -0.4, -0.7], bicak: [0, -0.5, -0.78], yay: [0, 0.55, 0], buyu: [0, -0.4, -0.55], armor: [-0.12, 0.5, 0], helmet: [0.18, 0.55, 0], amulet: [0.05, 0.45, 0], shield: [-0.1, 0.55, 0], boots: [0.1, 0.9, 0], bracelet: [0.85, 0.3, 0], earring: [0.05, 0.4, 0] };
 
 const SIZE = 192;
 interface Studio { engine: Engine; scene: Scene; cam: FreeCamera; mat: ReturnType<typeof toonMaterial>; canvas: HTMLCanvasElement }
