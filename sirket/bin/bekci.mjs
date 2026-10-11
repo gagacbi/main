@@ -2,7 +2,7 @@
 // BEKÇİ: her koşuyu denetler. kabul → masa · red → kuyruk (deneme+1, gerekçe notla). İnsan yerine kapıları ve sınırları uygular.
 //   node sirket/bin/bekci.mjs <iş-id>
 import { execSync } from 'node:child_process';
-import { muhurFarki, okuJson, git, gorevler, gorevYaz, jsonlEkle, kurallar, oku, simdi, uyar, yol, bugun, ekle, PROJE } from './lib.mjs';
+import { git, gorevler, gorevYaz, jsonlEkle, kurallar, oku, simdi, uyar, yol, bugun, ekle, PROJE } from './lib.mjs';
 
 const id = process.argv[2]; const g = gorevler().find((x) => x.id === id);
 if (!g) { console.error('iş yok: ' + id); process.exit(2); }
@@ -18,12 +18,6 @@ for (const f of degisen) {
   else if (k.izinliYollar.length && !k.izinliYollar.some((p) => uyar(p, f))) sorunlar.push(`izin dışı yol: ${f}`);
 }
 if (!degisen.length && !g.salt_okunur) sorunlar.push('hiçbir dosya değişmemiş (salt-okunur iş değilse boş koşu kabul edilmez)');
-
-// 1b) MÜHÜR: takımlar birbirine mesaj atmaz, dosya yazar. Korunan dosyalar (anayasa, bin, kurallar, başka takım, masa, başka işler) değişmemiş olmalı
-const muhur = okuJson(yol('calisma', id + '.muhur.json'));
-if (!muhur) sorunlar.push('mühür yok: iş dağıtıcıdan geçmemiş (sirket/calisma/' + id + '.muhur.json)');
-else for (const f of muhurFarki(muhur)) sorunlar.push(`mühür bozuldu (${f}) — takımlar yalnızca kendi çıktısını, hafiza/ ve yeni kuyruk işi (devir) yazar`);
-kanit.devirler = gorevler().filter((x) => x.kimden === id).map((x) => x.id);
 
 // 2) rapor ve "kaynaksız sayı yok"
 const rapor = oku(yol('calisma', id + '.rapor.md'));

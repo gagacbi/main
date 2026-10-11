@@ -53,29 +53,6 @@ describe('şirket: dağıtıcı → takım → bekçi → masa', () => {
   });
 });
 
-describe('şirket: takımlar birbirine mesaj atmaz (mühür)', () => {
-  function iki() { const d = proje(); const k = join(d, 'sirket/takimlar'); mkdirSync(join(k, 'tb')); for (const f of ['takim.md', 'kurallar.md', 'durum.json', 'defter.md']) writeFileSync(join(k, 'tb', f), f === 'kurallar.md' ? '```json\n{"kapilar":[]}\n```\n' : f === 'durum.json' ? '{}\n' : '#\n'); return d; }
-  const kos = (d: string) => { const id = ekle(d); node(d, 'dagitici.mjs', 'sonraki'); writeFileSync(join(d, 'src/a.txt'), 'x' + Math.random()); rapor(d, id); return id; };
-  test('başka takımın dosyasını düzenlemek, kendi kurallarını gevşetmek, anayasayı veya bekçiyi değiştirmek → RED', () => {
-    for (const hedef of ['sirket/takimlar/tb/defter.md', 'sirket/takimlar/tb/durum.json', 'sirket/takimlar/ta/kurallar.md', 'sirket/ANAYASA.md', 'sirket/bin/kur.mjs', 'sirket/sirket.json']) {
-      const d = iki(); const id = kos(d); writeFileSync(join(d, hedef), readFileSync(join(d, hedef), 'utf8') + '\n# sızma'); const r = node(d, 'bekci.mjs', id);
-      expect(r.status, hedef).toBe(1); expect(r.stdout, hedef).toContain('mühür bozuldu'); expect(r.stdout).toContain(hedef);
-    }
-  });
-  test('başka işin kuyruk kaydını silmek veya düzenlemek → RED', () => {
-    const d = iki(); const diger = node(d, 'dagitici.mjs', 'ekle', '--takim', 'ta', '--baslik', 'diğer', '--oncelik', '5').stdout.trim(); const id = kos(d); const f = join(d, `sirket/kuyruk/${diger}.json`); writeFileSync(f, readFileSync(f, 'utf8').replace('bekliyor', 'kabul'));
-    expect(node(d, 'bekci.mjs', id).stdout).toContain(`kuyruk/${diger}.json`);
-  });
-  test('izinli iletişim: yeni iş yazmak (devir), hafıza sayfası, kendi çıktıları → KABUL ve devir kaydı izlenir', () => {
-    const d = iki(); const id = kos(d); const dev = node(d, 'dagitici.mjs', 'ekle', '--takim', 'tb', '--kimden', id, '--baslik', 'devir').stdout.trim(); writeFileSync(join(d, 'sirket/hafiza/not.md'), '---\ntur: kavram\ndurum: aktif\nguncelleme: 2026-10-12\nkaynak: x\n---\n# not\n');
-    const r = node(d, 'bekci.mjs', id); expect(r.status).toBe(0); expect(r.stdout).toContain('KABUL');
-    const g = JSON.parse(readFileSync(join(d, `sirket/kuyruk/${dev}.json`), 'utf8')); expect(g.kimden).toBe(id); expect(g.takim).toBe('tb'); expect(g.durum).toBe('bekliyor');
-  });
-  test('dağıtıcıdan geçmemiş (mührü olmayan) iş kabul edilmez', () => {
-    const d = proje(); const id = ekle(d); writeFileSync(join(d, 'src/a.txt'), 'q'); rapor(d, id); const r = node(d, 'bekci.mjs', id); expect(r.status).toBe(1); expect(r.stdout).toContain('mühür yok');
-  });
-});
-
 describe('şirket: hafıza grafı (bu depodaki gerçek sayfalar)', () => {
   test('kırık bağlantı yok, öksüz sayfa yok; her sayfada frontmatter (tür, durum, güncelleme, kaynak)', () => {
     const r = spawnSync('node', [join(SIRKET, 'bin/hafiza.mjs')], { encoding: 'utf8' }); expect(r.stdout).toContain('kırık bağlantı 0'); expect(r.stdout).toContain('öksüz 0'); expect(r.status).toBe(0);

@@ -12,7 +12,7 @@ Esin: "Sıfırdan Ajanlar" şirket mimarisi (verdiğiniz üç slayt). **Videoyu 
 | BEKÇİ (her koşuyu denetler: kabul → masa, red → kuyruk) | `sirket/bin/bekci.mjs`: yol sınırı, rapor biçimi, "SAYI ⇒ KAYNAK", kapılar (typecheck/test/derleme/e2e) |
 | MASA → SEN (sabah tek liste, evet/hayır) | `sirket/masa/<gün>.jsonl` + `sirket/bin/masa.mjs` (`evet`/`hayir`) |
 | GRAF = HAFIZA (sayfa = düğüm, [[link]] = kenar) | `sirket/hafiza/*.md` (frontmatter: tur/durum/guncelleme/kaynak) + `sirket/bin/hafiza.mjs` (graf, kırık bağlantı, öksüz sayfa) |
-| "Takımlar birbirine mesaj atmaz" | Takımlar yalnızca dosya yazar/okur. Başka takıma iş: kuyruğa yeni iş (`dagitici.mjs ekle --takim <hedef> --kimden <iş-id>`). **Mühür** bunu zorlar (aşağıda) |
+| "Takımlar birbirine mesaj atmaz" | Takımlar yalnızca dosya yazar/okur: `kuyruk/`, `calisma/`, `hafiza/`, `defter.md` |
 
 ## Kullanım
 ```
@@ -25,15 +25,6 @@ npm run sirket:masa                  # bekleyen onaylar;  npm run sirket:masa --
 npm run sirket:hafiza                # hafıza grafı + dizin
 ```
 Başka projeye taşımak: `node sirket/bin/kur.mjs ../baska-proje takim1 takim2` (bağımlılıksız, yalnızca Node).
-
-## Neden mesaj yok, nasıl zorlanıyor?
-**Neden:** (1) Takımlar ayrı oturumlar; birbirinin bağlamını göremez, mesaj kaybolur veya yanlış anlaşılır. Dosya kalıcıdır, denetlenebilir, tekrar okunabilir. (2) Mesajlaşma sırayı ve tavanı baypas eder: bir takım diğerini sınırsız çalıştırabilir. Kuyruk üzerinden gelen iş dağıtıcının tavanlarından geçer. (3) Sorumluluk izlenir: her devirde `kimden` alanı vardır.
-
-**Nasıl:** `kimin ne yazabileceği` mühürle denetlenir. Dağıtıcı koşu başında korunan dosyaların SHA-256 özetini `calisma/<id>.muhur.json`'a yazar; bekçi koşu sonunda karşılaştırır, değişen/silinen varsa koşuyu reddeder.
-| Serbest | Korunan (değişirse RED) |
-|---|---|
-| kendi `calisma/<id>.*` (rapor), `hafiza/`, kendi `defter.md`, **yeni** kuyruk işi (devir) | ANAYASA, `sirket.json`, `bin/`, tüm `takim.md` + `kurallar.md` (kendi sınırını gevşetemez), başka takımın her dosyası, kendi `durum.json`, `masa/`, başka işlerin kuyruk ve çalışma dosyaları |
-Mührü olmayan (dağıtıcıdan geçmemiş) iş de reddedilir. **Sınır:** mühür kazara ve dikkatsiz sızmayı yakalar; bekçi kodunun kendisini değiştiren kötü niyetli bir ajana karşı değildir (aynı depoda çalışır). Bunun için bekçi/bin değişikliklerinin insan incelemesinden geçmesi (ör. kod sahibi onayı) gerekir.
 
 ## Dürüst sınırlar
 - **Arka planda kendi kendine çalışmaz.** Dağıtıcı ve bekçi betiktir; işi yapan ajanı (Claude Code oturumu) siz ya da bir zamanlanmış görev başlatır. Bu depoda henüz zamanlanmış görev **kurulmadı**; kurulursa (ör. her gece bir oturum `sirket:sonraki` → işi yap → `sirket:bekci`) bunun için sizin onayınız gerekir.

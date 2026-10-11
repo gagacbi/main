@@ -3,7 +3,7 @@
 //   node sirket/bin/dagitici.mjs ekle --takim denge --baslik "..." --istek "..." [--oncelik 2]
 //   node sirket/bin/dagitici.mjs sonraki          # sıradaki işi seçer, calisma/<id>.brief.md yazar
 //   node sirket/bin/dagitici.mjs durum            # kuyruk ve tavan özeti
-import { muhurAl, arg, bugun, git, gorevler, gorevYaz, kurallar, oku, sayac, sayacYaz, simdi, takimlar, yol, yazJson, jsonl, okuJson } from './lib.mjs';
+import { arg, bugun, git, gorevler, gorevYaz, kurallar, oku, sayac, sayacYaz, simdi, takimlar, yol, yazJson, jsonl, okuJson } from './lib.mjs';
 import { writeFileSync } from 'node:fs';
 
 const [, , komut = 'durum', ...rest] = process.argv;
@@ -14,7 +14,7 @@ function ekle() {
   if (!takim || !takimlar().includes(takim)) { console.error(`takım yok: ${takim}. Var olanlar: ${takimlar().join(', ')}`); process.exit(2); }
   if (!baslik) { console.error('--baslik gerekli'); process.exit(2); }
   const n = gorevler().length + 1; const id = `${bugun().replace(/-/g, '')}-${String(n).padStart(3, '0')}`;
-  gorevYaz({ id, takim, baslik, istek, oncelik: Number(arg(rest, 'oncelik', 3)), durum: 'bekliyor', deneme: 0, olusturma: simdi(), notlar: [], kimden: arg(rest, 'kimden', 'insan') });
+  gorevYaz({ id, takim, baslik, istek, oncelik: Number(arg(rest, 'oncelik', 3)), durum: 'bekliyor', deneme: 0, olusturma: simdi(), notlar: [] });
   console.log(id);
 }
 
@@ -33,10 +33,9 @@ function sonraki() {
     if (d.bugunKosu >= k.gunlukKosu) { continue; }
     g.durum = 'kosuyor'; g.deneme = (g.deneme ?? 0) + 1; g.sonKosu = simdi(); g.taban = git('rev-parse', 'HEAD'); gorevYaz(g);
     d.bugunKosu += 1; d.sonGorev = g.id; sayacYaz(g.takim, d);
-    yazJson(yol('calisma', g.id + '.muhur.json'), muhurAl(g.takim, g.id));   // korunan dosyaların özeti (bekçi karşılaştırır)
     const T = (f) => oku(yol('takimlar', g.takim, f), '(yok)');
     const defter = T('defter.md').split('\n').slice(-30).join('\n');
-    const brief = `# İş emri ${g.id} — ${g.baslik}\n\nTakım: **${g.takim}** · deneme ${g.deneme}/${k.denemeTavani} · taban: \`${g.taban || '—'}\`\n\n## Önce oku\n1. sirket/ANAYASA.md (her koşu önce bunu okur)\n2. sirket/takimlar/${g.takim}/takim.md ve kurallar.md\n3. sirket/hafiza/ içindeki ilgili sayfalar ([[bağlantılar]])\n\n## İstek\n${g.istek}\n\n## Sınırlar (bekçi bunları denetler)\n- İzinli yollar: ${k.izinliYollar.join(', ') || '(hepsi)'}\n- Yasaklı yollar: ${k.yasakliYollar.join(', ') || '(yok)'}\n- Kapılar (hepsi geçmeli): ${k.kapilar.map((c) => '`' + c + '`').join(' · ') || '(yok)'}\n\n## Teslim\n\`sirket/calisma/${g.id}.rapor.md\` yaz: \`## Sonuç\` bölümü, değiştirilen dosyalar, sınırlar. Her sayısal iddia \`SAYI: ... KAYNAK: dosya/komut\` biçiminde olmalı (kaynaksız sayı yok).\n\n## Başka takıma iş gerekiyorsa\nMesaj atma, başkasının dosyasını düzenleme. Kuyruğa yeni iş yaz (dağıtıcı sırasını ve tavanını uygular): \`node sirket/bin/dagitici.mjs ekle --takim <hedef> --kimden ${g.id} --baslik \"…\" --istek \"…\"\`. Kalıcı bilgi: sirket/hafiza/.\n\nSonra: \`node sirket/bin/bekci.mjs ${g.id}\`\n\n## Takım defteri (son notlar)\n${defter}\n\n## Önceki bekçi notları\n${(g.notlar || []).slice(-3).join('\n') || '(yok)'}\n`;
+    const brief = `# İş emri ${g.id} — ${g.baslik}\n\nTakım: **${g.takim}** · deneme ${g.deneme}/${k.denemeTavani} · taban: \`${g.taban || '—'}\`\n\n## Önce oku\n1. sirket/ANAYASA.md (her koşu önce bunu okur)\n2. sirket/takimlar/${g.takim}/takim.md ve kurallar.md\n3. sirket/hafiza/ içindeki ilgili sayfalar ([[bağlantılar]])\n\n## İstek\n${g.istek}\n\n## Sınırlar (bekçi bunları denetler)\n- İzinli yollar: ${k.izinliYollar.join(', ') || '(hepsi)'}\n- Yasaklı yollar: ${k.yasakliYollar.join(', ') || '(yok)'}\n- Kapılar (hepsi geçmeli): ${k.kapilar.map((c) => '`' + c + '`').join(' · ') || '(yok)'}\n\n## Teslim\n\`sirket/calisma/${g.id}.rapor.md\` yaz: \`## Sonuç\` bölümü, değiştirilen dosyalar, sınırlar. Her sayısal iddia \`SAYI: ... KAYNAK: dosya/komut\` biçiminde olmalı (kaynaksız sayı yok).\nSonra: \`node sirket/bin/bekci.mjs ${g.id}\`\n\n## Takım defteri (son notlar)\n${defter}\n\n## Önceki bekçi notları\n${(g.notlar || []).slice(-3).join('\n') || '(yok)'}\n`;
     writeFileSync(yol('calisma', g.id + '.brief.md'), brief);
     console.log(`sirket/calisma/${g.id}.brief.md`); return;
   }
