@@ -1,4 +1,6 @@
-# Şirket: geliştirmeyi dosya, kuyruk ve döngüyle yönetmek
+# Şirket (yalnızca denetim): dağıtıcı · bekçi · masa · hafıza
+
+**Karar (kullanıcı):** geliştirme normal akışta sürer; şirket zorunlu bir iş akışı DEĞİL. Takımlar yalnızca denetleyici olarak kullanılır: `npm run sirket:bekci -- <id>` kapıları (typecheck, test, derleme, e2e) ve rapor biçimini denetler. Takımlar arası mesajlaşma kuralı bir ilke olarak yazılıdır; bekçi bunu dosya düzeyinde zorlamaz.
 
 Esin: "Sıfırdan Ajanlar" şirket mimarisi (verdiğiniz üç slayt). **Videoyu izleyemedim** (bu ortamdan erişilemiyor); aşağıdaki tasarım yalnızca slaytlardaki şemaya dayanır.
 
