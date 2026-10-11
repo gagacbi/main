@@ -12,6 +12,7 @@ import { IDLE, buildHuman, type Rig } from './models';
 import { Predictor } from './predict';
 import { genStones } from '@shared/world';
 import { eqCode } from '@shared/appearance';
+import { FISH } from '@shared/fishing';
 import { genRuins } from '@shared/chronicle';
 import { GATE_LINKS, gatePos } from '@shared/game';
 import { regionAt } from '@shared/maps';
@@ -274,7 +275,7 @@ export class Game {
     const key = force ?? this.nearby?.key; if (!key) return;
     if (key.startsWith('ruin:')) { void this.readRuin(Number(key.slice(5))); return; }
     if (key.startsWith('stone:')) { void this.readStone(Number(key.slice(6))); return; }
-    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate'); else if (key === 'loom') this.ui.open('loom');
+    if (key === 'aksakal') this.ui.open('elder'); else if (key === 'demirci') this.ui.open('smith'); else if (key === 'otag') this.ui.open('oba'); else if (key === 'stele') this.ui.open('inscr'); else if (key === 'gate') this.ui.open('gate'); else if (key === 'loom') this.ui.open('loom'); else if (key === 'fish') this.ui.open('fish');
     this.audio.sfx('ui');
   }
 
@@ -363,7 +364,7 @@ export class Game {
     // kamera
     this.updateCamera(dt);
     // etkileşim ipucu
-    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ['loom', LOOM_POS.x, LOOM_POS.z, LOOM_POS.interact], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5]), ...genRuins().map((s): [string, number, number, number] => ['ruin:' + s.n, s.x, s.z, 6])];
+    this.nearby = null; const cand: [string, number, number, number][] = [['aksakal', HUB.akSakal.x, HUB.akSakal.z, HUB.interactAkSakal], ['demirci', HUB.demirci.x, HUB.demirci.z, HUB.interactDemirci], ['otag', HUB.otag.x, HUB.otag.z, HUB.interactOtag], ['stele', HUB.stele.x, HUB.stele.z, HUB.interactStele], ['loom', LOOM_POS.x, LOOM_POS.z, LOOM_POS.interact], ['fish', FISH.pond.x, FISH.pond.z, FISH.pond.r + FISH.shoreReach - 0.5], ...genStones().map((s): [string, number, number, number] => ['stone:' + s.n, s.x, s.z, 5.5]), ...genRuins().map((s): [string, number, number, number] => ['ruin:' + s.n, s.x, s.z, 6])];
     const reg = regionAt(this.pos.x, this.pos.z); if (reg && MAPS_GATES.has(reg.id)) { const gp = gatePos(reg.id); cand.push(['gate', gp.x, gp.z, HUB.interactGate]); }
     if (reg && reg.id !== this.regionId) { this.regionId = reg.id; this.world.setAtmosphere(reg.map); this.ui.regionChanged(reg.id); }
     for (const [k, x, z, r] of cand) { const d = Math.hypot(x - this.pos.x, z - this.pos.z); if (d < r && (!this.nearby || d < this.nearby.dist)) this.nearby = { key: k, dist: d }; }

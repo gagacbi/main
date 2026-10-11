@@ -1,3 +1,5 @@
+import type { FishState, Buff } from '../shared/fishing';
+import type { DailyState } from '../shared/daily';
 import type { CostumeState } from '../shared/costume';
 import type { Bag, Companion, Expedition, Item, Slot, Spec } from '../shared/game';
 import type { Rng } from '../shared/rng';
@@ -16,6 +18,7 @@ export interface PlayerData {
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };
   x: number; z: number; lang: 'tr' | 'en';
   /** Alp Avı: sıradaki av görevi seviyesi ve ilerleme */ hunt?: { lv: number; k: [number, number] };
+  /** Göl Avı durumu */ fish?: FishState; /** süreli güçlendirmeler (pişmiş balık vb.) */ buffs?: Buff[]; /** Obanın Günlüğü */ daily?: DailyState;
   clues: string[]; dreams: number; shards: number; pendingDream: number;
   /** isteğe bağlı PvP bayrağı (eski kayıtlarda yok = kapalı) */
   pvp?: boolean;

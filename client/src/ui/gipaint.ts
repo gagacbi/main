@@ -20,6 +20,10 @@ const UI: Record<string, [string, P3]> = {
   kalkan: ['viking-shield', ['#e2f0ff', '#7fb0f0', '#3a5aa8']], zehir: ['poison-bottle', ['#d8ffb0', '#6fcf4a', '#2a7a2a']], hiddet: ['thunder-struck', ['#fffbd0', '#ffe03c', '#d98a0a']],
   swords: ['sword-clash', GOLD], bag: ['knapsack', ['#e3c797', '#b9814a', '#6a4a28']], char: ['character', GOLD], skills: ['skills', GOLD], oba: ['tipi', ['#fff0d0', '#e8a85a', '#8a4f22']],
   stele: ['stone-tablet', ['#e4e1f2', '#9a97bd', '#5a587c']], akce: ['coins', GOLD], globe: ['compass', GOLD], book: ['open-book', ['#ffd9c8', '#d8644c', '#7a2a1c']], skull: ['skull-crossed-bones', ['#f4f0e6', '#cfc8b4', '#6b6450']],
+  fish_sazan: ['tropical-fish', ['#ffe3b0', '#e8a04a', '#8a5420']], fish_otsazani: ['clownfish', ['#d8f2c0', '#7fc05a', '#3a6a28']], fish_zargana: ['double-fish', ['#e2f0ff', '#8fb8f2', '#3a5aa8']],
+  fish_hamsi: ['school-of-fish', ['#f4f7fc', '#aeb9cb', '#5f6c80']], fish_levrek: ['flatfish', ['#e6e1f5', '#a59bd0', '#5a4f8a']], fish_kadife: ['angler-fish', ['#f0d4ff', '#b46bff', '#5a2a9a']],
+  fish_kralyengeci: ['crab', ['#ffc4b0', '#e0553a', '#7a2214']], fish_altinsudak: ['porcupinefish', ['#fff3b0', '#f2bb3b', '#a8691a']], fish_ata: ['whale-tail', ['#c8f0ff', '#4ab0e8', '#1e5a9a']],
+  hamur: ['sliced-bread', ['#fff0d0', '#e0b070', '#8a6030']], solucan: ['earth-worm', ['#ffc8c0', '#e07a7a', '#8a3a3a']], rod: ['fishing-pole', ['#e3c797', '#b9814a', '#6a4a28']], daily: ['scroll-unfurled', ['#fff3d0', '#e8c070', '#9a6a28']],
   kimiz: ['waterskin', ['#fff8dc', '#e6d9a8', '#9a8450']],
 };
 export function uiIcon(k: string): string | null { const m = UI[k]; return m ? paint(m[0], m[1][0], m[1][1], m[1][2], 'gi') : null; }

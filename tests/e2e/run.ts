@@ -176,6 +176,10 @@ if (want('paneller')) {
   const wk = (await page.textContent('.overlay.open')) ?? ''; check('S2.wiki', /Alp Avı/.test(wk) && /Atla/.test(wk) && (await page.$$('.wkitem')).length >= 10, `Oyun içi Wiki (U): ${(await page.$$('.wkitem')).length} makale, Alp Avı kuralları ve örnek tablo görünür`);
   await page.keyboard.press('Escape'); await sleep(200);
   const huntBox = (await page.textContent('#quest')) ?? ''; check('S3.alp-avi-hud', /Alp Av/.test(huntBox), 'Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür');
+  { const mm = pl(NAME); mm.d.level = Math.max(mm.d.level, 12); mm.x = HUB.pond.x; mm.z = HUB.pond.z + 11; mm.d.fish = { rod: 2, pts: 3, hamur: 5, solucan: 2, luck: 0, stock: { sazan: 2, altinsudak: 1 }, caught: 4, ancestor: false }; mm.meDirty = true; await sleep(1500);
+    await page.keyboard.press('j'); await sleep(900); await shot('12-gunluk'); const dTxt = (await page.textContent('.overlay.open')) ?? ''; check('S4.gunluk', /Yaratık kes/.test(dTxt) && /Günlük Hediye/.test(dTxt), 'Obanın Günlüğü (J): 4 görev, ilerleme çubukları, ödül türleri ve Günlük Hediye görünür'); await page.keyboard.press('Escape'); await sleep(300);
+    await page.evaluate("window.__game.ui.open('fish')"); await sleep(900); await shot('12b-gol-avi'); const fTxt = (await page.textContent('.overlay.open')) ?? ''; check('S5.gol-avi', /Olta At/.test(fTxt) && /Sazan/.test(fTxt) && /Altın Sudak/.test(fTxt), 'Göl Avı paneli: olta seviyesi, yemler, olta at düğmesi, balık envanteri ve pişirme');
+    await page.click('[data-act="fishcast"]'); await sleep(900); await shot('12c-zamanlama'); check('S6.zamanlama-oyunu', (await page.$$('.fgame .fbar')).length === 1, 'Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor'); await page.keyboard.press('Escape'); await sleep(400); }
   await page.keyboard.press('Escape');
 }
 

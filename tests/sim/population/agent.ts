@@ -300,7 +300,7 @@ export class Agent {
     if (process.env.POP_NOGOODS) return; const d = this.d; const r = this.eng.rng; const mk = this.eng.market; const w = this.w;
     const keep = (k: GoodKey): number => {
       const cos = this.par.cos; const bookish = this.par.book; const charmish = this.par.charm;
-      switch (k) { case 'ore': return 90; case 'hide': return 20; case 'wood': return 20; case 'book': return bookish ? 4 : 0; case 'charm': return charmish ? 3 : 0; case 'frag': return 30;
+      switch (k) { default: return 0; case 'ore': return 90; case 'hide': return 20; case 'wood': return 20; case 'book': return bookish ? 4 : 0; case 'charm': return charmish ? 3 : 0; case 'frag': return 30;
         case 'lif': case 'boya': case 'ipek': case 'nakis': return cos ? 999 : 0; case 'boncuk': case 'dugum': case 'nazar': return cos ? 3 : 0; case 'kagit': return cos && (this.par.cosChase ?? 0) > 0.05 ? 6 : 0; case 'kimiz': return 999; }
     };
     const minBatch = (k: GoodKey) => (k === 'ore' || k === 'hide' || k === 'wood' ? 40 : k === 'lif' ? 20 : 1);

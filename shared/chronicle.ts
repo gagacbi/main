@@ -8,10 +8,10 @@ import { WORLD_SEED, roadDist, worldObstacles } from './world';
  *  - "ortaya çıkan" katman: bosslar, çatlaklar, zindanlar, ilkler ve yazıtlar Yıllık'a oyuncu adıyla işlenir
  * Çağ, sunucunun toplam Yıllık puanından türer; hiçbir çağ "son" değildir.
  */
-export type ChronKind = 'boss' | 'rift' | 'dungeon' | 'level' | 'insc' | 'ruin' | 'era' | 'outlaw';
+export type ChronKind = 'boss' | 'rift' | 'dungeon' | 'level' | 'insc' | 'ruin' | 'era' | 'outlaw' | 'fish';
 export interface ChronEntry { t: number; k: ChronKind; who: string; a: number; b: number }
 export const CHRON_MAX = 200;
-export const CHRON_PTS: Record<ChronKind, number> = { boss: 10, rift: 6, dungeon: 4, level: 0, insc: 25, ruin: 2, era: 0, outlaw: 0 };
+export const CHRON_PTS: Record<ChronKind, number> = { boss: 10, rift: 6, dungeon: 4, level: 0, insc: 25, ruin: 2, era: 0, outlaw: 0, fish: 3 };
 /** İlk-ünvan seviyeleri: sunucuda bu seviyeye ilk ulaşan Yıllık'a geçer */
 export const FIRST_LEVELS = [10, 20, 30, 40, 50];
 

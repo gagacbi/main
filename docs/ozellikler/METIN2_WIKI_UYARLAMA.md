@@ -46,4 +46,4 @@ Ekonomi notu: balık satışı pazarda serbest olursa yeni bir akçe kaynağı o
 3. Obanın Günlüğü (günlük görev)
 4. Element yazısı (sink olarak), sonra Kut Taşları / Yoldaş evrimi
 
-Durum: **Alp Avı ve oyun içi Wiki (U) yapıldı**; Göl Avı, Obanın Günlüğü, Element yazısı beklemede.
+Durum: **Alp Avı, oyun içi Wiki (U), Göl Avı (balıkçılık), Obanın Günlüğü (günlük görevler) ve ek kuşanma yuvaları yapıldı**; Element yazısı, Kut Taşları ve Yoldaş evrimi beklemede. Ekonomi notu: balık/günlük görev eklemeleri nüfus simülasyonunda yeniden ölçülmedi (akçe girişi yok; Kımız, kitap ve XP ödülü var).

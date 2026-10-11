@@ -308,3 +308,11 @@ button { font-family: var(--f-head); cursor: pointer; }
 /* ek kuşanma yuvaları: küpe (baş yanı), kalkan (sol el), bilezik, çizme */
 .inv3 .doll .d-e { grid-column: 1; grid-row: 1; } .inv3 .doll .d-s { grid-column: 3; grid-row: 3; } .inv3 .doll .d-b { grid-column: 1; grid-row: 3; } .inv3 .doll .d-f { grid-column: 2; grid-row: 4; }
 .inv3 .doll .d-w { grid-row: 2; } .inv3 .doll .d-a { grid-row: 1; grid-column: 3; }
+
+/* Göl Avı ve Günlük */
+.fgame { margin: 10px 0; padding: 10px; border-radius: 12px; background: rgba(40,26,14,.12); border: 2px dashed rgba(90,58,28,.5); }
+.fbar { position: relative; height: 34px; border-radius: 17px; background: linear-gradient(#5aa4d8, #2a6aa8); border: 3px solid #2a1a0e; margin: 8px 0; cursor: pointer; overflow: hidden; }
+.fzone { position: absolute; top: 0; bottom: 0; background: linear-gradient(#9af0a0, #3fb860); border-left: 2px solid #1d6b34; border-right: 2px solid #1d6b34; }
+.fcur { position: absolute; top: -2px; bottom: -2px; width: 8px; margin-left: -4px; background: #fff; border: 2px solid #2a1a0e; border-radius: 4px; box-shadow: 0 0 8px #fff; }
+.chip.on { background: #f2c14e; border-color: #a8691a; color: #3a2414; } .col { display: flex; flex-direction: column; }
+.quest .hunth[data-p]:hover { filter: brightness(1.25); }

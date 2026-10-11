@@ -26,6 +26,7 @@ export function chronLine(e: ChronEntry): string {
     case 'dungeon': return t('chron.dungeon', { who: e.who, d: t('map.' + (DUNGEON_IDS[e.a] ?? 'demir')) });
     case 'level': return t('chron.level', { who: e.who, a: e.a });
     case 'insc': return t('chron.insc', { who: e.who, a: e.a });
+    case 'fish': return t('chron.fish.' + e.a, { who: e.who });
     case 'ruin': return t('chron.ruin', { who: e.who, a: e.a });
     case 'era': return t('chron.era', { name: eraName(e.a) });
     default: return e.who;

@@ -2,6 +2,8 @@ import { BOOK_BONUS, COMBO, DEATH_XP_LOSS, KIMIZ, MARKET, PVP_FLAG, RANK_RECOVER
 import { DUNGEONS } from '@shared/dungeon';
 import { ERA_AT, ERA_STEP, CHRON_PTS, RUIN_LEVELS } from '@shared/chronicle';
 import { HUNT, huntFor } from '@shared/hunt';
+import { FISH, FISH_DEFS } from '@shared/fishing';
+import { DAILY } from '@shared/daily';
 import { getLang, t } from './i18n';
 
 /**
@@ -189,25 +191,61 @@ ${Object.values(DUNGEONS).map((d) => `- ${t('map.' + d!.id)}: Lv ${d!.minLv}+, u
 ## Epic Ruins
 - ${RUIN_LEVELS.length} ruins on the steppe, near levels ${RUIN_LEVELS.join(', ')}. Read with E; you need at least (ruin level − 2)`] },
 
+  { id: 'fish', ic: 'rod', cat: 'grow', title: ['Göl Avı (balıkçılık)', 'Lake Fishing'], body: () => [
+`Yurt’taki gölün kıyısında (E ile "Göl") olta atılır. En az Sv ${FISH.minLevel} gerekir.
+## Ekipman
+- Olta ${FISH.rodPrice} akçe; yem şart: Hamur ${FISH.bait.hamur}, Solucan ${FISH.bait.solucan} akçe (solucan nadir balık şansını ikiye katlar)
+- Olta puanla gelişir (en çok seviye ${FISH.rodMax}): yakalanan balıkta %${Math.round(FISH.ptsChance * 100)} şansla +1 puan. Geliştirme akçe ister; başarısızlıkta puanın %${Math.round(FISH.rodFailLose * 100)}’u gider. Yüksek olta, vuruş bölgesini genişletir ve nadir balık şansını artırır
+## Zamanlama oyunu
+- ${FISH.gameSec} sn içinde çizgi yeşil bölgedeyken tıkla (veya Boşluk): ${FISH.hitsNeeded} isabet balığı yakalar; ıska ${FISH.missPenaltySec} sn götürür
+- Hangi balığın geleceği atışta sunucuca belirlenir; ${FISH.minReelSec} sn dolmadan çekilen olta geçersizdir
+## Balıklar
+${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (nadir)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} dk` : ''}`).join('\n')}
+- Gölün Atası (çok nadir): serbest bırak (herkese ${FISH.ancestorBuffSec / 60} dk +%${FISH.ancestorXpPct} XP, Yıllık’a yazılır), kes (3 yazıt parçası + 1 tılsım) ya da yem yap (sonraki ${FISH.luckCasts} atışta nadir ×${FISH.luckMult})
+## Pişirme ve pazar
+- Balık yalnızca Yurt’ta pişirilip yenir; güçler iyileştirme değildir (Kımız ile çakışmaz). Balıklar Pazar’da takas edilir
+- Balıkçılıktan akçe kazanılmaz: olta, yem ve geliştirme akçe harcatır`,
+`Cast a rod at the shore of the Camp lake (E: "Lake"). Requires Lv ${FISH.minLevel}.
+## Gear
+- Rod ${FISH.rodPrice} akçe; bait is required: Dough ${FISH.bait.hamur}, Worm ${FISH.bait.solucan} akçe (worms double rare-fish odds)
+- The rod levels up with points (max level ${FISH.rodMax}): a catch gives +1 point with ${Math.round(FISH.ptsChance * 100)}% chance. Upgrading costs akçe; a failure loses ${Math.round(FISH.rodFailLose * 100)}% of your points. A higher rod widens the hit zone and raises rare-fish odds
+## Timing game
+- Within ${FISH.gameSec} s, click (or Space) while the marker is in the green zone: ${FISH.hitsNeeded} hits land the fish; a miss costs ${FISH.missPenaltySec} s
+- The fish is decided on the server at the cast; a line reeled before ${FISH.minReelSec} s is void
+## Fish
+${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (rare)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} min` : ''}`).join('\n')}
+- Ancestor of the Lake (very rare): release it (everyone gets +${FISH.ancestorXpPct}% XP for ${FISH.ancestorBuffSec / 60} min, written in the Annals), cut it (3 inscription fragments + 1 charm) or use it as bait (rare ×${FISH.luckMult} for the next ${FISH.luckCasts} casts)
+## Cooking & market
+- Fish are cooked and eaten only in the Camp; buffs are not healing (no overlap with Kımız). Fish trade on the Market
+- Fishing earns no gold: rod, bait and upgrades are gold sinks`] },
+
+  { id: 'daily', ic: 'daily', cat: 'grow', title: ['Obanın Günlüğü (günlük görevler)', 'Oba Journal (daily tasks)'], body: () => [
+`Sv ${DAILY.minLevel}’dan itibaren her gün ${DAILY.count} görev gelir (J). Gün sınırı zindan günüyle aynıdır.
+## Görevler
+- Yaratık kes (her zaman), ardından havuzdan: malzeme topla, balık tut, Alp Avı tamamla, çatlak kapat; Sv 41+ zindan bitir
+## Ödüller
+- Her görev için rastgele: XP (seviye ihtiyacının %${Math.round(DAILY.xpPct * 100)}’i), Kımız ×${DAILY.rewardKimiz}, Demirci kitabı ×${DAILY.rewardBook} ya da kostüm lifi ×${DAILY.rewardLif}
+- Dördü bitince Günlük Hediye: Kımız ×${DAILY.gift.kimiz} + ${DAILY.gift.book} kitap
+- Ödüller görev biter bitmez otomatik verilir. Akçe ve tılsım verilmez`,
+`From Lv ${DAILY.minLevel} you get ${DAILY.count} tasks a day (J). The day boundary matches the dungeon day.
+## Tasks
+- Defeat creatures (always), then from a pool: gather materials, catch fish, complete an Alp Hunt, seal a rift; Lv 41+: clear a dungeon
+## Rewards
+- Random per task: XP (${Math.round(DAILY.xpPct * 100)}% of the level requirement), Kımız ×${DAILY.rewardKimiz}, Smith’s Handbook ×${DAILY.rewardBook} or costume fibre ×${DAILY.rewardLif}
+- Finishing all four gives the Daily Gift: Kımız ×${DAILY.gift.kimiz} + ${DAILY.gift.book} handbooks
+- Rewards are granted automatically when a task ends. No gold or charms`] },
+
   { id: 'soon', ic: 'wood', cat: 'soon', title: ['Yol haritası (yakında)', 'Roadmap (coming soon)'], body: () => [
 `Bunlar henüz oyunda DEĞİL; tasarımı docs/ozellikler/METIN2_WIKI_UYARLAMA.md içinde:
-## Göl Avı (balıkçılık)
-- Hub gölünün kenarında E ile olta atılır; mini oyun: halka içindeyken 3 doğru tıklama; yem gerekir; balıklar pişirilince kısa süreli güç verir; nadir "Gölün Atası" balığı
-## Obanın Günlüğü (günlük görevler)
-- Sv 30+, günde 4 görev, ödüller Kımız / tılsım / Yıllık puanı
 ## Element yazısı
-- +7 üstü silaha 6 elementten biri; yüksek akçe maliyeti (akçe sink'i)
+- +7 üstü silaha 6 elementten biri; yüksek akçe maliyeti (akçe sink’i)
 ## Sonrası
-- Kut Taşları (ejderha taşı simyası benzeri), Yoldaş evrimi ve ömrü`,
+- Kut Taşları (ejderha taşı simyası benzeri), Yoldaş evrimi ve ömrü, kalan çizgi ikonların yenilenmesi`,
 `These are NOT in the game yet; the design is in docs/ozellikler/METIN2_WIKI_UYARLAMA.md:
-## Lake Fishing
-- Cast a rod with E at the camp pond; mini-game: 3 correct clicks while the ring is in range; needs bait; cooked fish give short buffs; a rare "Ancestor of the Lake" fish
-## Oba Journal (dailies)
-- Lv 30+, 4 tasks a day, rewards Kımız / charms / Annals points
 ## Element script
 - One of 6 elements on a +7 weapon; high gold cost (a gold sink)
 ## Later
-- Kut Stones (dragon-stone alchemy style), companion evolution and lifespan`] },
+- Kut Stones (dragon-stone alchemy style), companion evolution and lifespan, refreshing the remaining line icons`] },
 ];
 
 export const CATS: Article['cat'][] = ['play', 'grow', 'world', 'soon'];

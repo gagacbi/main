@@ -7,7 +7,7 @@ import { ROAD_HALF, ROAD_LEN, genAllCamps, genBosses, genStones, worldObstacles 
 import { MAPS, regionAt } from '@shared/maps';
 import { LOOM_POS } from '@shared/costume';
 import type { Game } from '../game/game';
-import { getLang, hasKey, num, t } from '../i18n';
+import { fmtDur, getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
 import { Panels, type PanelName } from './panels';
@@ -49,9 +49,9 @@ export class UI {
     this.e.skillbar.insertAdjacentHTML('beforeend', '<div class="combobadge" style="display:none"></div>'); this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
     this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
     // sağ üst düğmeler
-    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['book', 'wiki', 'U', 'ui.wiki'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
+    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['book', 'wiki', 'U', 'ui.wiki'], ['daily', 'daily', 'J', 'ui.daily'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
     this.e.btns.innerHTML = btns.map(([ic, p, k, tt]) => `<button class="btn icon" data-p="${p}" title="${t(tt)}">${icon(ic)}${k ? `<span class="k">${k}</span>` : ''}<i class="dot"></i></button>`).join('');
-    this.e.quest.addEventListener('click', (ev) => { if ((ev.target as HTMLElement).dataset.hunt === 'skip') void this.g.net.rpc('hunt.skip').then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); else this.toast(t('hunt.skipped'), 'good'); }); });
+    this.e.quest.addEventListener('click', (ev) => { { const dp = (ev.target as HTMLElement).closest('[data-p]') as HTMLElement | null; if (dp) this.open(dp.dataset.p as PanelName); } if ((ev.target as HTMLElement).dataset.hunt === 'skip') void this.g.net.rpc('hunt.skip').then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); else this.toast(t('hunt.skipped'), 'good'); }); });
     this.e.btns.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('button[data-p]') as HTMLElement | null; if (b) this.open(b.dataset.p as PanelName); });
     // sohbet
     this.renderTabs();
@@ -83,7 +83,7 @@ export class UI {
     if (k === 'enter') { e.preventDefault(); this.startTyping(); return; }
     if (k === 'f2' && this.g.me?.role === 'admin') { e.preventDefault(); this.panels.toggle('gm'); return; }
     if (k === 'escape') { if (this.panels.isOpen()) this.panels.close(); return; }
-    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', u: 'wiki', p: 'market', h: 'help', b: 'inv' };
+    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', u: 'wiki', j: 'daily', p: 'market', h: 'help', b: 'inv' };
     if (map[k]) { e.preventDefault(); this.open(map[k], true); }
     if (k === 'q') { void this.useKimiz(); }
     if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
@@ -144,7 +144,7 @@ export class UI {
     if (c.key === 'sys.clue' && c.p?.id) this.lore(String(c.p.id));
     this.chatLog.push({ ...c, at: Date.now() }); if (this.chatLog.length > 120) this.chatLog.shift(); this.renderChat();
     if (c.ch === 'sys' && c.key && hasKey(c.key)) {
-      if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.era', 'sys.hunt_done', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
+      if (['sys.levelup', 'sys.spec_ready', 'sys.tut_done', 'sys.inscription', 'sys.era', 'sys.hunt_done', 'sys.daily_done', 'sys.daily_gift', 'sys.ancestor', 'sys.rift_closed', 'sys.rift_open'].includes(c.key)) this.toast(t(c.key, c.p), c.key === 'sys.rift_open' ? 'rift' : c.key === 'sys.levelup' ? 'lvl' : 'good');
       else if (['sys.pvp_on', 'sys.pvp_off', 'sys.cos_soon', 'sys.cos_expired', 'sys.rank_down', 'sys.xp_lost', 'sys.item_lost', 'sys.bag_full'].includes(c.key)) this.toast(t(c.key, c.p), 'warn');
     }
   }
@@ -206,6 +206,7 @@ export class UI {
     const tags: string[] = [`<span class="tag">${icon('akce')}${num(m.gold)}</span>`];
     if (m.rested > 0) tags.push(`<span class="tag blue" title="${t('ui.rested')}">${icon('sound')}${t('ui.rested')} ${Math.round((m.rested / m.restedCap) * 100)}%</span>`);
     if (m.role === 'admin') tags.push(`<span class="tag red">${t('ui.role.admin')}${m.god ? ' · GOD' : ''}</span>`);
+    for (const b of m.buffs) tags.push(`<span class="tag blue" title="${t('fish.' + b.id)}">${icon('fish_' + b.id)}${fmtDur(b.until - this.g.net.now())}</span>`);
     if (m.rank < 0) tags.push(`<span class="tag red">${icon('skull')}${t('ui.rank')} ${m.rank}</span>`);
     if (m.kut > 0) tags.push(`<span class="tag">${t('ui.kut')} ${m.kut}</span>`);
     if (m.skillPts > 0) tags.push(`<span class="tag">${icon('skills')}${m.skillPts}</span>`);
@@ -229,13 +230,18 @@ export class UI {
     } else cp.style.display = 'none';
     // görev takibi
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
-    q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '') + this.huntHtml(m);
+    q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '') + this.huntHtml(m) + this.dailyHtml(m);
     // etkileşim ipucu
     const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
     if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.innerHTML = (left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : '') + this.deathHint(); }
     void dt;
+  }
+  /** Günlük görev özeti (görev kutusu): tamamlanan/toplam, tıklayınca günlük paneli */
+  dailyHtml(m: Me): string {
+    if (m.level < 10) return ''; const d = m.daily; const done = d.tasks.filter((x) => x.claimed).length;
+    return `<div class="h hunth" data-p="daily" style="cursor:pointer">${icon('daily')}${t('daily.hud')} <small>${done}/${d.tasks.length}${d.gift ? ' ★' : ''}</small></div>`;
   }
   /** Alp Avı görev satırı: hedef yaratıklar, sayaçlar ve (geride kaldıysa) "atla" bağlantısı */
   huntHtml(m: Me): string {

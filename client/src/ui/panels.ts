@@ -16,6 +16,8 @@ import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LU
 import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice, ALL_SLOTS } from '@shared/game';
 import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
+import { FISH, FISH_DEFS, EDIBLE, fishOf, type FishId } from '@shared/fishing';
+import { DAILY } from '@shared/daily';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
 import { icon } from './icons';
 
@@ -28,7 +30,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
+export type PanelName = 'fish' | 'daily' | 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -121,7 +123,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), fish: () => this.fishPanel(), daily: () => this.dailyPanel(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -194,7 +196,7 @@ export class Panels {
     const [b, m] = await Promise.all([this.g.net.rpc('market.browse', { slot: this.mkSlot || undefined, sort: this.mkSort, ...(this.mkMine2 && this.mkSlot !== 'good' && this.mkSlot !== 'costume' ? { minIlvl: Math.max(1, this.me.level - 10), maxIlvl: this.me.level + 2 } : {}) }), this.g.net.rpc('market.mine')]);
     if (b.ok) this.mkData = b.data as typeof this.mkData; if (m.ok) this.mkMine = m.data as typeof this.mkMine;
   }
-  goodName(k: string) { if (k === 'kimiz') return t('kimiz.name'); return t(['lif', 'boya', 'ipek', 'nakis'].includes(k) ? 'cos.mat.' + k : ['boncuk', 'dugum', 'nazar', 'kagit'].includes(k) ? 'cos.luck.' + k : 'mat.' + k); }
+  goodName(k: string) { if (k === 'kimiz') return t('kimiz.name'); if (k.startsWith('fish_')) return t('fish.' + k.slice(5)); return t(['lif', 'boya', 'ipek', 'nakis'].includes(k) ? 'cos.mat.' + k : ['boncuk', 'dugum', 'nazar', 'kagit'].includes(k) ? 'cos.luck.' + k : 'mat.' + k); }
   market() {
     const m = this.me; const inTown = inHubTown(this.g.pos.x, this.g.pos.z); const gold = `<span class="chip">${icon('akce')}${num(m.gold)}</span>`;
     const tabs = `<div class="tabs2"><div class="tab2 ${this.mkTab === 'browse' ? 'on' : ''}" data-act="mktab" data-v="browse">${t('mk.browse')} <small>${this.mkData.total}</small></div><div class="tab2 ${this.mkTab === 'mine' ? 'on' : ''}" data-act="mktab" data-v="mine">${t('mk.mine')} <small>${this.mkMine.listings.length}/${this.mkMine.max}</small>${this.mkMine.mail.length ? ' <span class="badge">' + this.mkMine.mail.length + '</span>' : ''}</div></div>`;
@@ -423,6 +425,64 @@ export class Panels {
       <div class="card hint-card">${t('thread.' + th + '.hint')}</div>${fragBar}<div style="margin-top:8px">${cards}</div></div>`);
   }
 
+  // ─── Göl Avı ───
+  fg: { endAt: number; hits: number; zone: number; zw: number; pos: number; dir: number; speed: number; big: boolean; raf: number; key: ((e: KeyboardEvent) => void) | null } | null = null;
+  fishMsg: { cls: string; text: string } | null = null; fishBait: 'hamur' | 'solucan' = 'hamur';
+  fishPanel() {
+    const m = this.me; const f = m.fish; const need = FISH.rodNeed(f.rod); const lowLv = m.level < FISH.minLevel;
+    const stock = EDIBLE.map((id) => ({ id, n: f.stock[id] ?? 0 })).filter((x) => x.n > 0);
+    const buffTxt = (id: FishId) => { const d = fishOf(id)!; return d.cleanse ? t('fish.cleanse') : d.buff ? `${t('fish.buff.' + d.buff.k, { v: d.buff.v })} · ${Math.round(d.buff.sec / 60)} ${t('fish.min')}` : ''; };
+    const buffs = m.buffs.length ? `<div class="sub">${t('fish.buffs')}</div><div class="row" style="flex-wrap:wrap;gap:6px">${m.buffs.map((b) => `<span class="chip">${icon('fish_' + b.id)}${t('fish.' + b.id)} <small>${fmtDur(b.until - this.g.net.now())}</small></span>`).join('')}</div>` : '';
+    const stockH = stock.length ? stock.map((x) => `<div class="card row" style="margin:4px 0"><div class="cell item mat" style="--tc:#4aa8ff">${icon('fish_' + x.id)}<span class="cnt">${x.n}</span></div><div class="grow"><b>${t('fish.' + x.id)}</b><div class="muted">${esc(buffTxt(x.id))}</div></div><button class="btn small primary" data-act="fisheat" data-id="${x.id}" ${inHubTown(this.g.pos.x, this.g.pos.z) ? '' : 'disabled'} title="${t('fish.cooktown')}">${t('fish.cook')}</button></div>`).join('') : `<div class="muted">${t('fish.none')}</div>`;
+    const anc = f.ancestor ? `<div class="card" style="border-left:4px solid #4ab0e8;margin:8px 0"><b>${t('fish.ancestor.t')}</b><div class="muted">${t('fish.ancestor.d')}</div><div class="col" style="gap:6px;margin-top:6px">${(['release', 'cut', 'bait'] as const).map((c) => `<button class="btn small ${c === 'release' ? 'primary' : ''}" data-act="fishanc" data-v="${c}">${t('fish.ancestor.' + c)}</button>`).join('')}</div></div>` : '';
+    const game = this.fg ? `<div class="fgame"><div class="muted">${this.fg.big ? t('fish.big') + ' ' : ''}${t('fish.game.hint')}</div><div class="fbar" data-act="fishhit"><div class="fzone"></div><div class="fcur"></div></div><div class="row" style="justify-content:space-between"><span>${t('fish.game.hits')}: <b class="fh">0</b>/${FISH.hitsNeeded}</span><span class="ft"></span></div></div>` : '';
+    const rodRow = f.rod < 1 ? `<button class="btn primary" data-act="fishbuy" data-v="rod" ${m.gold >= FISH.rodPrice ? '' : 'disabled'}>${icon('rod')} ${t('fish.buyrod', { n: num(FISH.rodPrice) })}</button>`
+      : `<div class="row" style="gap:10px;flex-wrap:wrap"><span class="chip">${icon('rod')} ${t('fish.rodlv')} <b>${f.rod}</b>/${FISH.rodMax}</span>${f.rod < FISH.rodMax ? `<span class="chip">${t('fish.pts')} <b>${f.pts}</b>/${need}</span><button class="btn small" data-act="fishrod" ${f.pts >= need && m.gold >= FISH.rodCost(f.rod) ? '' : 'disabled'}>${t('fish.upgrade', { n: num(FISH.rodCost(f.rod)), r: Math.round(FISH.rodRate(f.rod) * 100) })}</button>` : ''}</div>`;
+    const baitRow = (['hamur', 'solucan'] as const).map((k) => `<div class="row" style="gap:6px"><label class="chip ${this.fishBait === k ? 'on' : ''}" data-act="fishbait" data-v="${k}" style="cursor:pointer">${icon(k)} ${t('fish.bait.' + k)} <b>${f[k]}</b></label><button class="btn small" data-act="fishbuy" data-v="${k}" ${m.gold >= FISH.bait[k] * 5 ? '' : 'disabled'}>${t('fish.buy5', { n: FISH.bait[k] * 5 })}</button></div>`).join('');
+    const msg = this.fishMsg ? `<div class="card ${this.fishMsg.cls}" style="margin:8px 0">${this.fishMsg.text}</div>` : '';
+    return this.shell(t('ui.fish'), 'rod', `<div style="min-width:520px;max-width:640px">${lowLv ? `<div class="card bad">${t('err.fish_level', { lvl: FISH.minLevel })}</div>` : ''}<div class="muted">${t('fish.hint')}</div>
+      <div class="sub">${t('fish.rod')}</div>${rodRow}<div class="sub">${t('fish.bait.hamur')} / ${t('fish.bait.solucan')}</div>${baitRow}<div class="muted" style="font-size:12px">${t('fish.bait.hint')}</div>
+      ${msg}${anc}${game || (f.rod >= 1 ? `<button class="btn primary" style="width:100%;margin:10px 0;padding:10px" data-act="fishcast" ${lowLv || f[this.fishBait] < 1 ? 'disabled' : ''}>${icon('rod')} ${t('fish.cast')}</button>` : '')}
+      <div class="sub">${t('fish.stock')}</div>${stockH}${buffs}</div>`);
+  }
+  async fishCast() {
+    const r = await this.g.net.rpc('fish.cast', { bait: this.fishBait }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.audio.sfx('err'); return; }
+    const d = r.data as { sec: number; hits: number; zone: number; big: boolean }; this.fishMsg = null;
+    const zw = d.zone; this.fg = { endAt: performance.now() + d.sec * 1000, hits: 0, zone: Math.random() * (1 - zw), zw, pos: 0, dir: 1, speed: 0.9, big: d.big, raf: 0, key: null };
+    this.g.audio.sfx('ui'); this.render(true); this.fishLoop();
+  }
+  private fishLoop() {
+    const g = this.fg; if (!g) return; let last = performance.now();
+    g.key = (e: KeyboardEvent) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); this.fishHit(); } }; window.addEventListener('keydown', g.key, true);
+    const tick = () => {
+      const f = this.fg; if (!f) return; if (this.open !== 'fish') { this.fishEnd(false); return; }
+      const now = performance.now(); const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      f.pos += f.dir * f.speed * dt; if (f.pos >= 1) { f.pos = 1; f.dir = -1; } else if (f.pos <= 0) { f.pos = 0; f.dir = 1; }
+      const el = this.el.querySelector('.fgame'); if (el) { (el.querySelector('.fcur') as HTMLElement).style.left = `${f.pos * 100}%`; const z = el.querySelector('.fzone') as HTMLElement; z.style.left = `${f.zone * 100}%`; z.style.width = `${f.zw * 100}%`; (el.querySelector('.fh') as HTMLElement).textContent = String(f.hits); (el.querySelector('.ft') as HTMLElement).textContent = `${Math.max(0, (f.endAt - now) / 1000).toFixed(1)} s`; }
+      if (f.hits >= FISH.hitsNeeded || now >= f.endAt) { this.fishEnd(true); return; }
+      f.raf = requestAnimationFrame(tick);
+    }; g.raf = requestAnimationFrame(tick);
+  }
+  fishHit() {
+    const f = this.fg; if (!f) return;
+    if (f.pos >= f.zone && f.pos <= f.zone + f.zw) { f.hits++; f.zone = Math.random() * (1 - f.zw); f.speed *= 1.18; this.g.audio.sfx('coin'); } else { f.endAt -= FISH.missPenaltySec * 1000; this.g.audio.sfx('err'); }
+  }
+  private async fishEnd(report: boolean) {
+    const f = this.fg; if (!f) return; this.fg = null; cancelAnimationFrame(f.raf); if (f.key) window.removeEventListener('keydown', f.key, true); if (!report) return;
+    const elapsedOk = true; void elapsedOk; const r = await this.g.net.rpc('fish.reel', { hits: f.hits });
+    if (!r.ok) { this.fishMsg = { cls: 'bad', text: t('err.' + (r.err ?? 'internal')) }; }
+    else { const d = r.data as { ok: boolean; fish?: FishId; pts?: boolean }; if (d.ok) { this.fishMsg = { cls: 'good', text: `${t('fish.ok', { name: t('fish.' + d.fish) })}${d.pts ? ' · ' + t('fish.ptsgain') : ''}` }; this.g.audio.sfx('rare'); } else { this.fishMsg = { cls: 'bad', text: t('fish.miss') }; this.g.audio.sfx('err'); } }
+    if (this.open === 'fish') this.render(true);
+  }
+
+  // ─── Obanın Günlüğü ───
+  dailyPanel() {
+    const m = this.me; const d = m.daily; if (m.level < DAILY.minLevel) return this.shell(t('ui.daily'), 'daily', `<div style="min-width:420px"><div class="card">${t('daily.locked', { n: DAILY.minLevel })}</div></div>`);
+    const left = (() => { const ms = 86400000 - ((this.g.net.now() + 3 * 3600000) % 86400000); return fmtDur(ms); })();
+    const rows = d.tasks.map((k) => `<div class="card row ${k.claimed ? 'doneh' : ''}" style="margin:6px 0"><div class="cb">${k.claimed ? '✓' : ''}</div><div class="grow"><b>${t('daily.' + k.k)}${k.k === 'kill' || k.k === 'mat' || k.k === 'fish' ? ` ×${k.need}` : ''}</b><div class="ratebar mid"><i style="width:${Math.round((k.done / k.need) * 100)}%"></i><b>${k.done}/${k.need}</b></div></div><span class="chip" title="${t('daily.r.' + k.reward)}">${icon(k.reward === 'xp' ? 'skills' : k.reward === 'kimiz' ? 'kimiz' : k.reward === 'book' ? 'book' : 'lif')} ${t('daily.r.' + k.reward)}</span></div>`).join('');
+    return this.shell(t('ui.daily'), 'daily', `<div style="min-width:520px;max-width:620px"><div class="row"><div class="grow muted">${t('daily.hint')}</div><span class="chip">${t('daily.reset', { t: left })}</span></div>${rows}<div class="card ${d.gift ? 'good' : ''}" style="margin-top:10px">${d.gift ? '✓ ' : ''}${t('daily.gift')}</div></div>`);
+  }
+
   /** Oyun içi Wiki: sol listede makaleler, sağda seçili makale. Sayılar kaynak sabitlerden okunur. */
   wiki() {
     const cur = ARTICLES.find((a) => a.id === this.wikiId) ?? ARTICLES[0];
@@ -501,6 +561,13 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
+      case 'fishbuy': { const r = await this.act('fish.buy', { what: d.v, n: 5 }); if (r.ok) this.g.audio.sfx('coin'); break; }
+      case 'fishbait': this.fishBait = (d.v === 'solucan' ? 'solucan' : 'hamur'); break;
+      case 'fishcast': await this.fishCast(); return;
+      case 'fishhit': this.fishHit(); return;
+      case 'fishrod': { const r = await this.act('fish.rod'); if (r.ok) { const x = r.data as { ok: boolean; rod: number }; this.fishMsg = x.ok ? { cls: 'good', text: t('fish.rodok', { n: x.rod }) } : { cls: 'bad', text: t('fish.rodfail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } break; }
+      case 'fisheat': { const r = await this.act('fish.eat', { id: d.id }); if (r.ok) this.g.audio.sfx('rare'); break; }
+      case 'fishanc': { await this.act('fish.ancestor', { choice: d.v }); break; }
       case 'invp': this.invPage = (d.v ?? 'items') as typeof this.invPage; break;
       case 'goto': await this.show(d.v as PanelName); return;
       case 'invf': this.invFilter = (d.v ?? 'all') as Slot | 'all'; break;

@@ -3,7 +3,7 @@ import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
   RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
-  CRAFT, POISON_DOT, randomExtraSlot, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
+  CRAFT, POISON_DOT, randomExtraSlot, inHubTown, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
@@ -17,9 +17,12 @@ import { cosOf, costumeRpc, tickCostumes } from './costume';
 import { costumeCode, costumeLines } from '../shared/costume';
 import { cancelLobby, dungeonBossDown, dungeonRpc, dunInfo, updateDungeons, type DungeonRun, type Lobby } from './dungeon';
 import { claimMail, marketRpc } from './market';
-import { irange, range } from '../shared/rng';
+import { irange, mulberry32, range } from '../shared/rng';
+import { goodAdd } from '../shared/goods';
 import * as oba from './oba';
 import { chronOf } from './chronicle';
+import { FISH, EDIBLE, fishOf, newFishState, nearShore, rollFish, type Buff, type FishId } from '../shared/fishing';
+import { DAILY, dailyRoll, type DailyKind, type DailyState } from '../shared/daily';
 import { eqCode } from '../shared/appearance';
 import { HUNT, huntFor } from '../shared/hunt';
 import { FIRST_LEVELS, genRuins, RUIN_LEVELS, type ChronKind } from '../shared/chronicle';
@@ -33,6 +36,7 @@ export class Player {
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; comboSlot = -1; comboLinks = 0; comboUntil = 0; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
   cosWarnAt = 0; kimizAt = 0; hotUntil = 0; hotPerSec = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
+  fishCast: { at: number; fish: FishId; bait: string } | null = null; fishAt = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -172,7 +176,7 @@ export class World {
 
   recalc(p: Player) {
     const frac = p.stats ? p.hp / p.stats.maxHp : 1;
-    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut, costume: costumeLines(p.d.cos?.worn, this.now) });
+    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut, costume: [...costumeLines(p.d.cos?.worn, this.now), ...(p.d.buffs ?? []).filter((b) => b.until > this.now).map((b) => ({ k: b.k, v: b.v }))] });
     p.hp = Math.max(1, Math.round(p.stats.maxHp * Math.min(1, frac)));
     p.meDirty = true;
   }
@@ -203,6 +207,28 @@ export class World {
     p.meDirty = true;
     return xp;
   }
+  // ───────────── Obanın Günlüğü ─────────────
+  dailyOf(p: Player): DailyState {
+    const day = dungeonDay(this.now); const d = p.d;
+    if (!d.daily || d.daily.day !== day) { const seed = (p.dbId * 2654435761 + day * 40503) >>> 0; d.daily = dailyRoll(mulberry32(seed), d.level, day); }
+    return d.daily;
+  }
+  /** Günlük görev ilerlemesi; görev dolunca ödül otomatik verilir, dördü bitince Günlük Hediye */
+  daily(p: Player, kind: DailyKind, n = 1) {
+    const d = p.d; if (d.level < DAILY.minLevel) return; const st = this.dailyOf(p); let changed = false;
+    for (const t of st.tasks) {
+      if (t.k !== kind || t.claimed) continue; t.done = Math.min(t.need, t.done + n); changed = true;
+      if (t.done >= t.need) {
+        t.claimed = true;
+        if (t.reward === 'xp') this.addXp(p, xpToNext(d.level) * DAILY.xpPct, false); else if (t.reward === 'kimiz') d.kimiz = (d.kimiz ?? 0) + DAILY.rewardKimiz; else if (t.reward === 'book') d.bag.book += DAILY.rewardBook; else goodAdd(d, 'lif', DAILY.rewardLif);
+        this.ledger(p, 'daily.reward', { k: t.k, reward: t.reward }); this.sys(p, 'sys.daily_done', { r: t.reward });
+        this.chronDaily(p);
+      }
+    }
+    if (st.tasks.every((t) => t.claimed) && !st.gift) { st.gift = true; d.kimiz = (d.kimiz ?? 0) + DAILY.gift.kimiz; d.bag.book += DAILY.gift.book; this.ledger(p, 'daily.gift', {}); this.sys(p, 'sys.daily_gift'); }
+    if (changed) p.meDirty = true;
+  }
+  private chronDaily(_p: Player) { /* ileride: Oba çapı günlük puan */ }
   /** Alp Avı: öldürülen yaratık güncel av hedefiyse sayar; ikisi dolunca ödül otomatik verilir. */
   huntKill(p: Player, m: Mob) {
     const d = p.d; const h = (d.hunt ??= { lv: HUNT.first, k: [0, 0] }); if (h.lv > MAX_LEVEL || d.level < h.lv) return;
@@ -218,7 +244,7 @@ export class World {
       d.bag.book += def.book; d.bag.charm += def.charm;
     }
     this.ledger(p, 'hunt.reward', { lv: h.lv, late, item: !late && def.item, book: late ? 0 : def.book, charm: late ? 0 : def.charm });
-    this.sys(p, 'sys.hunt_done', { lv: h.lv }); d.hunt = { lv: h.lv + 1, k: [0, 0] }; p.meDirty = true;
+    this.sys(p, 'sys.hunt_done', { lv: h.lv }); d.hunt = { lv: h.lv + 1, k: [0, 0] }; p.meDirty = true; if (!late) this.daily(p, 'hunt');
   }
   /** Kut Yıllığı'na olay yazar; çağ değişirse herkese duyurur. `first` verilirse yalnızca o ilk ise yazılır. */
   chron(k: ChronKind, who: string, a: number, b: number, first?: string) {
@@ -433,7 +459,7 @@ export class World {
         this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
-        this.tutorial(p, 'kill'); this.huntKill(p, m);
+        this.tutorial(p, 'kill'); this.huntKill(p, m); this.daily(p, 'kill');
         this.rollDrops(p, m, share);
       }
     }
@@ -542,7 +568,7 @@ export class World {
   collectDrop(p: Player, dr: Drop): boolean {
     switch (dr.k) {
       case 'gold': p.d.gold += dr.amount; p.goldFromMobs += dr.amount; break;
-      case 'mat': p.d.bag[dr.m as MatKey] += dr.amount; break;
+      case 'mat': p.d.bag[dr.m as MatKey] += dr.amount; this.daily(p, 'mat', dr.amount); break;
       case 'book': p.d.bag.book += 1; break;
       case 'charm': p.d.bag.charm += 1; break;
       case 'frag': this.addFrag(p, 1); break;
@@ -766,6 +792,56 @@ export class World {
         const h = (d.hunt ??= { lv: HUNT.first, k: [0, 0] }); if (h.lv >= d.level) throw new GameError('hunt_nothing');
         this.ledger(p, 'hunt.skip', { from: h.lv, to: d.level }); d.hunt = { lv: d.level, k: [0, 0] }; p.meDirty = true; return null;
       }
+      // ───── Göl Avı ─────
+      case 'fish.buy': {
+        const f = (d.fish ??= newFishState()); this.alive(p); if (!nearShore(p.x, p.z)) throw new GameError('fish_far'); const what = String(a.what); const n = Math.max(1, Math.min(50, Math.floor(a.n ?? 1)));
+        if (what === 'rod') { if (f.rod >= 1) throw new GameError('fish_has_rod'); if (d.gold < FISH.rodPrice) throw new GameError('no_gold'); d.gold -= FISH.rodPrice; f.rod = 1; this.ledger(p, 'fish.buy', { what, gold: FISH.rodPrice }); }
+        else if (what === 'hamur' || what === 'solucan') { const cost = FISH.bait[what] * n; if (d.gold < cost) throw new GameError('no_gold'); d.gold -= cost; f[what] += n; this.ledger(p, 'fish.buy', { what, n, gold: cost }); }
+        else throw new GameError('bad_args');
+        p.meDirty = true; return null;
+      }
+      case 'fish.cast': {
+        const f = (d.fish ??= newFishState()); this.alive(p);
+        if (d.level < FISH.minLevel) throw new GameError('fish_level', { lvl: FISH.minLevel }); if (!nearShore(p.x, p.z)) throw new GameError('fish_far'); if (f.rod < 1) throw new GameError('fish_no_rod');
+        if (this.now < p.fishAt) throw new GameError('fish_cd'); const bait = a.bait === 'solucan' ? 'solucan' : 'hamur'; if (f[bait] < 1) throw new GameError('fish_no_bait');
+        if (this.now - p.lastCombat < 5000 && p.lastCombat > 0) throw new GameError('fish_combat');
+        f[bait]--; const luck = f.luck > 0; if (luck) f.luck--; const fish = rollFish(this.ctx.rng, f.rod, bait, luck);
+        p.fishCast = { at: this.now, fish, bait }; p.fishAt = this.now + FISH.castCdSec * 1000; p.meDirty = true; this.ledger(p, 'fish.cast', { bait });
+        return { sec: FISH.gameSec, hits: FISH.hitsNeeded, zone: FISH.zone(f.rod), big: !!fishOf(fish)?.rare };
+      }
+      case 'fish.reel': {
+        const f = (d.fish ??= newFishState()); const c = p.fishCast; if (!c) throw new GameError('fish_nocast'); p.fishCast = null;
+        const el = this.now - c.at; const hits = Math.floor(Number(a.hits) || 0);
+        if (el < FISH.minReelSec * 1000 || el > (FISH.gameSec + 4) * 1000 || hits < FISH.hitsNeeded) { this.ledger(p, 'fish.miss', { hits }); p.meDirty = true; return { ok: false }; }
+        if (c.fish === 'ata') f.ancestor = true; else f.stock[c.fish] = (f.stock[c.fish] ?? 0) + 1;
+        f.caught++; let gained = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.ptsChance) { f.pts++; gained = true; }
+        this.ledger(p, 'fish.catch', { fish: c.fish }); this.daily(p, 'fish'); p.meDirty = true; return { ok: true, fish: c.fish, pts: gained };
+      }
+      case 'fish.rod': {
+        const f = (d.fish ??= newFishState()); this.alive(p); if (f.rod < 1) throw new GameError('fish_no_rod'); if (f.rod >= FISH.rodMax) throw new GameError('max_rank');
+        const need = FISH.rodNeed(f.rod), cost = FISH.rodCost(f.rod); if (f.pts < need) throw new GameError('fish_pts', { n: need }); if (d.gold < cost) throw new GameError('no_gold');
+        d.gold -= cost; const ok = this.ctx.rng() < FISH.rodRate(f.rod);
+        if (ok) { f.pts -= need; f.rod++; } else f.pts -= Math.ceil(f.pts * FISH.rodFailLose);
+        this.ledger(p, 'fish.rod', { ok, rod: f.rod, gold: cost }); p.meDirty = true; return { ok, rod: f.rod };
+      }
+      case 'fish.eat': {
+        const f = (d.fish ??= newFishState()); const id = String(a.id) as FishId; if (!(EDIBLE as string[]).includes(id)) throw new GameError('bad_args');
+        this.alive(p); if (!inHubTown(p.x, p.z)) throw new GameError('fish_cook_town'); if ((f.stock[id] ?? 0) < 1) throw new GameError('no_item');
+        const def = fishOf(id)!; f.stock[id]!--;
+        if (def.cleanse) { for (const k of ['stun', 'slow', 'curse', 'poison'] as StatusKey[]) delete p.status[k]; }
+        if (def.buff) { const b: Buff = { id, k: def.buff.k, v: def.buff.v, until: this.now + def.buff.sec * 1000 }; d.buffs = [...(d.buffs ?? []).filter((x) => x.id !== id), b]; this.recalc(p); }
+        this.ledger(p, 'fish.eat', { id }); p.meDirty = true; return null;
+      }
+      case 'fish.ancestor': {
+        const f = (d.fish ??= newFishState()); if (!f.ancestor) throw new GameError('no_item'); const ch = String(a.choice); f.ancestor = false;
+        if (ch === 'release') {
+          this.chron('fish', p.name, 1, 0);
+          const until = this.now + FISH.ancestorBuffSec * 1000; for (const w of this.ctx.worlds) for (const q of w.players.values()) { q.d.buffs = [...(q.d.buffs ?? []).filter((x) => x.id !== 'ata'), { id: 'ata', k: 'xpPct', v: FISH.ancestorXpPct, until }]; w.recalc(q); w.sys(q, 'sys.ancestor', { who: p.name }); }
+        } else if (ch === 'cut') { this.addFrag(p, 3); d.bag.charm += 1; this.chron('fish', p.name, 2, 0); }
+        else if (ch === 'bait') { f.luck += FISH.luckCasts; }
+        else { f.ancestor = true; throw new GameError('bad_args'); }
+        this.ledger(p, 'fish.ancestor', { ch }); p.meDirty = true; return null;
+      }
       case 'chron': { const v = chronOf(this.ctx.db).view(); return { ...v, ruins: d.clues.filter((c) => c.startsWith('ruin.')).length }; }
       case 'ruin': {
         const n = Math.floor(a.n); const ru = genRuins().find((q) => q.n === n); if (!ru) throw new GameError('bad_stone');
@@ -938,6 +1014,7 @@ export class World {
       // hız sınırı penceresi
       p.rate.win += dt; if (p.rate.win >= 1) { p.rate.win = 0; p.rate.msgs = 0; p.rate.rpcs = 0; p.rate.chat = 0; }
       if (p.duelInvite && now - p.duelInvite.at > 30000) p.duelInvite = null;
+      if (p.d.buffs?.length && p.d.buffs.some((b) => b.until <= now)) { p.d.buffs = p.d.buffs.filter((b) => b.until > now); this.recalc(p); }
       if (p.deadUntil > 0) { if (now - p.deadUntil > 7000) { try { this.respawn(p); } catch { /* */ } } continue; }
       // durumlar
       this.tickStatus(p, dt, now);
@@ -1133,7 +1210,7 @@ export class World {
       if (rng() < 0.35) this.spawnDrop(p, 'frag', r.x, r.z);
       this.addXp(p, mobXp(r.lvl) * RIFT.rewardXpMult, false);
       p.d.shards++; SHARD_AT.forEach((at, i) => { if (p.d.shards >= at) this.discoverClue(p, `shard.${i + 1}`); });
-      this.ledger(p, 'rift.reward', { rift: r.id, lvl: r.lvl, tier, gold });
+      this.ledger(p, 'rift.reward', { rift: r.id, lvl: r.lvl, tier, gold }); this.daily(p, 'rift');
       this.sys(p, 'sys.rift_closed', {});
     }
   }
@@ -1211,7 +1288,7 @@ export class World {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
       combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
-      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, lang: d.lang,
+      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
       role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,
