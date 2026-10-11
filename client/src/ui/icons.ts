@@ -1,3 +1,4 @@
+import { uiIcon } from './gipaint';
 /** Tamga esintili basit çizgi ikonlar (64x64, currentColor). */
 const S = (body: string, extra = '') => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" ${extra}>${body}</svg>`;
 export const ICONS: Record<string, string> = {
@@ -52,4 +53,4 @@ export const ICONS: Record<string, string> = {
   chat: S('<path d="M8 12 L56 12 L56 40 L30 40 L18 52 L18 40 L8 40 Z"/>'),
   coin: S('<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="12"/>'),
 };
-export const icon = (k: string, cls = 'ico') => `<span class="${cls}">${ICONS[k] ?? ''}</span>`;
+export const icon = (k: string, cls = 'ico') => `<span class="${cls}">${uiIcon(k) ?? ICONS[k] ?? ''}</span>`;

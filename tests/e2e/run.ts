@@ -67,6 +67,7 @@ check('F6.font', gfx.fonts.some((f) => f.startsWith('Fredoka')) && gfx.fonts.som
 // HUD
 const hud = await page.evaluate(() => ({ hp: !!document.querySelector('#hpbar'), skills: document.querySelectorAll('#skillbar .slot').length, map: !!document.querySelector('#mm'), chat: !!document.querySelector('#chat'), quest: !!document.querySelector('#quest'), tamga: document.querySelectorAll('svg').length }));
 check('F4.hud', hud.hp && hud.skills === 7 && hud.map && hud.chat && hud.quest && hud.tamga > 10, `HUD: can/xp, ${hud.skills - 1} yetenek, mini harita, sohbet, görev; ${hud.tamga} SVG ikon`);
+const giN = await page.$$eval('.skillbar svg.gi', (e) => e.length); check('F4.yetenek-ikonlari', giN >= 6, `Yetenek çubuğunda ${giN} renkli yetenek simgesi (game-icons)`);
 const sbPos = await page.evaluate(() => { const r = document.querySelector('.skillbar')!.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, vh: innerHeight }; });
 check('F4.yetenek-cubugu-altta', sbPos.top > sbPos.vh * 0.6 && sbPos.bottom <= sbPos.vh, `Yetenek çubuğu ekranın altında (üst=${Math.round(sbPos.top)}, alt=${Math.round(sbPos.bottom)}, yükseklik=${sbPos.vh})`);
 
@@ -157,6 +158,7 @@ if (want('paneller')) {
   await page.keyboard.press('i'); await sleep(900); await shot('08-canta');
   const cells = await page.$$eval('.overlay.open .cell.item', (e) => e.length); check('D5.envanter', cells >= 7, `Çanta paneli ${cells} eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)`);
   await page.click('.bag .cell.item'); await sleep(500); await page.dblclick('.bag .cell.item:nth-child(2)'); await sleep(900); await page.click('.bag .cell.item'); await sleep(500); await shot('08b-canta-detay');
+  await page.hover('.cell.spin'); await sleep(900); const src1 = await page.getAttribute('.cell.spin img', 'src'); await sleep(450); const src2 = await page.getAttribute('.cell.spin img', 'src'); check('D5c.donen-onizleme', !!src1 && !!src2 && src1 !== src2, 'Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)');
   const detTxt = (await page.textContent('.invdet')) ?? ''; const eqN = await page.$$eval('.eqs .cell.item', (e) => e.length); const eqLook = await ev<number>('g.selfView.eq'); check('D5b.envanter-v2', eqN >= 1 && eqLook > 0 && /Kuşan|Equip/.test(detTxt) && (await page.$$('.bag .cell.item[draggable="true"]')).length >= 1, `Çanta v2: çift tıkla kuşanıldı (kuşanılan=${eqN}), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=${eqLook})`);
   await page.keyboard.press('Escape'); await sleep(200);
   await page.keyboard.press('c'); await sleep(900); await shot('09-karakter-uzmanlik');

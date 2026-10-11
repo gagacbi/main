@@ -82,9 +82,10 @@ function bow(b: number, p: Pal, g: string): PartSpec[] {
   for (const sd of [-1, 1]) s.push(CN(0.12, 0.3, [tx + 0.08, sd * (ty + 0.1), 0], b >= 3 ? g : p.l, p.l, 0.5, [0, 0, -sd * 0.7]));
   s.push(C(0.17, 0.5, [0, 0, 0], p.k, p.w, 0.1), ...wraps(0, -0.2, 0.2, 4, 0.19, p.d), TR(0.22, 0.05, [0, 0.28, 0], p.l, [0, 0, 0], 0.6), TR(0.22, 0.05, [0, -0.28, 0], p.l, [0, 0, 0], 0.6));
   if (b >= 1) s.push(...gemAt(g, 0.2, [-0.05, 0, -0.1]));
-  // ok: yayın çekilmiş kirişinde, öne uzanır
-  s.push(C(0.07, 1.5, [tx * 0.5 + 0.25, 0, 0], p.w, p.k, 0.1, [0, 0, Math.PI / 2]), CN(0.26, 0.4, [tx * 0.5 + 1.2, 0, 0], p.l, p.m, 0.7, [0, 0, -Math.PI / 2]));
-  for (const k of [0, 1, 2]) s.push(B(0.2, 0.2, 0.02, [tx * 0.5 - 0.62 + k * 0.1, 0, 0], k === 1 ? g : '#f4efd8', undefined, 0.2, [0.4, 0, 0.4]));
+  // ok: kirişe takılı; ucu yayın karnı yönüne (−x) bakar (oklar kirişten gövde/hedef yönüne uçar)
+  const tail = tx + 0.05;
+  s.push(C(0.07, 1.5, [tail - 0.75, 0, 0], p.w, p.k, 0.1, [0, 0, Math.PI / 2]), CN(0.26, 0.4, [tail - 1.5 - 0.1, 0, 0], p.l, p.m, 0.7, [0, 0, Math.PI / 2]));
+  for (const k of [0, 1, 2]) s.push(B(0.2, 0.2, 0.02, [tail - 0.12 - k * 0.11, 0, 0], k === 1 ? g : '#f4efd8', undefined, 0.2, [0.4, 0, 0.4]));
   return s;
 }
 function staff(b: number, p: Pal, g: string): PartSpec[] {
@@ -167,22 +168,35 @@ function ensure(): Studio | null {
     return studio;
   } catch { studio = false; return null; }
 }
-const cache = new Map<string, string>();
-/** Eşya görselinin PNG veri adresi (WebGL yoksa null). Aynı slot/tür/bant/kademe için bir kez çizilir. */
-export function itemArtUrl(it: ItemKey): string | null {
-  const key = `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}`;
-  const hit = cache.get(key); if (hit) return hit;
+const cache = new Map<string, string>(); const frameCache = new Map<string, string[]>();
+const keyOf = (it: ItemKey) => `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}`;
+/** Eşyayı verilen y dönüşleriyle çizer. uniform=true: tüm kareler aynı kadraj (döner önizleme), değilse tek kare sıkı kadraj. */
+function shoot(it: ItemKey, yaws: number[], uniform: boolean): string[] | null {
   const st = ensure(); if (!st) return null;
   const { scene, cam, canvas, engine } = st; const pose = POSE[it.slot === 'weapon' ? it.wk ?? 'kilic' : it.slot];
   const mesh: Mesh = build(scene, 'item', itemSpecs(it)); mesh.material = st.mat; addOutline(mesh, scene);
-  const pivot = new TransformNode('pv', scene); mesh.parent = pivot; pivot.rotation.set(...pose);
-  pivot.computeWorldMatrix(true); mesh.computeWorldMatrix(true); mesh.refreshBoundingInfo();
-  const bb = mesh.getBoundingInfo().boundingBox; const mn = bb.minimumWorld, mx = bb.maximumWorld;
-  const cx = (mn.x + mx.x) / 2, cy = (mn.y + mx.y) / 2; const h = Math.max(mx.x - mn.x, mx.y - mn.y) / 2 * 1.03 + 0.04;
-  cam.orthoLeft = cx - h; cam.orthoRight = cx + h; cam.orthoTop = cy + h; cam.orthoBottom = cy - h; cam.position.set(cx, cy, -10); cam.setTarget(new Vector3(cx, cy, 0));
-  engine.setSize(SIZE, SIZE); scene.render();
-  const url = canvas.toDataURL('image/png'); cache.set(key, url);
+  const pivot = new TransformNode('pv', scene); mesh.parent = pivot;
+  const box = (yaw: number) => { pivot.rotation.set(pose[0], pose[1] + yaw, pose[2]); pivot.computeWorldMatrix(true); mesh.computeWorldMatrix(true); mesh.refreshBoundingInfo(); const bb = mesh.getBoundingInfo().boundingBox; return { mn: bb.minimumWorld.clone(), mx: bb.maximumWorld.clone() }; };
+  const fitOf = (b: { mn: Vector3; mx: Vector3 }) => ({ cx: (b.mn.x + b.mx.x) / 2, cy: (b.mn.y + b.mx.y) / 2, h: Math.max(b.mx.x - b.mn.x, b.mx.y - b.mn.y) / 2 * 1.03 + 0.04 });
+  let shared: { cx: number; cy: number; h: number } | null = null;
+  if (uniform) { const bs = yaws.map(box); const mn = new Vector3(Math.min(...bs.map((b) => b.mn.x)), Math.min(...bs.map((b) => b.mn.y)), 0), mx = new Vector3(Math.max(...bs.map((b) => b.mx.x)), Math.max(...bs.map((b) => b.mx.y)), 0); shared = fitOf({ mn, mx }); }
+  const urls: string[] = [];
+  for (const yaw of yaws) {
+    const f = shared ?? fitOf(box(yaw)); box(yaw);
+    cam.orthoLeft = f.cx - f.h; cam.orthoRight = f.cx + f.h; cam.orthoTop = f.cy + f.h; cam.orthoBottom = f.cy - f.h; cam.position.set(f.cx, f.cy, -10); cam.setTarget(new Vector3(f.cx, f.cy, 0));
+    engine.setSize(SIZE, SIZE); scene.render(); urls.push(canvas.toDataURL('image/png'));
+  }
   mesh.dispose(false, false); pivot.dispose();
-  return url;
+  return urls;
+}
+/** Eşya görselinin PNG veri adresi (WebGL yoksa null). Aynı slot/tür/bant/kademe için bir kez çizilir. */
+export function itemArtUrl(it: ItemKey): string | null {
+  const key = keyOf(it); const hit = cache.get(key); if (hit) return hit;
+  const r = shoot(it, [0], false); if (!r) return null; cache.set(key, r[0]); return r[0];
+}
+/** Döner önizleme kareleri (n kare, tam tur); ilk kullanımda çizilir ve önbelleğe alınır. */
+export function itemArtFrames(it: ItemKey, n = 12): string[] | null {
+  const key = keyOf(it) + '|' + n; const hit = frameCache.get(key); if (hit) return hit;
+  const r = shoot(it, Array.from({ length: n }, (_, i) => (i / n) * Math.PI * 2), true); if (!r) return null; frameCache.set(key, r); return r;
 }
 export const itemArtReady = () => ensure() !== null;

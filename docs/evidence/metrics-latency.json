@@ -1,9 +1,9 @@
 {
  "rttMs": 150,
  "speed": 7,
- "maxPredictionError": 1.6,
+ "maxPredictionError": 1.46,
  "settledError": 0,
  "snaps": 0,
  "firstFrameMove": 0.117,
- "serverWalked": 22.3
+ "serverWalked": 22.4
 }

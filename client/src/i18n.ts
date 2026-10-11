@@ -224,6 +224,7 @@ const D: Record<string, [string, string]> = {
   "mat.kimiz": ["Kımız", "Kımız"],
   "ui.credits": ["Eşya simgeleri: game-icons.net (Lorc, Delapouite ve diğerleri) — CC BY 3.0", "Item icons: game-icons.net (Lorc, Delapouite and others) — CC BY 3.0"],
   "inv.page.items": ["Eşyalar", "Items"], "inv.page.mats": ["Malzemeler ve kaynaklar", "Materials & resources"], "inv.page.cos": ["Kostüm malzemeleri ve şans eşyaları", "Costume materials & luck items"], "cos.bagN": ["çantada {n} kostüm", "{n} costumes in bag"],
+  "inv.spin": ["Üzerine gel: döner; sürükle: çevir", "Hover to spin; drag to rotate"],
   "inv.ench": ["efsun", "enchants"],
   "hunt.lv": ["Sv {lv}", "Lv {lv}"], "hunt.title": ["Alp Avı", "Alp Hunt"], "hunt.late": ["geride", "behind"], "hunt.skip": ["[atla]", "[skip]"], "hunt.skipped": ["Geride kalan avlar seviyene getirildi.", "Late hunts brought up to your level."], "hunt.wait": ["Sv {lv}'de açılır", "Opens at Lv {lv}"],
   "sys.hunt_done": ["Av tamamlandı (Sv {lv})! Ödülün işlendi.", "Hunt complete (Lv {lv})! Reward granted."], "err.hunt_nothing": ["Atlanacak av yok.", "No hunt to skip."],

@@ -1,5 +1,5 @@
 {
- "at": "2026-10-11T14:51:13.228Z",
+ "at": "2026-10-11T16:06:46.853Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,7 +294,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt113"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt603"
   },
   {
    "id": "F1.toon",
@@ -304,7 +304,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 96 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 92 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -317,6 +317,11 @@
    "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 19 SVG ikon"
   },
   {
+   "id": "F4.yetenek-ikonlari",
+   "ok": true,
+   "detail": "Yetenek çubuğunda 7 renkli yetenek simgesi (game-icons)"
+  },
+  {
    "id": "F4.yetenek-cubugu-altta",
    "ok": true,
    "detail": "Yetenek çubuğu ekranın altında (üst=612, alt=706, yükseklik=720)"
@@ -324,7 +329,7 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=5.00 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=3.14 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
@@ -335,6 +340,11 @@
    "id": "D5.envanter",
    "ok": true,
    "detail": "Çanta paneli 7 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
+  },
+  {
+   "id": "D5c.donen-onizleme",
+   "ok": true,
+   "detail": "Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)"
   },
   {
    "id": "D5b.envanter-v2",
@@ -374,7 +384,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=9.81 ms; aktif mesh=178/2601; üçgen=528400; (yazılım rasterleştirmede FPS=6)"
+   "detail": "Kare başına JS/CPU maliyeti=10.03 ms; aktif mesh=178/2601; üçgen=528400; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -383,15 +393,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 5.00390625,
+  "audioPeak": 3.138671875,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 6,
+   "fps": 4,
    "meshes": 2601,
    "active": 178,
    "draw": 0,
    "tris": 528400,
-   "cpuMs": 9.81
+   "cpuMs": 10.03
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

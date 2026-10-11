@@ -7,6 +7,7 @@ bone-knife plain-dagger broad-dagger cloak-dagger sacrificial-dagger curvy-knife
 leather-armor armor-vest chest-armor layered-armor spiked-armor ninja-armor wooden-helmet light-helm viking-helmet samurai-helmet warlord-helmet horned-helm crested-helmet
 primitive-necklace tribal-pendant gem-pendant emerald-necklace gem-necklace intricate-necklace ore animal-hide wood-pile log coins spell-book charm crystal-cluster round-potion standing-potion health-potion milk-carton waterskin jug
 gladius machete two-handed-sword zeus-sword stiletto trench-knife bowie-knife pocket-bow chain-mail breastplate abdominal-armor spiked-shoulder-armor robe centurion-helmet spartan-helmet overlord-helm pearl-necklace necklace ankh rune-stone evil-eyes eye-of-horus
+axe-swing earth-crack megaphone viking-shield thunder-struck sword-slice quake-stomp wolf-howl tribal-shield lightning-storm snake-bite tipi compass character stone-tablet skull-crossed-bones crown trophy hourglass sword-clash portal
 fishing-pole fishing-hook fish-cooked sword-slice shield poison-bottle lightning-storm shouting earth-spit knapsack backpack crossed-swords skills open-book`.split(/\s+/).filter(Boolean);
 const out = {}; const miss = [];
 for (const n of NAMES) { const i = src[n]; if (!i) { miss.push(n); continue; } out[n] = i.body.replace(/<\/?g[^>]*>/g, '').trim(); }

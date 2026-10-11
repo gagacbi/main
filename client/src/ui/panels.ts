@@ -15,6 +15,7 @@ import { LOOM_POS } from '@shared/costume';
 import { costLevel, costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LUCK_KEYS, addLineCost, baseLine, craftChance, extendCost, gold, inGrace, isExpired, rerollAllCost, rerollLineCost, type Costume, type CostumeTier } from '@shared/costume';
 import { KIMIZ, GATE_DUNGEONS, GATE_LINKS, INSCRIPTIONS, CRAFT, DMG_KINDS, MARKET, HUB_R, inHubTown, marketRef, marketPriceBounds, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, BAG_SIZE, vendorPrice } from '@shared/game';
 import { emblemSvg } from './emblems';
+import { itemArtFrames } from '../game/itemart';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
 import { icon } from './icons';
 
@@ -57,6 +58,15 @@ export class Panels {
     this.tipEl = document.createElement('div'); this.tipEl.className = 'tip'; root.appendChild(this.tipEl);
     this.el.addEventListener('mousedown', (e) => { if (e.target === this.el) this.close(); });
     this.el.addEventListener('click', (e) => this.onClick(e));
+    // döner önizleme: üzerine gelince yavaş döner, sürükleyince fareyle çevrilir (kareler ilk kullanımda çizilir)
+    let spin: { el: HTMLElement; frames: string[]; i: number; timer: number; drag: number | null } | null = null; const stopSpin = () => { if (spin) { clearInterval(spin.timer); spin = null; } };
+    const frames = (el: HTMLElement) => { const m = this.me; const it = m.items.find((x) => x.id === this.selBag); return it ? itemArtFrames(it, 12) : null; };
+    this.el.addEventListener('pointerover', (e) => { const el = (e.target as HTMLElement).closest('.cell.spin') as HTMLElement | null; if (!el || spin?.el === el) return; stopSpin(); const f = frames(el); if (!f) return; const img = el.querySelector('img'); if (!img) return;
+      spin = { el, frames: f, i: 0, drag: null, timer: window.setInterval(() => { if (!spin || spin.drag !== null) return; spin.i = (spin.i + 1) % spin.frames.length; img.src = spin.frames[spin.i]; }, 110) }; });
+    this.el.addEventListener('pointerout', (e) => { const el = (e.target as HTMLElement).closest('.cell.spin'); if (el && !(e.relatedTarget as HTMLElement | null)?.closest?.('.cell.spin')) { const img = el.querySelector('img'); if (img && spin) img.src = spin.frames[0]; stopSpin(); } });
+    this.el.addEventListener('pointerdown', (e) => { if (spin && (e.target as HTMLElement).closest('.cell.spin')) { spin.drag = e.clientX; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); e.preventDefault(); } });
+    this.el.addEventListener('pointermove', (e) => { if (!spin || spin.drag === null) return; const dx = e.clientX - spin.drag; const step = Math.trunc(dx / 14); if (step) { spin.drag = e.clientX; spin.i = (spin.i - step + spin.frames.length * 8) % spin.frames.length; const img = spin.el.querySelector('img'); if (img) img.src = spin.frames[spin.i]; } });
+    this.el.addEventListener('pointerup', () => { if (spin) spin.drag = null; });
     this.el.addEventListener('dragstart', (e) => { const c = (e.target as HTMLElement).closest('[data-item]') as HTMLElement | null; if (c && e.dataTransfer) { e.dataTransfer.setData('text/plain', c.dataset.item!); e.dataTransfer.effectAllowed = 'move'; } });
     this.el.addEventListener('dragover', (e) => { if ((e.target as HTMLElement).closest('.eqs .cell, .bag')) e.preventDefault(); });
     this.el.addEventListener('drop', (e) => {
@@ -136,7 +146,7 @@ export class Panels {
     const eqSel = sel ? m.equip[sel.slot] : undefined;
     const st0 = sel ? itemStats(sel) : null; const st1 = eqSel ? itemStats(eqSel) : null;
     const chip = (lab: string, v: number, c: number | null, unit = '') => (v || (c ?? 0)) ? `<span class="dc">${lab} <b>${v}${unit}</b>${c === null ? '' : v === c ? '' : ` <i class="${v > c ? 'up' : 'dn'}">${v > c ? '▲+' : '▼'}${Math.round((v - c) * 10) / 10}</i>`}</span>` : '';
-    const detail = sel && st0 ? `<div class="card invdet" style="--tc:${TIER_COLORS[sel.tier]}"><div class="cell item" style="--tc:${TIER_COLORS[sel.tier]}">${itemIcon(sel)}${sel.up > 0 ? `<span class="up">+${sel.up}</span>` : ''}</div>
+    const detail = sel && st0 ? `<div class="card invdet" style="--tc:${TIER_COLORS[sel.tier]}"><div class="cell item spin" data-spin="${sel.slot}|${sel.wk ?? ''}|${sel.band}|${sel.tier}" title="${t('inv.spin')}" style="--tc:${TIER_COLORS[sel.tier]}">${itemIcon(sel)}${sel.up > 0 ? `<span class="up">+${sel.up}</span>` : ''}</div>
       <div class="grow dt"><div class="tn">${esc(itemName(sel))}${sel.up ? ` <b>+${sel.up}</b>` : ''}</div><div class="ts">${tierName(sel.tier)} · ${t('slot.' + sel.slot)} · ${t('ui.ilvl')} ${sel.ilvl} · ${t('ui.lvlReq')} ${sel.lvlReq}${sel.slot === 'weapon' ? ` · ${t('dk.' + (sel.wk ?? 'kilic'))}` : ''}</div>
       <div class="dls">${chip(t('ui.atk'), st0.atk, st1 ? st1.atk : null)}${chip(t('ui.def'), st0.def, st1 ? st1.def : null)}${chip(t('ui.hp'), st0.hp, st1 ? st1.hp : null)}${chip(t('ui.crit'), st0.critPct, st1 ? st1.critPct : null, '%')}${sel.ench.length + (sel.base ? 1 : 0) ? `<span class="dc en">✦ ${sel.ench.length + (sel.base ? 1 : 0)} ${t('inv.ench')}</span>` : ''}</div></div>
       <div class="acts"><button class="btn primary small" data-act="equip" data-id="${sel.id}" ${sel.lvlReq > m.level ? 'disabled' : ''}>${t('ui.equip')}</button><button class="btn small" data-act="toUp" data-id="${sel.id}">${t('ui.upgrade')}</button>

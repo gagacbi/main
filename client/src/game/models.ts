@@ -187,7 +187,7 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   // silah ele göre ÖNE-YUKARI eğik tutulur (eskiden -0.35 bıçağı geriye yatırıyordu: kol idle'da -0.25 → toplam -0.6 rad = arkaya)
   if (rig.pivots.weapon) {
     rig.pivots.weapon.rotation.x = kind === 'guard' ? 0 : weaponKind === 'cift' ? 0.7 : weaponKind === 'buyu' ? 0.35 : 0.95;
-    if (weaponKind === 'yay') { rig.pivots.weapon.rotation.x = 0.15; rig.pivots.weapon.rotation.y = -1.05; }   // yay: kiriş gövdeye, ok öne
+    if (weaponKind === 'yay') { rig.pivots.weapon.rotation.x = 0.15; rig.pivots.weapon.rotation.y = 1.1; }   // yay: kiriş gövdeye, ok öne
   }
   if (kind === 'demirci' && rig.pivots.weapon) rig.pivots.weapon.rotation.x = -1.1;
   rig.height = 2.9;

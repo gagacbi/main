@@ -1,5 +1,5 @@
 import { type DmgKind, type Item, type Slot } from '@shared/game';
-import { GI } from './gameicons.generated';
+import { paint } from './gipaint';
 import { itemArtUrl } from '../game/itemart';
 
 /**
@@ -22,17 +22,6 @@ const KINDS: Record<string, string[]> = {
   helmet: ['light-helm', 'spartan-helmet', 'centurion-helmet', 'horned-helm', 'overlord-helm'],
   amulet: ['primitive-necklace', 'pearl-necklace', 'gem-pendant', 'necklace', 'ankh'],
 };
-const OL = '#25160b';
-let uid = 0;
-/** Bir game-icons gövdesini konturlu, gradyan dolgulu ve parlamalı çizer */
-function paint(name: string, top: string, mid: string, bot: string, cls: string): string {
-  const raw = GI[name] ?? GI['ore']; const id = 'g' + (uid++ % 4096);
-  const outline = raw.replace(/fill="currentColor"/g, `fill="${OL}" stroke="${OL}" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"`);
-  const fill = raw.replace(/fill="currentColor"/g, `fill="url(#${id}f)"`);
-  const shine = raw.replace(/fill="currentColor"/g, `fill="url(#${id}s)"`);
-  return `<svg class="${cls}" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}f" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${top}"/><stop offset=".5" stop-color="${mid}"/><stop offset="1" stop-color="${bot}"/></linearGradient>`
-    + `<linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".42" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>${outline}${fill}${shine}</svg>`;
-}
 const iconName = (it: Pick<Item, 'slot' | 'band' | 'wk'>): string => {
   const b = Math.max(0, Math.min(4, it.band));
   if (it.slot === 'weapon') return KINDS[(it.wk as DmgKind | undefined) ?? 'kilic'][b];
