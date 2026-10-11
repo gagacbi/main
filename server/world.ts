@@ -20,6 +20,7 @@ import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
 import { chronOf } from './chronicle';
+import { eqCode } from '../shared/appearance';
 import { HUNT, huntFor } from '../shared/hunt';
 import { FIRST_LEVELS, genRuins, RUIN_LEVELS, type ChronKind } from '../shared/chronicle';
 import { GameError, type Ctx, type PlayerData } from './types';
@@ -1225,7 +1226,7 @@ export class World {
       for (const q of this.players.values()) {
         if (q === p || dist2(p, q) > AOI_R * AOI_R) continue;
         let f = this.flags(q); if (q.deadUntil > 0) f |= F.DEAD; if (q.atk) f |= F.ATK; if (q.d.rank < 0) f |= F.RED; if (q.duelWith) f |= F.DUEL; if (this.pvpActive(q)) f |= F.PVP;
-        players.push({ cs: costumeCode(q.d.cos?.worn && this.now < q.d.cos.worn.expiresAt ? q.d.cos.worn : null), i: q.id, n: q.name, b: BOY_ID[q.boy], l: q.d.level, x: r2(q.x), z: r2(q.z), r: r2(q.rot), h: Math.round(q.hp), H: q.stats.maxHp, f, sp: q.d.spec === 'kalkan' ? 1 : q.d.spec === 'kilic' ? 2 : 0, oy: '' });
+        players.push({ eq: eqCode(q.d.equip), cs: costumeCode(q.d.cos?.worn && this.now < q.d.cos.worn.expiresAt ? q.d.cos.worn : null), i: q.id, n: q.name, b: BOY_ID[q.boy], l: q.d.level, x: r2(q.x), z: r2(q.z), r: r2(q.rot), h: Math.round(q.hp), H: q.stats.maxHp, f, sp: q.d.spec === 'kalkan' ? 1 : q.d.spec === 'kilic' ? 2 : 0, oy: '' });
       }
       const mobs: Snapshot['mobs'] = [];
       for (const m of this.mobs.values()) {

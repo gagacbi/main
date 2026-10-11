@@ -1,3 +1,6 @@
+import { itemSpecs } from './itemart';
+import { scaleSpecs } from './meshkit';
+import type { EqLook } from '@shared/appearance';
 import { LOOKS } from '@shared/costume';
 import { Color3, Mesh, TransformNode, type Scene, type ShaderMaterial } from '@babylonjs/core';
 import { BOY_COLORS, type Boy, type MobType, type Spec } from '@shared/game';
@@ -42,7 +45,7 @@ export class Rig {
 const SKIN = '#f4c79c'; const SKIN_D = '#e0a97f'; const HAIR = '#1d1620'; const STEEL = '#cfd9e6'; const LEATHER = '#6b4326'; const GOLD = '#f2c14e';
 
 // ─────────────────────────── İNSANSI ───────────────────────────
-export interface HumanOpts { boy: Boy; spec?: Spec; kind?: 'player' | 'aksakal' | 'demirci' | 'guard'; red?: boolean; /** giyili kostüm: görünüm + basamak */ costume?: { look: number; tier: number } | null }
+export interface HumanOpts { /** kuşanılan eşya görünümü */ eq?: EqLook; boy: Boy; spec?: Spec; kind?: 'player' | 'aksakal' | 'demirci' | 'guard'; red?: boolean; /** giyili kostüm: görünüm + basamak */ costume?: { look: number; tier: number } | null }
 
 export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   const kind = o.kind ?? 'player';
@@ -81,6 +84,7 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   }
   if (robe) body.push({ k: 'cone', db: 0.5, dt: 0.0, h: 0.9, p: [0, 0.75, 0.52], c: '#ffffff', c2: '#dfe8f8' }, { k: 'sphere', d: 0.42, p: [0, 1.0, 0.4], s: [1, 1.5, 0.7], c: '#ffffff' });
   rig.part('body', body, [0, 0, 0]);
+  if (kind === 'player' && o.eq?.armor) { const ap = rig.part('armorItem', scaleSpecs(itemSpecs({ slot: 'armor', ...o.eq.armor }), 0.74), [0, 1.0, 0.0], 'body'); ap.rotation.y = Math.PI; }
 
   // baş + yüz + saç
   const head: PartSpec[] = [
@@ -133,7 +137,9 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   }
   if (ctier >= 0) { hat.push({ k: 'torus', d: 0.96, th: 0.1, p: [0, 0.16, 0], c: accent, gloss: 0.5 }); if (ctier >= 2) hat.push({ k: 'sphere', d: 0.22, p: [0, 0.62, 0.12], c: accent, gloss: 0.7 });
     if (ctier >= 3) for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; hat.push({ k: 'cone', db: 0.16, dt: 0, h: 0.4, p: [Math.cos(a) * 0.42, 0.9, Math.sin(a) * 0.42], c: GOLD, gloss: 0.8 }); } }
-  rig.part('hat', hat, [0, 0.27, 0], 'head');
+  if (kind === 'player' && o.eq?.helmet) {   // kuşanılan miğfer: eşyanın kendi modeli (yüz +z yönüne çevrilir)
+    const hp = rig.part('hat', scaleSpecs(itemSpecs({ slot: 'helmet', ...o.eq.helmet }), 0.76), [0, 0.14, -0.03], 'head'); hp.rotation.y = Math.PI;
+  } else rig.part('hat', hat, [0, 0.27, 0], 'head');
 
   // kollar + eller
   const sleeve = (): PartSpec[] => [
@@ -145,10 +151,12 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   rig.part('armL', sleeve(), [-0.52 * stocky, 1.38, 0]); rig.part('armR', sleeve(), [0.52 * stocky, 1.38, 0]);
 
   // silah / kalkan
-  const spec = o.spec ?? 'none';
+  const spec = o.spec ?? 'none'; let weaponKind: string | null = null;
   if (kind === 'player' || kind === 'guard') {
     const sword: PartSpec[] = [];
-    if (kind === 'guard') {
+    if (kind === 'player' && o.eq?.weapon) {   // kuşanılan silah: eşyanın kendi modeli, türüne göre tutuş
+      const w = o.eq.weapon; const wp = rig.part('weapon', scaleSpecs(itemSpecs({ slot: 'weapon', ...w }), 0.82), [0, -0.58, 0.08], 'armR'); wp.rotation.set(0, 0, 0); weaponKind = w.wk ?? 'kilic'; void wp;
+    } else if (kind === 'guard') {
       sword.push({ k: 'cyl', d: 0.07, h: 2.2, p: [0, 0.4, 0], c: '#8a5a32' }, { k: 'cone', db: 0.2, dt: 0, h: 0.55, p: [0, 1.7, 0], c: STEEL, gloss: 0.8 });
       rig.part('weapon', sword, [0, -0.58, 0.08], 'armR');
     } else if (spec === 'kilic') {
@@ -177,7 +185,10 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
 
   // duruş: silah eli
   // silah ele göre ÖNE-YUKARI eğik tutulur (eskiden -0.35 bıçağı geriye yatırıyordu: kol idle'da -0.25 → toplam -0.6 rad = arkaya)
-  if (rig.pivots.weapon) rig.pivots.weapon.rotation.x = kind === 'guard' ? 0 : 0.95;
+  if (rig.pivots.weapon) {
+    rig.pivots.weapon.rotation.x = kind === 'guard' ? 0 : weaponKind === 'cift' ? 0.7 : weaponKind === 'buyu' ? 0.35 : 0.95;
+    if (weaponKind === 'yay') { rig.pivots.weapon.rotation.x = 0.15; rig.pivots.weapon.rotation.y = -1.05; }   // yay: kiriş gövdeye, ok öne
+  }
   if (kind === 'demirci' && rig.pivots.weapon) rig.pivots.weapon.rotation.x = -1.1;
   rig.height = 2.9;
 

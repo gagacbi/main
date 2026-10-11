@@ -41,7 +41,7 @@ export interface Me {
 export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024, PVP: 2048 } as const;
 export const STATUS_FLAG: Record<StatusKey, number> = { stun: F.STUN, slow: F.SLOW, poison: F.POISON, curse: F.CURSE, shield: F.SHIELD };
 
-export interface SnapPlayer { /** kostüm kodu (0 yok) */ cs: number; i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
+export interface SnapPlayer { /** kostüm kodu (0 yok) */ cs: number; /** kuşanılan eşya görünümü (shared/appearance.ts) */ eq: number; i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
 export interface SnapMob { i: number; t: MobType; l: number; x: number; z: number; r: number; h: number; H: number; f: number; /** saha bossu kimliği */ b?: number }
 export interface SnapRift { i: number; x: number; z: number; w: number; st: number; h: number; H: number }
 export interface SnapDrop { i: number; k: 'gold' | 'mat' | 'item' | 'book' | 'charm' | 'frag'; x: number; z: number; t: number; a: number; m?: string; o: number }

@@ -1,5 +1,5 @@
 {
- "at": "2026-10-11T14:33:05.732Z",
+ "at": "2026-10-11T14:51:13.228Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,7 +294,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt810"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt113"
   },
   {
    "id": "F1.toon",
@@ -304,7 +304,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 92 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 96 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -324,12 +324,12 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=4.83 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=5.00 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
    "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.0001579149393364787, sessizlikte enerji=0.000"
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
   },
   {
    "id": "D5.envanter",
@@ -339,7 +339,7 @@
   {
    "id": "D5b.envanter-v2",
    "ok": true,
-   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=1), seçili eşya ayrıntı kartı, sürüklenebilir hücreler"
+   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=1), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=622592)"
   },
   {
    "id": "B4.uzmanlik-ui",
@@ -374,7 +374,7 @@
   {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=8.71 ms; aktif mesh=176/2599; üçgen=518408; (yazılım rasterleştirmede FPS=5)"
+   "detail": "Kare başına JS/CPU maliyeti=9.81 ms; aktif mesh=178/2601; üçgen=528400; (yazılım rasterleştirmede FPS=6)"
   },
   {
    "id": "G.konsol",
@@ -383,15 +383,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 4.833984375,
+  "audioPeak": 5.00390625,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 5,
-   "meshes": 2599,
-   "active": 176,
+   "fps": 6,
+   "meshes": 2601,
+   "active": 178,
    "draw": 0,
-   "tris": 518408,
-   "cpuMs": 8.71
+   "tris": 528400,
+   "cpuMs": 9.81
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

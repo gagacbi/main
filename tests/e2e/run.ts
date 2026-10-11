@@ -157,7 +157,7 @@ if (want('paneller')) {
   await page.keyboard.press('i'); await sleep(900); await shot('08-canta');
   const cells = await page.$$eval('.overlay.open .cell.item', (e) => e.length); check('D5.envanter', cells >= 7, `Çanta paneli ${cells} eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)`);
   await page.click('.bag .cell.item'); await sleep(500); await page.dblclick('.bag .cell.item:nth-child(2)'); await sleep(900); await page.click('.bag .cell.item'); await sleep(500); await shot('08b-canta-detay');
-  const detTxt = (await page.textContent('.invdet')) ?? ''; const eqN = await page.$$eval('.eqs .cell.item', (e) => e.length); check('D5b.envanter-v2', eqN >= 1 && /Kuşan|Equip/.test(detTxt) && (await page.$$('.bag .cell.item[draggable="true"]')).length >= 1, `Çanta v2: çift tıkla kuşanıldı (kuşanılan=${eqN}), seçili eşya ayrıntı kartı, sürüklenebilir hücreler`);
+  const detTxt = (await page.textContent('.invdet')) ?? ''; const eqN = await page.$$eval('.eqs .cell.item', (e) => e.length); const eqLook = await ev<number>('g.selfView.eq'); check('D5b.envanter-v2', eqN >= 1 && eqLook > 0 && /Kuşan|Equip/.test(detTxt) && (await page.$$('.bag .cell.item[draggable="true"]')).length >= 1, `Çanta v2: çift tıkla kuşanıldı (kuşanılan=${eqN}), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=${eqLook})`);
   await page.keyboard.press('Escape'); await sleep(200);
   await page.keyboard.press('c'); await sleep(900); await shot('09-karakter-uzmanlik');
   const hasSpec = await page.$$eval('.overlay.open .spec', (e) => e.length); check('B4.uzmanlik-ui', hasSpec === 2, 'Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür');

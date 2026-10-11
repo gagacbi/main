@@ -45,3 +45,8 @@ export function build(scene: Scene, name: string, specs: PartSpec[]): Mesh {
   merged.name = name; merged.isPickable = false;
   return merged;
 }
+
+/** Parça listesini düzgün (tek tip) ölçekler: konum ve boyutlar k ile çarpılır */
+export function scaleSpecs(specs: PartSpec[], k: number): PartSpec[] {
+  return specs.map((s) => ({ ...s, p: s.p ? (s.p.map((v) => v * k) as V3) : undefined, d: s.d && s.d * k, h: s.h && s.h * k, dt: s.dt && s.dt * k, db: s.db && s.db * k, w: s.w && s.w * k, dp: s.dp && s.dp * k, th: s.th && s.th * k }));
+}
