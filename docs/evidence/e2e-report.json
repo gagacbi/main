@@ -1,5 +1,5 @@
 {
- "at": "2026-10-06T23:07:04.951Z",
+ "at": "2026-10-11T13:29:36.009Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -294,7 +294,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt770"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt200"
   },
   {
    "id": "F1.toon",
@@ -304,7 +304,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 102 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 94 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -314,12 +314,17 @@
   {
    "id": "F4.hud",
    "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 18 SVG ikon"
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 19 SVG ikon"
+  },
+  {
+   "id": "F4.yetenek-cubugu-altta",
+   "ok": true,
+   "detail": "Yetenek çubuğu ekranın altında (üst=612, alt=706, yükseklik=720)"
   },
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=7.71 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=4.38 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
@@ -352,9 +357,19 @@
    "detail": "Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür"
   },
   {
+   "id": "S2.wiki",
+   "ok": true,
+   "detail": "Oyun içi Wiki (U): 11 makale, Alp Avı kuralları ve örnek tablo görünür"
+  },
+  {
+   "id": "S3.alp-avi-hud",
+   "ok": true,
+   "detail": "Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=2.79 ms; aktif mesh=175/2599; üçgen=518352; (yazılım rasterleştirmede FPS=11)"
+   "detail": "Kare başına JS/CPU maliyeti=9.4 ms; aktif mesh=176/2599; üçgen=518408; (yazılım rasterleştirmede FPS=5)"
   },
   {
    "id": "G.konsol",
@@ -363,15 +378,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 7.7138671875,
+  "audioPeak": 4.3837890625,
   "dropsSeenDuringLoot": 3,
   "perf": {
-   "fps": 11,
+   "fps": 5,
    "meshes": 2599,
-   "active": 175,
+   "active": 176,
    "draw": 0,
-   "tris": 518352,
-   "cpuMs": 2.79
+   "tris": 518408,
+   "cpuMs": 9.4
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

@@ -4,6 +4,7 @@ import {
 } from '@shared/game';
 import type { MarketListing, MarketMail, ObaInfo } from '@shared/protocol';
 import type { Game } from '../game/game';
+import { ARTICLES, CATS, catName, renderBody, articleTitle, articleBody } from '../wiki';
 import { eraName, eraStartPts, eraText, chronAgo, chronLine, type ChronView } from '../chron';
 import { fmtDur, getLang, itemName, num, setLang, t, tierName } from '../i18n';
 import { THREADS, THREAD_SIZE, titlesOf, type Thread } from '@shared/lore';
@@ -25,7 +26,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
+export type PanelName = 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -49,7 +50,7 @@ export class Panels {
   mkQty = '1';
   lmTier = 1; lmLook = 0; lmBoncuk = 0; lmDugum = false; lmNazar = false;
   selUp = ''; smithTab: 'up' | 'craft' | 'reroll' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
-  codexTab: Thread | 'chron' = 'insc'; chron: ChronView | null = null; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
+  wikiId = 'basics'; codexTab: Thread | 'chron' = 'insc'; chron: ChronView | null = null; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
     this.tipEl = document.createElement('div'); this.tipEl.className = 'tip'; root.appendChild(this.tipEl);
@@ -101,7 +102,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -375,6 +376,12 @@ export class Panels {
       <div class="card hint-card">${t('thread.' + th + '.hint')}</div>${fragBar}<div style="margin-top:8px">${cards}</div></div>`);
   }
 
+  /** Oyun içi Wiki: sol listede makaleler, sağda seçili makale. Sayılar kaynak sabitlerden okunur. */
+  wiki() {
+    const cur = ARTICLES.find((a) => a.id === this.wikiId) ?? ARTICLES[0];
+    const nav = CATS.map((c) => `<div class="wkcat">${catName(c)}</div>` + ARTICLES.filter((a) => a.cat === c).map((a) => `<div class="wkitem ${a.id === cur.id ? 'on' : ''}" data-act="wk" data-v="${a.id}">${icon(a.ic)}<span>${esc(articleTitle(a))}</span></div>`).join('')).join('');
+    return this.shell(t('ui.wiki'), 'book', `<div class="wiki"><div class="wknav">${nav}</div><div class="wkbody"><h3>${esc(articleTitle(cur))}</h3>${renderBody(articleBody(cur))}</div></div>`);
+  }
   /** Kut Yıllığı: çağ, ilerleme ve sunucunun ortak olay günlüğü */
   chronPanel() {
     const c = this.chron; const tabs = `<div class="tab2 on" data-act="cx" data-v="chron">${t('thread.chron')}</div>` + THREADS.map((x) => `<div class="tab2" data-act="cx" data-v="${x}">${t('thread.' + x)}</div>`).join('');
@@ -444,6 +451,7 @@ export class Panels {
       }
       case 'lm': { const k = d.k!; const v = Number(d.v); if (k === 'tier') this.lmTier = v; else if (k === 'look') this.lmLook = v; else if (k === 'boncuk') this.lmBoncuk = v; else if (k === 'dugum') this.lmDugum = !!v; this.render(true); break; }
       case 'travel': { const r = await this.g.net.rpc('travel', { to: d.v }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.ui.sfx('err'); } else this.close(); break; }
+      case 'wk': this.wikiId = d.v ?? 'basics'; break;
       case 'cx': this.codexTab = d.v as Thread | 'chron'; if (this.codexTab === 'chron') { const r = await this.g.net.rpc('chron'); if (r.ok) this.chron = r.data as ChronView; } break;
       case 'mktab': this.mkTab = d.v as 'browse' | 'mine'; await this.loadMarket(); break;
       case 'mkslot': this.mkSlot = d.v ?? ''; await this.loadMarket(); break;

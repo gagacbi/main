@@ -20,6 +20,7 @@ import { claimMail, marketRpc } from './market';
 import { irange, range } from '../shared/rng';
 import * as oba from './oba';
 import { chronOf } from './chronicle';
+import { HUNT, huntFor } from '../shared/hunt';
 import { FIRST_LEVELS, genRuins, RUIN_LEVELS, type ChronKind } from '../shared/chronicle';
 import { GameError, type Ctx, type PlayerData } from './types';
 import type { PlayerRow } from './db';
@@ -200,6 +201,23 @@ export class World {
     }
     p.meDirty = true;
     return xp;
+  }
+  /** Alp Avı: öldürülen yaratık güncel av hedefiyse sayar; ikisi dolunca ödül otomatik verilir. */
+  huntKill(p: Player, m: Mob) {
+    const d = p.d; const h = (d.hunt ??= { lv: HUNT.first, k: [0, 0] }); if (h.lv > MAX_LEVEL || d.level < h.lv) return;
+    const def = huntFor(h.lv); const i = def.types.indexOf(m.type); if (i < 0 || m.lvl < h.lv - HUNT.minMobLvlGap || h.k[i] >= def.n[i]) return;
+    h.k[i]++; p.meDirty = true;
+    if (h.k[0] >= def.n[0] && h.k[1] >= def.n[1]) this.huntDone(p);
+  }
+  huntDone(p: Player) {
+    const d = p.d; const h = d.hunt!; const def = huntFor(h.lv); const late = h.lv < d.level; const rng = this.ctx.rng;
+    this.addXp(p, xpToNext(d.level) * (late ? HUNT.latePct : def.xpPct), false);
+    if (!late) {
+      if (def.item) { const it = makeItem(rng, randomSlot(rng), d.level, rollTier(rng, 1)); this.spawnDrop(p, 'item', p.x, p.z, { item: it, t: it.tier, m: it.slot }); }
+      d.bag.book += def.book; d.bag.charm += def.charm;
+    }
+    this.ledger(p, 'hunt.reward', { lv: h.lv, late, item: !late && def.item, book: late ? 0 : def.book, charm: late ? 0 : def.charm });
+    this.sys(p, 'sys.hunt_done', { lv: h.lv }); d.hunt = { lv: h.lv + 1, k: [0, 0] }; p.meDirty = true;
   }
   /** Kut Yıllığı'na olay yazar; çağ değişirse herkese duyurur. `first` verilirse yalnızca o ilk ise yazılır. */
   chron(k: ChronKind, who: string, a: number, b: number, first?: string) {
@@ -414,7 +432,7 @@ export class World {
         this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
-        this.tutorial(p, 'kill');
+        this.tutorial(p, 'kill'); this.huntKill(p, m);
         this.rollDrops(p, m, share);
       }
     }
@@ -741,6 +759,10 @@ export class World {
         for (const it of res.items) this.giveItem(p, it);
         if (res.frag > 0) { d.bag.frag -= res.frag; this.addFrag(p, res.frag); }
         p.meDirty = true; return { result: res, info: oba.obaInfo(this.ctx, p) };
+      }
+      case 'hunt.skip': {
+        const h = (d.hunt ??= { lv: HUNT.first, k: [0, 0] }); if (h.lv >= d.level) throw new GameError('hunt_nothing');
+        this.ledger(p, 'hunt.skip', { from: h.lv, to: d.level }); d.hunt = { lv: d.level, k: [0, 0] }; p.meDirty = true; return null;
       }
       case 'chron': { const v = chronOf(this.ctx.db).view(); return { ...v, ruins: d.clues.filter((c) => c.startsWith('ruin.')).length }; }
       case 'ruin': {
@@ -1187,7 +1209,7 @@ export class World {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
       combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
-      companions: d.companions, expeditions: d.expeditions, tut: d.tut, lang: d.lang,
+      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
       role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,

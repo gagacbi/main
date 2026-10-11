@@ -167,6 +167,10 @@ if (want('paneller')) {
   await page.keyboard.press('Escape');
   await page.keyboard.press('y'); await sleep(900); await shot('10a-kodeks'); await page.click('.tab2[data-v="chron"]'); await sleep(900); await shot('10b-kut-yilligi');
   const chronTxt = (await page.textContent('.overlay.open')) ?? ''; check('S1.kut-yilligi', /Çağ 0/.test(chronTxt) && /Uyanış Çağı/.test(chronTxt), 'Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür');
+  await page.keyboard.press('u'); await sleep(700); await page.click('.wkitem[data-v="hunt"]'); await sleep(500); await shot('10c-wiki-av');
+  const wk = (await page.textContent('.overlay.open')) ?? ''; check('S2.wiki', /Alp Avı/.test(wk) && /Atla/.test(wk) && (await page.$$('.wkitem')).length >= 10, `Oyun içi Wiki (U): ${(await page.$$('.wkitem')).length} makale, Alp Avı kuralları ve örnek tablo görünür`);
+  await page.keyboard.press('Escape'); await sleep(200);
+  const huntBox = (await page.textContent('#quest')) ?? ''; check('S3.alp-avi-hud', /Alp Av/.test(huntBox), 'Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür');
   await page.keyboard.press('Escape');
 }
 

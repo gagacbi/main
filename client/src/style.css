@@ -248,3 +248,17 @@ button { font-family: var(--f-head); cursor: pointer; }
 @keyframes nextc-pulse { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 .combobadge { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); padding: 3px 14px 5px; border-radius: 12px; font: 800 15px 'Fredoka', sans-serif; letter-spacing: 1px; color: #ffe9a8; background: rgba(60, 28, 10, .88); border: 2px solid #ffd46a; text-shadow: 0 1px 0 #1a1230; white-space: nowrap; pointer-events: none; overflow: hidden; }
 .combobadge i { position: absolute; left: 0; bottom: 0; height: 3px; background: #ffd46a; }
+
+/* Wiki ve Alp Avı */
+.wiki { display: flex; gap: 14px; min-width: 760px; max-width: 920px; height: min(64vh, 560px); }
+.wknav { width: 220px; flex: none; overflow-y: auto; padding-right: 6px; }
+.wkcat { font: 800 12px 'Fredoka', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #8a6a3a; margin: 10px 0 4px; }
+.wkitem { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px; }
+.wkitem svg { width: 18px; height: 18px; flex: none; } .wkitem:hover { background: rgba(120, 80, 30, .12); } .wkitem.on { background: #5a3a1c; color: #ffe9a8; }
+.wkbody { flex: 1; overflow-y: auto; padding-right: 8px; font-size: 15px; line-height: 1.45; }
+.wkbody h3 { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; } .wkbody h4 { margin: 14px 0 4px; color: #7a4a14; font-family: 'Fredoka', sans-serif; }
+.wkbody p { margin: 6px 0; } .wkbody ul { margin: 4px 0 4px 18px; padding: 0; } .wkbody li { margin: 2px 0; }
+.wkbody table.wk { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: 14px; } .wkbody .wk td, .wkbody .wk th { border: 1px solid rgba(90, 58, 28, .35); padding: 3px 8px; text-align: left; } .wkbody .wk th { background: rgba(90, 58, 28, .15); }
+.quest .hunth { margin-top: 8px; } .quest .hunth small { opacity: .7; font-weight: 600; } .quest .ok { color: #7ed77e; text-decoration: line-through; opacity: .8; }
+.quest .huntskip { color: #ffd46a; cursor: pointer; text-decoration: underline; pointer-events: auto; }
+@media (max-width: 820px) { .wiki { flex-direction: column; min-width: 0; height: 70vh; } .wknav { width: auto; display: flex; flex-wrap: wrap; gap: 4px; max-height: 120px; } }
