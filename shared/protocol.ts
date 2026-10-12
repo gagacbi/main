@@ -10,7 +10,7 @@ export interface JoinOptions {
 }
 export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
-  | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.collect'
+  | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.evolve' | 'oba.collect'
   | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos' | 'kimiz.buy' | 'kimiz.use'
   | 'chron' | 'ruin' | 'hunt.skip' | 'element' | 'kt.refine' | 'kt.set' | 'kt.unset' | 'fish.buy' | 'fish.cast' | 'fish.reel' | 'fish.rod' | 'fish.eat' | 'fish.clean' | 'fish.ancestor' | 'daily.claim' | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 

@@ -422,7 +422,16 @@ export const OBA = {
 export const EXPEDITION_HOURS = [1, 4, 12] as const;
 export type Trait = 'gozupek' | 'tuccar' | 'sansli' | 'cevik';
 export const TRAITS: Trait[] = ['gozupek', 'tuccar', 'sansli', 'cevik'];
-export interface Companion { id: string; name: string; cls: 'alp' | 'kam' | 'mergen'; level: number; xp: number; traits: Trait[] }
+export interface Companion { id: string; name: string; cls: 'alp' | 'kam' | 'mergen'; level: number; xp: number; traits: Trait[]; /** evrim aşaması 0–3 (eski kayıtlarda yok = 0) */ evo?: number }
+/**
+ * Yoldaş evrimi: yoldaş belli seviyeye gelince akçe + yazıt parçası verilerek bir üst aşamaya (Genç → Yiğit → Bahadır → Destan) evrilir.
+ * Sefer akçesi/eşya şansı artar, sefer kısalır; 1. ve 3. aşamada yeni bir özellik kazanır. Akçe sink'i; sefer kazancını %36'ya kadar artırır (ekonomi simülasyonu bekliyor).
+ */
+export const COMP_EVO = {
+  max: 3, minLevel: [6, 12, 18], goldUnits: [4, 12, 30], frag: [3, 8, 15], goldBonus: 0.12, itemBonus: 0.08, speed: 0.03, traitAt: [1, 3],
+  gold: (stage: number, ownerLevel: number) => Math.round(Math.max(60, Math.round(40 * Math.pow(Math.max(1, ownerLevel), 1.6) / 10) * 10) * COMP_EVO.goldUnits[stage]),
+};
+export const compEvo = (c: Pick<Companion, 'evo'>) => Math.min(COMP_EVO.max, Math.max(0, Math.floor(c.evo ?? 0)));
 export interface Expedition { id: string; compId: string; hours: number; startAt: number; endAt: number; seed: number }
 export interface ExpeditionResult { gold: number; mats: Partial<Record<MatKey, number>>; items: Item[]; frag: number; compXp: number; compLevelUp: boolean }
 

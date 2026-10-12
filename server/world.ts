@@ -784,6 +784,9 @@ export class World {
         this.near(p, HUB.otag, HUB.interactOtag);
         oba.dispatch(this.ctx, p, a.compId, a.hours); this.tutorial(p, 'expedition'); p.meDirty = true; return oba.obaInfo(this.ctx, p);
       }
+      case 'oba.evolve': {
+        this.near(p, HUB.otag, HUB.interactOtag); const r = oba.evolve(this.ctx, p, String(a.compId)); this.recalc(p); p.meDirty = true; this.save(p); return r;
+      }
       case 'oba.collect': {
         this.near(p, HUB.otag, HUB.interactOtag);
         const free = BAG_SIZE - d.items.length;

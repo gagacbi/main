@@ -1,4 +1,4 @@
-import { ECON } from '../shared/game';
+import { ECON, COMP_EVO, compEvo } from '../shared/game';
 import {
   BUILDINGS, COMPANION_NAMES, EXPEDITION_HOURS, NOVICE_MAX_LEVEL, OBA, TRAITS, makeItem, randomSlot, rollTier, type BuildingKey, type Boy, type Companion, type Expedition, type ExpeditionResult, type MatKey, type Trait,
 } from '../shared/game';
@@ -129,7 +129,7 @@ export function dispatch(ctx: Ctx, a: Actor, compId: string, hours: number): Exp
   if (a.d.expeditions.some((e) => e.compId === compId)) throw new GameError('comp_busy');
   if (a.d.expeditions.length >= OBA.slots(o.lv.otag)) throw new GameError('slots_full');
   const now = ctx.clock.now();
-  const dur = hours * 3600000 * (c.traits.includes('cevik') ? 0.85 : 1);
+  const dur = hours * 3600000 * (c.traits.includes('cevik') ? 0.85 : 1) * (1 - COMP_EVO.speed * compEvo(c));
   const e: Expedition = { id: 'e' + Math.floor(ctx.rng() * 1e9).toString(36), compId, hours, startAt: now, endAt: Math.round(now + dur), seed: Math.floor(ctx.rng() * 2 ** 31) };
   a.d.expeditions.push(e);
   a.points += 5 * hours;
@@ -140,11 +140,11 @@ export function dispatch(ctx: Ctx, a: Actor, compId: string, hours: number): Exp
 /** Deterministik sefer sonucu (tohum = sefer başında yazılır). */
 export function rollExpedition(e: Pick<Expedition, 'seed' | 'hours'>, c: Companion, ownerLevel: number): ExpeditionResult {
   const r = mulberry32(e.seed); const h = e.hours; const has = (t: Trait) => c.traits.includes(t);
-  const gold = Math.round((60 + c.level * 15 + ownerLevel * 8) * h * (has('tuccar') ? 1.4 : 1) * (0.85 + 0.3 * r()));
+  const ev = compEvo(c); const gold = Math.round((60 + c.level * 15 + ownerLevel * 8) * h * (has('tuccar') ? 1.4 : 1) * (1 + COMP_EVO.goldBonus * ev) * (0.85 + 0.3 * r()));
   const mats: Partial<Record<MatKey, number>> = {};
   for (const k of ['ore', 'hide', 'wood'] as MatKey[]) mats[k] = Math.round(h * (2 + r() * 4) * (0.6 + c.level * 0.1));
   const items = [];
-  const itemChance = Math.min(0.92, 0.14 * Math.pow(h, 0.9) * (has('gozupek') ? 1.3 : 1));
+  const itemChance = Math.min(0.92, 0.14 * Math.pow(h, 0.9) * (has('gozupek') ? 1.3 : 1) * (1 + COMP_EVO.itemBonus * ev));
   const n = h >= 12 ? 2 : 1;
   for (let i = 0; i < n; i++) if (r() < itemChance) items.push(makeItem(r, randomSlot(r), Math.max(1, ownerLevel), rollTier(r, h >= 12 ? 1 : 0, h >= 4 ? 0.5 : 0)));
   const fragChance = Math.min(0.85, 0.05 * h * (has('sansli') ? 2 : 1));
@@ -152,6 +152,20 @@ export function rollExpedition(e: Pick<Expedition, 'seed' | 'hours'>, c: Compani
   const compXp = 20 * h;
   const newXp = c.xp + compXp;
   return { gold, mats, items, frag, compXp, compLevelUp: newXp >= 100 * c.level };
+}
+
+/** Yoldaş evrimi: seviye eşiği + akçe + yazıt parçası; 1. ve 3. aşamada yeni özellik */
+export function evolve(ctx: Ctx, a: Actor, compId: string) {
+  const c = a.d.companions.find((x) => x.id === compId); if (!c) throw new GameError('no_companion');
+  if (a.d.expeditions.some((e) => e.compId === compId)) throw new GameError('comp_busy');
+  const st = compEvo(c); if (st >= COMP_EVO.max) throw new GameError('max_rank');
+  if (c.level < COMP_EVO.minLevel[st]) throw new GameError('comp_level', { n: COMP_EVO.minLevel[st] });
+  const gold = COMP_EVO.gold(st, a.d.level), frag = COMP_EVO.frag[st];
+  if (a.d.gold < gold) throw new GameError('no_gold'); if (a.d.bag.frag < frag) throw new GameError('no_frag', { n: frag });
+  a.d.gold -= gold; a.d.bag.frag -= frag; c.evo = st + 1; let gained: Trait | null = null;
+  if (COMP_EVO.traitAt.includes(c.evo)) { const rest = TRAITS.filter((t) => !c.traits.includes(t)); if (rest.length) { gained = pick(ctx.rng, rest); c.traits.push(gained); } }
+  ctx.db.ledger(ctx.clock.now(), a.dbId, 'comp.evolve', { compId, stage: c.evo, gold, frag, trait: gained });
+  return { stage: c.evo, trait: gained };
 }
 
 export function collect(ctx: Ctx, a: Actor, expId: string): ExpeditionResult {

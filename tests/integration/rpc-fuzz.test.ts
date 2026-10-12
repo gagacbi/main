@@ -19,7 +19,7 @@ const BASE: Record<string, (p: any) => Record<string, unknown>> = {
   element: (p) => ({ id: iid(p, 0), op: 'raise', el: 'buz' }), equip: (p) => ({ id: iid(p, 1) }), unequip: () => ({ slot: 'weapon' }), sell: (p) => ({ id: iid(p, 2) }), upgrade: (p) => ({ id: iid(p, 3), book: true, charm: true }),
   reroll: (p) => ({ id: iid(p, 0), line: 0, key: 'crit' }), craft: () => ({ kind: 'book' }), 'kimiz.buy': () => ({ n: 3 }), 'kimiz.use': () => ({}), rankSkill: () => ({ slot: 1 }), spec: () => ({ choice: 'kilic' }),
   'market.list': (p) => ({ good: 'ore', qty: 5, price: 100, id: iid(p, 4) }), 'market.buy': () => ({ id: 1 }), 'market.cancel': () => ({ id: 1 }), 'market.browse': () => ({ slot: 'weapon', sort: 'price', minIlvl: 1, maxIlvl: 30, maxPrice: 5000 }),
-  'oba.donate': () => ({ ore: 5, hide: 5, wood: 5 }), 'oba.build': () => ({ b: 'otag' }), 'oba.dispatch': () => ({ id: 1, hours: 1 }), 'oba.collect': () => ({ expId: 1 }), stone: () => ({ n: 1 }), ruin: () => ({ n: 1 }), travel: () => ({ to: 'otlak' }), cos: () => ({ op: 'buy', item: 'boncuk', k: 'lif', n: 2 }),
+  'oba.donate': () => ({ ore: 5, hide: 5, wood: 5 }), 'oba.build': () => ({ b: 'otag' }), 'oba.dispatch': () => ({ id: 1, hours: 1 }), 'oba.evolve': () => ({ compId: 'c1' }), 'oba.collect': () => ({ expId: 1 }), stone: () => ({ n: 1 }), ruin: () => ({ n: 1 }), travel: () => ({ to: 'otlak' }), cos: () => ({ op: 'buy', item: 'boncuk', k: 'lif', n: 2 }),
 };
 function sane(p: any) {
   const d = p.d; const fin = (v: unknown, n: string) => expect(Number.isFinite(v as number), `${n}=${String(v)}`).toBe(true);

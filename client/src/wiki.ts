@@ -6,6 +6,7 @@ import { FISH, FISH_DEFS } from '@shared/fishing';
 import { EL, EL_KEYS } from '@shared/element';
 import { KT, KT_TYPES, KT_GRADES } from '@shared/kuttas';
 import { DAILY } from '@shared/daily';
+import { COMP_EVO } from '@shared/game';
 import { getLang, t } from './i18n';
 
 /**
@@ -204,10 +205,12 @@ ${Object.values(DUNGEONS).map((d) => `- ${t('map.' + d!.id)}: Lv ${d!.minLv}+, u
 `- Her oyuncu bir Oba'ya (boy topluluğu) bağlıdır. Otağ ve Demirhane binaları bağışlanan cevher, deri ve odunla yükselir; yükseltmeler süre alır
 - Binalar zamanla kaynak üretir; Otağ'a gidip toplarsın (üst sınır saat olarak vardır)
 - Yoldaşlarını seferlere (1, 4 veya 12 saat) gönderirsin; dönüşte kaynak ve ender eşya getirirler
+- Yoldaş evrimi: Sv ${COMP_EVO.minLevel.join(' / ')} olan yoldaş sırayla Yiğit → Bahadır → Destan olur (akçe + ${COMP_EVO.frag.join(' / ')} yazıt parçası). Her aşama sefer akçesini +%${Math.round(COMP_EVO.goldBonus * 100)}, eşya şansını +%${Math.round(COMP_EVO.itemBonus * 100)} artırır, seferi %${Math.round(COMP_EVO.speed * 100)} kısaltır; Yiğit ve Destan yeni bir özellik de verir
 - Yıllık puanı: Oba bağışları ve sefer sonuçları ileride ortak çağ ilerlemesine eklenebilir`,
 `- Every player belongs to an Oba (tribe community). Otağ and Forge upgrade with donated ore, hide and wood; upgrades take time
 - Buildings produce resources over time; collect them at the Otağ (capped by hours)
 - Send companions on expeditions (1, 4 or 12 hours); they return with resources and rare items
+- Companion evolution: a companion at Lv ${COMP_EVO.minLevel.join(' / ')} evolves Valiant → Hero → Legend (gold + ${COMP_EVO.frag.join(' / ')} fragments). Each stage adds +${Math.round(COMP_EVO.goldBonus * 100)}% expedition gold and +${Math.round(COMP_EVO.itemBonus * 100)}% item odds and cuts trips by ${Math.round(COMP_EVO.speed * 100)}%; Valiant and Legend also grant a new trait
 - Annals points: donations and expedition results may feed the shared age progress later`] },
 
   { id: 'lore', ic: 'stele', cat: 'world', title: ['Hikâye: Yıllık, Çağlar, Kalıntılar', 'Story: Annals, Ages, Ruins'], body: () => [
@@ -283,10 +286,10 @@ ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.
   { id: 'soon', ic: 'wood', cat: 'soon', title: ['Yol haritası (yakında)', 'Roadmap (coming soon)'], body: () => [
 `Bunlar henüz oyunda DEĞİL; tasarımı docs/ozellikler/METIN2_WIKI_UYARLAMA.md içinde:
 ## Sonrası
-- Kut Taşları (ejderha taşı simyası benzeri), Yoldaş evrimi ve ömrü, kalan çizgi ikonların yenilenmesi`,
+- Yoldaş ömrü (yaşlanma/emeklilik), kalan çizgi ikonların yenilenmesi`,
 `These are NOT in the game yet; the design is in docs/ozellikler/METIN2_WIKI_UYARLAMA.md:
 ## Later
-- Kut Stones (dragon-stone alchemy style), companion evolution and lifespan, refreshing the remaining line icons`] },
+- Companion lifespan (aging/retirement), refreshing the remaining line icons`] },
 ];
 
 export const CATS: Article['cat'][] = ['play', 'grow', 'world', 'soon'];

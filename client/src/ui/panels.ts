@@ -18,6 +18,7 @@ import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
 import { EL, EL_KEYS, type ElKey } from '@shared/element';
 import type { MobType } from '@shared/game';
+import { COMP_EVO, compEvo } from '@shared/game';
 import { KT, KT_TYPES, KT_GRADES, ktLines, type KtType } from '@shared/kuttas';
 import { FISH, FISH_DEFS, EDIBLE, fishOf, catchRange, type FishId } from '@shared/fishing';
 import { DAILY } from '@shared/daily';
@@ -333,11 +334,13 @@ export class Panels {
     };
     const stepper = (k: MatKey) => `<div class="row"><span class="chip" style="width:130px">${icon(k)}${t('mat.' + k)}</span><span class="muted" style="width:56px">×${m.bag[k]}</span><div class="stepper"><button data-act="dn" data-k="${k}">−</button><span>${this.donate[k]}</span><button data-act="up" data-k="${k}">+</button><button data-act="max" data-k="${k}" style="width:auto;padding:0 6px">max</button></div></div>`;
     const pend = o.pending; const hasPend = pend.ore + pend.hide + pend.wood > 0;
+    const evoBtn = (c: (typeof m.companions)[number], busy: boolean) => { const st = compEvo(c); if (st >= COMP_EVO.max) return `<div class="muted" style="margin-top:4px">${t('evo.max')}</div>`; const g = COMP_EVO.gold(st, m.level), f = COMP_EVO.frag[st], l = COMP_EVO.minLevel[st];
+      return `<div class="row" style="margin-top:6px"><button class="btn small" data-act="evolve" data-id="${c.id}" ${!busy && c.level >= l && m.gold >= g && m.bag.frag >= f ? '' : 'disabled'} title="${t('evo.tip', { l, g: num(g), f })}">★ ${t('evo.btn')} → ${t('evo.' + (st + 1))}</button><span class="chip ${c.level >= l ? 'need-ok' : 'need-no'}">${t('ui.level')} ${l}</span><span class="chip ${m.gold >= g ? 'need-ok' : 'need-no'}">${icon('akce')}${num(g)}</span><span class="chip ${m.bag.frag >= f ? 'need-ok' : 'need-no'}">${icon('frag')}${f}</span></div>`; };
     const comps = m.companions.map((c) => {
       const exp = m.expeditions.find((e) => e.compId === c.id); const done = exp && now >= exp.endAt; const rem = exp ? exp.endAt - now : 0;
       const sends = exp ? (done ? `<button class="btn small green" data-act="collect" data-id="${exp.id}">${t('oba.collectExp')}</button> <span class="good">${t('oba.ready')}</span>` : `<div class="grow"><div class="minibar"><i data-pg="${exp.startAt},${exp.endAt}" style="width:${Math.min(100, ((now - exp.startAt) / (exp.endAt - exp.startAt)) * 100)}%"></i></div><span class="muted">${t('oba.returns')}: <b data-cd="${exp.endAt}">${fmtDur(rem)}</b></span></div>`)
         : `${EXPEDITION_HOURS.map((h) => `<button class="btn small" data-act="send" data-id="${c.id}" data-h="${h}">${t('oba.hours', { n: h })}</button>`).join('')}`;
-      return `<div class="card comp ${c.cls}"><div class="av">${c.name[0]}</div><div><h4>${esc(c.name)} <span class="muted">${t('ccls.' + c.cls)} · ${t('ui.level')} ${c.level}</span></h4><div class="row" style="flex-wrap:wrap;gap:4px">${c.traits.map((tr) => `<span class="chip" title="${t('trait.' + tr + '.d')}">${t('trait.' + tr)}</span>`).join('')}</div><div class="sends">${sends}</div></div></div>`;
+      return `<div class="card comp ${c.cls}"><div class="av">${c.name[0]}</div><div><h4>${esc(c.name)} <span class="muted">${t('ccls.' + c.cls)} · ${t('ui.level')} ${c.level}</span> <span class="chip evo e${compEvo(c)}">★${compEvo(c)} ${t('evo.' + compEvo(c))}</span></h4><div class="row" style="flex-wrap:wrap;gap:4px">${c.traits.map((tr) => `<span class="chip" title="${t('trait.' + tr + '.d')}">${t('trait.' + tr)}</span>`).join('')}</div><div class="sends">${sends}</div>${evoBtn(c, !!exp)}</div></div>`;
     }).join('');
     const res = this.expResult ? `<div class="result ok full" style="grid-column:1/-1">${t('oba.loot')}: +${num(this.expResult.gold)} ${icon('akce')} ${Object.entries(this.expResult.mats).map(([k, v]) => `+${v} ${icon(k)}`).join(' ')} ${this.expResult.frag ? `+${this.expResult.frag} ${icon('frag')}` : ''} ${this.expResult.items.map((it) => `<span style="color:${TIER_COLORS[it.tier]}">${esc(itemName(it))}</span>`).join(', ')}</div>` : '';
     return this.shell(`${esc(o.name)}`, 'oba', `<div class="oba"><div class="full row muted"><span>${t('oba.npc')}: <b>${esc(o.npc)}</b></span><span>${t('oba.members')}: <b>${o.members}/${o.memberCap}</b></span><span class="grow"></span><span class="chip">${icon('swords')} ${t('ui.points')}: ${num(o.points)}</span></div><div class="full muted">${t('oba.novice', { n: o.maxLevel })}</div>
@@ -659,6 +662,7 @@ export class Panels {
       case 'donate': { const r = await this.act('oba.donate', this.donate); if (r.ok) { this.oba = r.data as ObaInfo; this.donate = { ore: 0, hide: 0, wood: 0 }; this.g.audio.sfx('coin'); } break; }
       case 'claim': { const r = await this.act('oba.claim'); if (r.ok) { this.oba = (r.data as { info: ObaInfo }).info; this.g.audio.sfx('loot'); } break; }
       case 'build': { const r = await this.act('oba.build', { b: d.b }); if (r.ok) { this.oba = r.data as ObaInfo; this.g.audio.sfx('upok'); } else await this.refreshOba(); break; }
+      case 'evolve': { const r = await this.act('oba.evolve', { compId: d.id }); if (r.ok) { const x = r.data as { stage: number; trait: string | null }; const c = this.me.companions.find((q) => q.id === d.id); this.g.ui.toast(t('evo.ok', { n: c?.name ?? '', s: t('evo.' + x.stage) }) + (x.trait ? ' · ' + t('evo.trait', { t: t('trait.' + x.trait) }) : ''), 'good'); this.g.audio.sfx('upok'); } break; }
       case 'send': { const r = await this.act('oba.dispatch', { compId: d.id, hours: Number(d.h) }); if (r.ok) { this.oba = r.data as ObaInfo; this.g.audio.sfx('ui'); this.expResult = null; } break; }
       case 'collect': { const r = await this.act('oba.collect', { expId: d.id }); if (r.ok) { const x = r.data as { result: ExpeditionResult; info: ObaInfo }; this.oba = x.info; this.expResult = x.result; this.g.audio.sfx('rare'); } break; }
       case 'lang': setLang(d.v as 'tr' | 'en'); this.g.refreshNpcNames(); this.g.ui.relocalize(); await this.g.net.rpc('lang', { lang: d.v }); break;
