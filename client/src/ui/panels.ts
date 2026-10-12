@@ -18,6 +18,7 @@ import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
 import { EL, EL_KEYS, type ElKey } from '@shared/element';
 import type { MobType } from '@shared/game';
+import { KT, KT_TYPES, KT_GRADES, ktLines, type KtType } from '@shared/kuttas';
 import { FISH, FISH_DEFS, EDIBLE, fishOf, catchRange, type FishId } from '@shared/fishing';
 import { DAILY } from '@shared/daily';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
@@ -56,7 +57,7 @@ export class Panels {
   mkTab: 'browse' | 'mine' = 'browse'; mkSlot = ''; mkSort: 'deal' | 'price' | 'new' = 'deal'; mkMine2 = true; mkData: { listings: MarketListing[]; total: number } = { listings: [], total: 0 }; mkMine: { listings: MarketListing[]; mail: MarketMail[]; max: number } = { listings: [], mail: [], max: 8 }; mkSel = ''; mkPrice = '';
   mkQty = '1';
   lmTier = 1; lmLook = 0; lmBoncuk = 0; lmDugum = false; lmNazar = false;
-  selUp = ''; smithTab: 'up' | 'craft' | 'reroll' | 'element' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
+  selUp = ''; smithTab: 'up' | 'craft' | 'reroll' | 'element' | 'kut' = 'up'; useBook = false; useCharm = false; lastResult: { cls: string; text: string } | null = null; selBag = '';
   wikiId = 'basics'; codexTab: Thread | 'chron' = 'insc'; chron: ChronView | null = null; gmLine = ''; gmOut: string[] = []; oba: ObaInfo | null = null; donate: Record<MatKey, number> = { ore: 0, hide: 0, wood: 0 }; expResult: ExpeditionResult | null = null; tick = 0; obaTimer = 0; busy = false;
   constructor(public g: Game, root: HTMLElement) {
     this.el = document.createElement('div'); this.el.className = 'overlay'; root.appendChild(this.el);
@@ -287,6 +288,8 @@ export class Panels {
             return `<div class="card rr-row"><div class="grow">${l.line === 'base' ? '◆ ' + t('ui.baseEnch') + ': ' : '✦ '}<b>${t('ench.' + l.k)} +${l.v}%</b></div><button class="btn small" data-act="rr" data-line="${l.line}" ${m.gold >= rc ? '' : 'disabled'}>${t('rr.random')} ${icon('akce')}${num(rc)}</button><select class="rrsel" data-sel="${l.line}">${opts}</select><button class="btn small primary" data-act="rrt" data-line="${l.line}" ${m.gold >= tc ? '' : 'disabled'}>${t('rr.pick')} ${icon('akce')}${num(tc)}</button></div>`; }).join('')
           + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
       }
+    } else if (this.smithTab === 'kut') {
+      right = this.ktView();
     } else if (this.smithTab === 'element') {
       if (!sel) right = `<div class="card muted">${t('ui.chooseItem')}</div>`;
       else if (sel.slot !== 'weapon' || sel.up < EL.minUp) right = `<div class="bigitem">${itemCell(sel)}<div class="grow"><div class="nm">${esc(itemName(sel))} ${sel.up ? '+' + sel.up : ''}</div></div></div><div class="card bad">${t('el.need', { n: EL.minUp })}</div><div class="muted">${t('el.hint')}</div>`;
@@ -312,7 +315,7 @@ export class Panels {
       }).join('') + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
     }
     const kp = kimizPrice(m.level); const kimizCard = `<div class="card" style="margin-bottom:8px"><div class="row">${icon('kimiz')}<b style="margin-left:6px">${t('kimiz.name')}</b><span class="muted grow"> ${t('kimiz.desc', { p: KIMIZ.healPct * 100, s: KIMIZ.healSec, c: KIMIZ.cooldownSec })}</span><span class="chip">${t('kimiz.stock')}: ${m.kimiz ?? 0}/${KIMIZ.maxStack}</span></div><div class="row" style="margin-top:6px;gap:6px">${[1, 5, 10].map((n) => `<button class="btn small" data-act="kimizbuy" data-n="${n}" ${m.gold < kp * n || (m.kimiz ?? 0) + n > KIMIZ.maxStack ? 'disabled' : ''}>+${n} <i class="gp">${num(kp * n)}</i></button>`).join('')}<span class="muted">${t('kimiz.price', { p: num(kp) })}</span></div></div>`;
-    return this.shell(t('npc.demirci'), 'weapon', `${kimizCard}<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div><div class="tab2 ${this.smithTab === 'element' ? 'on' : ''}" data-act="tab" data-v="element">${t('el.tab')}</div></div>
+    return this.shell(t('npc.demirci'), 'weapon', `${kimizCard}<div class="tabs2"><div class="tab2 ${this.smithTab === 'up' ? 'on' : ''}" data-act="tab" data-v="up">${t('ui.upgrade')}</div><div class="tab2 ${this.smithTab === 'craft' ? 'on' : ''}" data-act="tab" data-v="craft">${t('ui.craft')}</div><div class="tab2 ${this.smithTab === 'reroll' ? 'on' : ''}" data-act="tab" data-v="reroll">${t('rr.tab')}</div><div class="tab2 ${this.smithTab === 'element' ? 'on' : ''}" data-act="tab" data-v="element">${t('el.tab')}</div><div class="tab2 ${this.smithTab === 'kut' ? 'on' : ''}" data-act="tab" data-v="kut">${t('kt.tab')}</div></div>
       <div class="smith"><div>${this.smithTab === 'up' || this.smithTab === 'element' ? `<div class="sub">${t('ui.bag')}</div><div class="itemlist">${list}</div>${this.matChips()}` : this.matChips()}</div><div>${right}</div></div>`);
   }
 
@@ -443,6 +446,19 @@ export class Panels {
 
   // ─── Göl Avı ───
   fg: { endAt: number; hits: number; zone: number; zw: number; pos: number; dir: number; speed: number; big: boolean; raf: number; key: ((e: KeyboardEvent) => void) | null } | null = null;
+  /** Kut Taşları sekmesi (Demirci) */
+  ktView() {
+    const m = this.me; const kt = m.kt; const gem = (ty: KtType, g: number) => `<span class="ktgem g${g}" style="--kc:${KT.colors[ty]}" title="${t('kt.g' + g)}"></span>`;
+    const lines = ktLines(kt).map((l) => `${t('ench.' + l.k)} +${l.v}`).join(' · ');
+    const rows = KT_TYPES.map((ty, i) => {
+      const eq = kt.eq[i]; const cells = Array.from({ length: KT_GRADES }, (_, g) => { const n = kt.s[i][g]; if (!n && !(g < KT_GRADES - 1 && false)) return `<span class="chip dim">${gem(ty, g)}<b>0</b></span>`;
+        const cost = g < KT_GRADES - 1 ? KT.refineCost(g, m.level) : 0;
+        return `<span class="chip">${gem(ty, g)}<b>${n}</b></span>` + `<button class="btn xs" data-act="ktset" data-ty="${ty}" data-g="${g}" title="${t('kt.set.tip')}">${t('kt.set')}</button>` + (g < KT_GRADES - 1 && n >= KT.refineNeed ? `<button class="btn xs" data-act="ktref" data-ty="${ty}" data-g="${g}" ${m.gold >= cost ? '' : 'disabled'} title="${t('kt.refine.tip', { c: num(cost), r: Math.round(KT.refineRate[g] * 100) })}">${t('kt.refine')} ${num(cost)} · %${Math.round(KT.refineRate[g] * 100)}</button>` : ''); }).join('');
+      return `<div class="card" style="margin:5px 0"><div class="row" style="gap:8px;flex-wrap:wrap"><b style="color:${KT.colors[ty]}">◆ ${t('kt.' + ty)}</b><span class="muted">${t('ench.' + KT.stat[ty])} ${eq >= 0 ? '+' + KT.val[ty][eq] : ''}</span><span class="grow"></span>${eq >= 0 ? `<span class="chip on">${gem(ty, eq)} ${t('kt.g' + eq)}</span><button class="btn xs" data-act="ktunset" data-ty="${ty}">${t('kt.unset')}</button>` : `<span class="muted">${t('kt.empty')}</span>`}</div><div class="row" style="flex-wrap:wrap;gap:4px;margin-top:6px">${cells}</div></div>`;
+    }).join('');
+    const lowLv = m.level < KT.minLevel;
+    return `<div class="muted">${t('kt.hint', { n: KT.refineNeed, l: KT.failLose, k: Math.round(KT.unsetKeep * 100) })}</div>${lowLv ? `<div class="card bad">${t('err.kt_level', { n: KT.minLevel })}</div>` : ''}<div class="card" style="border-left:4px solid var(--gold)"><b>${t('kt.total')}</b><div class="muted">${lines || t('kt.none')}</div></div>${rows}` + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
+  }
   fishMsg: { cls: string; text: string } | null = null; fishBait: 'hamur' | 'solucan' = 'hamur';
   fishPanel() {
     const m = this.me; const f = m.fish; const need = FISH.rodNeed(f.rod); const lowLv = m.level < FISH.minLevel;
@@ -589,6 +605,11 @@ export class Panels {
       case 'fishrod': { const r = await this.act('fish.rod'); if (r.ok) { const x = r.data as { ok: boolean; rod: number }; this.fishMsg = x.ok ? { cls: 'good', text: t('fish.rodok', { n: x.rod }) } : { cls: 'bad', text: t('fish.rodfail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } break; }
       case 'fisheat': { const r = await this.act('fish.eat', { id: d.id }); if (r.ok) this.g.audio.sfx('rare'); break; }
       case 'fishclean': { const r = await this.act('fish.clean', { id: d.id }); if (r.ok) { const x = r.data as { res: string }; this.fishMsg = { cls: x.res === 'solucan' ? 'good' : 'bad', text: t('fish.clean.' + x.res) }; } break; }
+      case 'ktset': case 'ktref': case 'ktunset': {
+        const r = await this.act(d.act === 'ktset' ? 'kt.set' : d.act === 'ktref' ? 'kt.refine' : 'kt.unset', { type: (d as { ty?: string }).ty, grade: Number((d as { g?: string }).g) });
+        if (r.ok) { const x = r.data as { ok?: boolean; kept?: boolean | null }; if (d.act === 'ktref') { this.lastResult = x.ok ? { cls: 'good', text: t('kt.refine.ok') } : { cls: 'bad', text: t('kt.refine.fail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } else { this.lastResult = x.kept === false ? { cls: 'bad', text: t('kt.broke') } : null; this.g.audio.sfx(x.kept === false ? 'err' : 'ui'); } this.render(true); }
+        return;
+      }
       case 'fishanc': { await this.act('fish.ancestor', { choice: d.v }); break; }
       case 'invp': this.invPage = (d.v ?? 'items') as typeof this.invPage; break;
       case 'goto': await this.show(d.v as PanelName); return;
@@ -615,7 +636,7 @@ export class Panels {
       case 'toUp': this.selUp = d.id!; this.smithTab = 'up'; await this.show('smith'); break;
       case 'spec': { const r = await this.act('spec', { choice: d.v }); if (r.ok) { this.g.audio.sfx('levelup'); } break; }
       case 'rank': { const r = await this.act('rankSkill', { slot: Number(d.i) }); if (r.ok) this.g.audio.sfx('upok'); break; }
-      case 'tab': this.smithTab = d.v as 'up' | 'craft' | 'reroll' | 'element'; this.lastResult = null; break;
+      case 'tab': this.smithTab = d.v as 'up' | 'craft' | 'reroll' | 'element' | 'kut'; this.lastResult = null; break;
       case 'rr': case 'rrt': { const line = d.line === 'base' ? 'base' : Number(d.line); const key = act === 'rrt' ? (this.el.querySelector<HTMLSelectElement>(`select[data-sel="${d.line}"]`)?.value ?? '') : undefined; const r = await this.act('reroll', { id: this.selUp, line, key }); if (r.ok) { const x = r.data as { line: { k: string; v: number }; cost: number }; this.lastResult = { cls: 'ok', text: `${t('ench.' + x.line.k)} +${x.line.v}%` }; this.g.audio.sfx('upok'); } break; }
       case 'pickUp': this.selUp = d.id!; this.lastResult = null; break;
       case 'upgrade': {

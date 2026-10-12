@@ -183,6 +183,12 @@ if (want('paneller')) {
   { const mm = pl(NAME); const sw = makeItem(mulberry32(8), 'weapon', 14, 2, 'cift'); sw.up = 8; sw.lvlReq = 1; sw.el = { k: 'ates', p: 5 }; mm.d.items.unshift(sw); mm.d.gold = 900000; mm.meDirty = true; await sleep(1200);
     await page.evaluate("window.__game.ui.open('smith')"); await sleep(900); await page.click('.tab2[data-v="element"]'); await sleep(700); await page.click('.irow:has-text("+8")'); await sleep(500); await shot('13-element'); const elTxt = (await page.textContent('.overlay.open')) ?? '';
     check('S7.element', /Element/.test(elTxt) && /Ateş/.test(elTxt) && /Gücü yükselt/.test(elTxt), 'Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri'); await page.keyboard.press('Escape'); await sleep(300); }
+
+  { const mm = pl(NAME); mm.d.level = Math.max(mm.d.level, 30); mm.d.gold += 5_000_000; mm.x = HUB.demirci.x + 2; mm.z = HUB.demirci.z; mm.d.kt = { s: [[4, 1, 0, 0, 0], [3, 0, 0, 0, 0], [0, 0, 2, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], eq: [-1, -1, -1, -1, -1, -1] }; mm.meDirty = true; await sleep(800);
+    await page.evaluate("window.__game.ui.open('smith')"); await sleep(900); await page.click('.tab2[data-v="kut"]'); await sleep(600); await shot('13b-kut-taslari');
+    const ktTxt = (await page.textContent('.panel')) ?? ''; check('S8.kut-sekmesi', /Alp Taşı/.test(ktTxt) && /Saflaştır/.test(ktTxt) && /Tak/.test(ktTxt), 'Demirci › Kut Taşları sekmesi: 6 tür, Tak/Saflaştır düğmeleri');
+    await page.click('[data-act="ktset"][data-ty="alp"][data-g="1"]'); await sleep(900); check('S8.kut-tak', pl(NAME).d.kt!.eq[0] === 1 && /\+2/.test((await page.textContent('.panel')) ?? ''), `Taş takıldı (yuva sınıfı=${pl(NAME).d.kt!.eq[0]}), istatistik sunucuda işlendi`);
+    await page.click('.tab2[data-v="up"]'); await sleep(300); await page.keyboard.press('Escape'); await sleep(300); }
   await page.keyboard.press('Escape');
 }
 

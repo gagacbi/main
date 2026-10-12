@@ -4,6 +4,7 @@ import { ERA_AT, ERA_STEP, CHRON_PTS, RUIN_LEVELS } from '@shared/chronicle';
 import { HUNT, huntFor } from '@shared/hunt';
 import { FISH, FISH_DEFS } from '@shared/fishing';
 import { EL, EL_KEYS } from '@shared/element';
+import { KT, KT_TYPES, KT_GRADES } from '@shared/kuttas';
 import { DAILY } from '@shared/daily';
 import { getLang, t } from './i18n';
 
@@ -120,6 +121,25 @@ ${rates}
 ## Philosophy
 Upgrading is risk and reward: high plusses cost a lot and many items burn on the way, which keeps the market and material economy alive.`] },
 
+  { id: 'kuttas', ic: 'charm', cat: 'grow', title: ['Kut Taşları (simya)', 'Kut Stones (alchemy)'], body: () => [
+`Sv ${KT.minLevel}+ yaratıklardan (yaklaşık %${(KT.dropChance * 100).toFixed(1)}) ve saha boss’larından düşen taşlar. 6 tür: ${KT_TYPES.map((k) => t('kt.' + k)).join(', ')}; 5 sınıf: ${Array.from({ length: KT_GRADES }, (_, g) => t('kt.g' + g)).join(' → ')}.
+## Kullanım
+- Demirci → Kut Taşları sekmesi: taşı kuşağın ilgili yuvasına tak; her yuva kalıcı bir istatistik verir (${KT_TYPES.map((k) => `${t('kt.' + k)}: ${t('ench.' + KT.stat[k])} ${KT.val[k][0]}–${KT.val[k][KT_GRADES - 1]}`).join('; ')})
+- Altı yuva da doluysa set bonusu: +%2 saldırı ve savunma; hepsi ${t('kt.g3')}+ ise ayrıca +%3 XP, +%4 can
+## Saflaştırma (simya)
+- ${KT.refineNeed} aynı taş + akçe → 1 üst sınıf taş. Şanslar: ${KT.refineRate.map((r, g) => `${t('kt.g' + g)}→${t('kt.g' + (g + 1))} %${Math.round(r * 100)}`).join(', ')}
+- Başarısızlıkta ${KT.failLose} taş yanar, 1’i kalır. Akçe maliyeti seviyeye ve sınıfa bağlıdır
+## Risk
+- Taşı yuvadan çıkarırken (ya da yeni taşla değiştirirken) eski taş %${Math.round(KT.unsetKeep * 100)} geri döner, %${100 - Math.round(KT.unsetKeep * 100)} kırılır`,
+`Stones dropping from Lv ${KT.minLevel}+ creatures (~${(KT.dropChance * 100).toFixed(1)}%) and field bosses. 6 types: ${KT_TYPES.map((k) => t('kt.' + k)).join(', ')}; 5 grades: ${Array.from({ length: KT_GRADES }, (_, g) => t('kt.g' + g)).join(' → ')}.
+## Use
+- Blacksmith → Kut Stones tab: socket a stone into its belt slot; each socket gives a permanent stat (${KT_TYPES.map((k) => `${t('kt.' + k)}: ${t('ench.' + KT.stat[k])} ${KT.val[k][0]}–${KT.val[k][KT_GRADES - 1]}`).join('; ')})
+- With all six sockets filled you get a set bonus: +2% attack and defense; all ${t('kt.g3')}+ adds +3% XP and +4% HP
+## Refining (alchemy)
+- ${KT.refineNeed} identical stones + gold → 1 stone of the next grade. Odds: ${KT.refineRate.map((r, g) => `${t('kt.g' + g)}→${t('kt.g' + (g + 1))} ${Math.round(r * 100)}%`).join(', ')}
+- On failure ${KT.failLose} stones burn, 1 remains. Gold cost scales with level and grade
+## Risk
+- Removing a stone (or replacing it) returns it with ${Math.round(KT.unsetKeep * 100)}% chance; otherwise it shatters`] },
   { id: 'element', ic: 'weapon', cat: 'grow', title: ['Element yazısı (silah)', 'Element scripts (weapons)'], body: () => [
 `Demirci’de ${EL.minUp} ve üstü silaha 6 elementten biri eklenir: ${EL_KEYS.map((k) => t('el.' + k)).join(', ')}.
 ## Etki

@@ -1,3 +1,4 @@
+import { KT, KT_TYPES, KT_GRADES, ktLines, ktNorm, type KtType } from '../shared/kuttas';
 import { dungeonDay } from '../shared/dungeon';
 import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
@@ -177,7 +178,7 @@ export class World {
 
   recalc(p: Player) {
     const frac = p.stats ? p.hp / p.stats.maxHp : 1;
-    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut, costume: [...costumeLines(p.d.cos?.worn, this.now), ...(p.d.buffs ?? []).filter((b) => b.until > this.now).map((b) => ({ k: b.k, v: b.v }))] });
+    p.stats = computeStats({ level: p.d.level, boy: p.boy, spec: p.d.spec, equip: p.d.equip, kut: p.d.kut, costume: [...costumeLines(p.d.cos?.worn, this.now), ...ktLines(p.d.kt), ...(p.d.buffs ?? []).filter((b) => b.until > this.now).map((b) => ({ k: b.k, v: b.v }))] });
     p.hp = Math.max(1, Math.round(p.stats.maxHp * Math.min(1, frac)));
     p.meDirty = true;
   }
@@ -417,6 +418,7 @@ export class World {
       if (rng() < 0.45) this.spawnDrop(p, 'charm', m.x, m.z);
       for (let i = 0; i < 3; i++) this.spawnDrop(p, 'frag', m.x, m.z);
       this.spawnDrop(p, 'mat', m.x, m.z, { m: 'ore', amount: irange(rng, 6, 12) });
+      if (p.d.level >= KT.minLevel) { const n = 1 + (rng() < 0.5 ? 1 : 0); for (let i = 0; i < n; i++) this.giveStone(p, rng() < KT.bossGrade1 ? 1 : 0); }
       this.ledger(p, 'boss.reward', { boss: m.bossId, tier: it.tier, gold });
       this.sys(p, 'sys.boss_reward', {});
     }
@@ -550,9 +552,15 @@ export class World {
       this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
     }
     if (r() < 0.028 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
+    if (m.lvl >= KT.minLevel && p.d.level >= KT.minLevel && r() < KT.dropChance * dm) this.giveStone(p, 0);
     if (r() < 0.012 * dm) this.spawnDrop(p, 'book', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'charm', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'frag', m.x, m.z);
+  }
+  /** Kut Taşı ver (rastgele tür) */
+  giveStone(p: Player, grade: number) {
+    const kt = (p.d.kt = ktNorm(p.d.kt)); const ti = Math.floor(this.ctx.rng() * KT_TYPES.length); kt.s[ti][grade]++;
+    this.ledger(p, 'kt.found', { t: KT_TYPES[ti], g: grade }); this.sys(p, 'sys.kt.' + KT_TYPES[ti], { g: grade + 1 }); p.meDirty = true;
   }
   giveItem(p: Player, it: Item) {
     if (p.d.items.length >= BAG_SIZE) return false;
@@ -877,6 +885,24 @@ export class World {
         d.gold -= cost; if (isBase) it.base = line; else it.ench[li] = line; it.rr = (it.rr ?? 0) + 1;
         this.ledger(p, 'reroll', { item: it.id, line: a.line, key, v: line.v, gold: cost, targeted, n: it.rr });
         this.recalc(p); p.meDirty = true; this.save(p); return { line, cost, rr: it.rr };
+      }
+      case 'kt.refine': case 'kt.set': case 'kt.unset': {
+        this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci); if (d.level < KT.minLevel) throw new GameError('kt_level', { n: KT.minLevel });
+        const kt = (d.kt = ktNorm(d.kt)); const ti = KT_TYPES.indexOf(String(a.type) as KtType); if (ti < 0) throw new GameError('bad_args'); const rng = this.ctx.rng;
+        if (op === 'kt.unset') {
+          const g = kt.eq[ti]; if (g < 0) throw new GameError('no_item'); kt.eq[ti] = -1; const kept = rng() < KT.unsetKeep; if (kept) kt.s[ti][g]++;
+          this.ledger(p, 'kt.unset', { t: a.type, g, kept }); this.recalc(p); this.save(p); return { kept };
+        }
+        const g = Math.floor(Number(a.grade)); if (!Number.isInteger(g) || g < 0 || g >= KT_GRADES) throw new GameError('bad_args');
+        if (op === 'kt.set') {
+          if (kt.s[ti][g] < 1) throw new GameError('no_item'); kt.s[ti][g]--; const old = kt.eq[ti]; let kept = true;
+          if (old >= 0) { kept = rng() < KT.unsetKeep; if (kept) kt.s[ti][old]++; } kt.eq[ti] = g;
+          this.ledger(p, 'kt.set', { t: a.type, g, old, kept }); this.recalc(p); this.save(p); return { kept: old < 0 ? null : kept };
+        }
+        if (g >= KT_GRADES - 1) throw new GameError('max_rank'); if (kt.s[ti][g] < KT.refineNeed) throw new GameError('kt_few', { n: KT.refineNeed });
+        const cost = KT.refineCost(g, d.level); if (d.gold < cost) throw new GameError('no_gold'); d.gold -= cost;
+        const ok = rng() < KT.refineRate[g]; if (ok) { kt.s[ti][g] -= KT.refineNeed; kt.s[ti][g + 1]++; } else kt.s[ti][g] -= KT.failLose;
+        this.ledger(p, 'kt.refine', { t: a.type, g, ok, gold: cost }); p.meDirty = true; this.save(p); return { ok, grade: g + (ok ? 1 : 0) };
       }
       case 'element': {
         this.alive(p); this.near(p, HUB.demirci, HUB.interactDemirci);
@@ -1314,7 +1340,7 @@ export class World {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
       combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
-      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
+      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, kt: ktNorm(d.kt), fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
       role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,

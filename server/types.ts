@@ -1,3 +1,4 @@
+import type { KtState } from '../shared/kuttas';
 import type { FishState, Buff } from '../shared/fishing';
 import type { DailyState } from '../shared/daily';
 import type { CostumeState } from '../shared/costume';
@@ -18,6 +19,7 @@ export interface PlayerData {
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };
   x: number; z: number; lang: 'tr' | 'en';
   /** Alp Avı: sıradaki av görevi seviyesi ve ilerleme */ hunt?: { lv: number; k: [number, number] };
+  /** Kut Taşları */ kt?: KtState;
   /** Göl Avı durumu */ fish?: FishState; /** süreli güçlendirmeler (pişmiş balık vb.) */ buffs?: Buff[]; /** Obanın Günlüğü */ daily?: DailyState;
   clues: string[]; dreams: number; shards: number; pendingDream: number;
   /** isteğe bağlı PvP bayrağı (eski kayıtlarda yok = kapalı) */
