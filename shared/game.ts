@@ -320,6 +320,15 @@ export const PVE_COEF = 1.0;
 /** Düşük seviye koruması: saldırgandan bu kadar seviye aşağıdaki hedef (ve çatışmayı başlatmamışsa) PvP'de hasar azaltması alır; 20+ farkta dokunulmazdır. */
 export const pvpGapMult = (attLevel: number, tgtLevel: number) => { const gap = attLevel - tgtLevel; return gap >= 20 ? 0 : gap >= 10 ? 0.25 : gap >= 6 ? 0.6 : 1; };
 /** Kalabalık kampta yeniden doğuş süresi çarpanı: oyuncu sayısı arttıkça kısalır (taban 0,25) */
+/**
+ * Agresif sürüler ve çekme: bir yaratık hedef bulunca (ya da ilk darbeyi alınca) yakınındaki aynı kamptaki yaratıklar da çağrılır.
+ * Çağrı yarıçapı yaratığın KENDİSİNDEN ölçülür (zincirleme yok): kenardaki yaratığı uzaktan vurup geri çekilirsen sürüyü bölebilirsin ("çekme").
+ * Çakal sürüleri geniş çağırır; Sürü Başı (kampın en az 4 yaratıklık olanlarında bir tane) tüm kampı çağırır, ama ödülü de büyüktür.
+ */
+export const PACK = {
+  call: { tepegoz: 7, albasti: 9, erlik: 9, cakal: 16, bekci: 0 } as Record<MobType, number>, delayMs: [500, 1100] as [number, number], minCamp: 4,
+  alphaCall: 1.8, alphaHp: 1.8, alphaAtk: 1.15, alphaScale: 1.35, alphaXp: 2.5, alphaGold: 2, alphaItemTier: 1 as Tier, alphaStone: 0.25, alphaItemChance: 0.6,
+};
 export const campRespawnMult = (playersNear: number) => Math.max(0.4, 1 / (1 + 0.12 * Math.max(0, playersNear - 1)));
 export const PVP_COEF = 0.35;
 export const CURSE_DMG_MULT = 0.75;

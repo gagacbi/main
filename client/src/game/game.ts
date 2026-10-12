@@ -218,6 +218,7 @@ export class Game {
         else if (e.st === 'wave' || e.st === 'boss') { this.fx.ring(e.x, e.z, 11, '#d27aff', 0.9, { fill: true, alpha: 0.7 }); this.audio.sfx('rift', 0.6); if (near(e.x, e.z)) this.ui.toast(e.st === 'boss' ? t('rift.boss') : t('rift.wave', { n: e.wave ?? 1 }), 'rift'); }
         else if (e.st === 'closed') { this.fx.beam(e.x, e.z, 50, 5, '#fff1a8', 1.8); this.fx.burst('holy', e.x, 1, e.z, 90); this.fx.burst('gold', e.x, 1, e.z, 60); this.audio.sfx('levelup'); }
         break;
+      case 'howl': { const v = this.vs.get(e.id); if (v && near(v.x, v.z)) { this.fx.ring(v.x, v.z, 9, '#ff7a3a', 0.7, { alpha: 0.6 }); this.fx.popup('!', v.x, v.rig.height * v.rig.scale + 1.2, v.z, 'status', 1.4); this.audio.sfx('rift', 0.35); } break; }
       case 'spawn': { const v = this.vs.get(e.id); if (v) { v.dyingT = -1; v.flags &= ~F.DEAD; this.fx.burst('dust', v.x, 0.3, v.z, 8); } break; }
     }
   }

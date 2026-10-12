@@ -109,6 +109,8 @@ if (want('yaratik')) {
   check('F3.yaratiklar', ['tepegoz', 'albasti', 'erlik', 'cakal', 'bekci'].every((k) => kinds.includes(k)), 'Tepegöz yavrusu, Albastı, Erlik çırağı, çakal ve çatlak bekçisi sahnede: ' + kinds.join(', '));
   const sil = await ev<number>('new Set([...g.vs.views.values()].filter(v => v.kind === "mob").map(v => v.rig.meshes.length + ":" + Math.round(v.rig.height*10))).size');
   check('F3.siluet', sil >= 5, `${sil} ayrı model imzası (parça sayısı + boy)`);
+  { const al = still(w.makeMob('cakal', 8, me.x + 6, me.z - 10, -1)); al.alpha = true; al.maxHp = al.hp = al.maxHp * 2; await sleep(2200); await shot('05b-suru-basi');
+    check('F3.suru-basi', await ev<boolean>('[...g.vs.views.values()].some(v => v.kind === "mob" && v.alpha && v.plate.textContent.includes("Sürü Başı"))'), 'Sürü Başı sahnede: büyütülmüş model ve "Sürü Başı" etiketi'); }
   w.mobs.clear();
 }
 

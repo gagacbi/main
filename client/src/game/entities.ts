@@ -1,6 +1,6 @@
 import { decodeEq } from '@shared/appearance';
 import { Color3, Mesh, MeshBuilder, type InstancedMesh, type Scene } from '@babylonjs/core';
-import { FIELD_BOSS, MOBS, type Boy, type MobType, type Spec } from '@shared/game';
+import { FIELD_BOSS, MOBS, PACK, type Boy, type MobType, type Spec } from '@shared/game';
 import { F } from '@shared/protocol';
 import { decodeCostume } from '@shared/costume';
 import { t } from '../i18n';
@@ -16,7 +16,7 @@ export class View {
   kind: 'player' | 'mob'; id: number; rig: Rig; buf: Sample[] = []; x = 0; z = 0; r = 0; speed = 0; hp = 1; H = 1; flags = 0; name = ''; level = 1;
   cs = 0; eq = 0; boy: Boy = 'gok'; spec: Spec = 'none'; mobType: MobType = 'cakal'; self = false; bossId = 0; auraT = Math.random();
   lodOff = false; attackT = -1; hit = 0; dyingT = -1; castT = -1; t = Math.random() * 10; removeAt = 0; shadow: InstancedMesh; shield: Mesh | null = null; stars: Mesh | null = null;
-  plate: HTMLElement; barFill: HTMLElement; nameEl: HTMLElement; stEl: HTMLElement; lastFlags = 0; boss = false; baseY = 0; lastAtkDur = 0.55;
+  plate: HTMLElement; barFill: HTMLElement; nameEl: HTMLElement; stEl: HTMLElement; lastFlags = 0; alpha = false; boss = false; baseY = 0; lastAtkDur = 0.55;
   constructor(public scene: Scene, fx: FX, ui: HTMLElement, o: { kind: 'player' | 'mob'; id: number; boy?: Boy; spec?: Spec; mob?: MobType; name: string; level: number; bossId?: number; cs?: number; eq?: number }) {
     this.kind = o.kind; this.id = o.id; this.name = o.name; this.level = o.level;
     if (o.kind === 'player') { this.boy = o.boy ?? 'gok'; this.spec = o.spec ?? 'none'; this.cs = o.cs ?? 0; this.eq = o.eq ?? 0; this.rig = buildHuman(scene, { boy: this.boy, spec: this.spec, costume: decodeCostume(this.cs), eq: decodeEq(this.eq) }); }
@@ -31,7 +31,7 @@ export class View {
     this.refreshName();
   }
   refreshName(friendly = true) {
-    const nm = this.kind === 'mob' ? (this.bossId ? t('boss.' + this.bossId) : t('mob.' + this.mobType)) : this.name;
+    const nm = this.kind === 'mob' ? (this.bossId ? t('boss.' + this.bossId) : (this.alpha ? t('pack.alpha') + ' ' : '') + t('mob.' + this.mobType)) : this.name;
     const red = (this.flags & F.RED) !== 0;
     const kd = this.kind === 'mob' ? (this.bossId ? FIELD_BOSS.list[this.bossId - 1][1] : MOBS[this.mobType].kind) : '';
     this.nameEl.innerHTML = `<b class="lv">${this.level}</b>${esc(nm)}${kd ? `<span class="dk" title="${t('ui.dmgKind')}">${t('dk.' + kd)}</span>` : ''}`;
@@ -111,6 +111,7 @@ export class ViewSystem {
       if (v.stars) { v.stars.setEnabled((v.flags & F.STUN) !== 0 && !dead); v.stars.position.set(v.x, (v.rig.height * v.rig.scale) + 0.3, v.z); v.stars.rotation.y = v.t * 4; }
       if ((v.flags & F.SHIELD) && !v.shield) { v.shield = MeshBuilder.CreateSphere('shield', { diameter: 3.4, segments: 16 }, this.scene); v.shield.material = toonMaterial(this.scene, { color: '#9fd8ff', emissive: new Color3(0.15, 0.3, 0.5), alpha: 0.3, rim: 2 }); v.shield.isPickable = false; }
       if (v.shield) { v.shield.setEnabled((v.flags & F.SHIELD) !== 0 && !dead); v.shield.position.set(v.x, 1.5, v.z); v.shield.scaling.setAll(1 + Math.sin(v.t * 5) * 0.025); }
+      if ((v.flags & F.ALPHA) && !v.alpha) { v.alpha = true; v.rig.setScale(v.rig.scale * PACK.alphaScale); v.plate.classList.add('alpha'); v.refreshName(); }
       v.lastFlags = v.flags;
       // gölge
       v.shadow.position.set(v.x, 0.05, v.z); v.shadow.setEnabled(v.dyingT < 0.9);

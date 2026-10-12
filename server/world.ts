@@ -8,7 +8,7 @@ import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { ECON, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos } from '../shared/game';
+import { ECON, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos, PACK } from '../shared/game';
 import { kimizPrice } from '../shared/goods';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
@@ -38,6 +38,7 @@ export class Player {
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; comboSlot = -1; comboLinks = 0; comboUntil = 0; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
   cosWarnAt = 0; kimizAt = 0; hotUntil = 0; hotPerSec = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
+  lastPackMsg = 0;
   fishCast: { at: number; fish: FishId; bait: string; holds: boolean; chance: number } | null = null; fishAt = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
@@ -61,6 +62,8 @@ export interface Mob {
   reg: string;
   /** zindan örneği kimliği (0 = değil) */
   dun: number;
+  /** Sürü Başı (kamp lideri) */
+  alpha?: boolean;
 }
 interface Rift {
   id: number; x: number; z: number; state: 0 | 1 | 2 | 3; wave: number; mobs: Set<number>; openedAt: number; lvl: number;
@@ -110,11 +113,24 @@ export class World {
     this.mobs.set(m.id, m);
     return m;
   }
+  campMobs = new Map<number, Mob[]>();
   spawnCampMob(c: Camp) {
     const a = this.ctx.rng() * Math.PI * 2; const d = 2 + this.ctx.rng() * 6;
     const type = c.types[Math.floor(this.ctx.rng() * c.types.length)];
     const lvl = Math.max(1, c.level + irange(this.ctx.rng, -1, 1));
-    return this.makeMob(type, lvl, c.x + Math.cos(a) * d, c.z + Math.sin(a) * d, c.id);
+    const m = this.makeMob(type, lvl, c.x + Math.cos(a) * d, c.z + Math.sin(a) * d, c.id);
+    const list = this.campMobs.get(c.id) ?? []; this.campMobs.set(c.id, list);
+    if (list.length === 0 && c.count >= PACK.minCamp) { m.alpha = true; m.maxHp = m.hp = Math.round(m.hp * PACK.alphaHp); m.atk *= PACK.alphaAtk; }   // her kampın ilk yaratığı Sürü Başı
+    list.push(m); return m;
+  }
+  /** Sürü çağrısı: yaratık yeni hedef bulunca aynı kamptaki, yakındaki hedefsiz yaratıkları aynı oyuncuya yöneltir (zincirleme yok) */
+  alertPack(m: Mob, tgt: Player) {
+    if (m.campId < 0 || m.riftId >= 0 || m.dun || m.bossId || m.dummy) return; const rad = PACK.call[m.type] * (m.alpha ? PACK.alphaCall : 1); if (rad <= 0) return;
+    let n = 0; for (const q of this.campMobs.get(m.campId) ?? []) {
+      if (q === m || q.dead || q.target || this.hasStatus(q, 'stun') || dist2(q, m) > rad * rad) continue;
+      q.target = tgt.id; q.nextAtk = Math.max(q.nextAtk, this.now + PACK.delayMs[0] + this.ctx.rng() * (PACK.delayMs[1] - PACK.delayMs[0])); n++;
+    }
+    if (n) { this.emit({ k: 'howl', id: m.id, n }, m.x, m.z); if (tgt.lastPackMsg < this.now - 4000) { tgt.lastPackMsg = this.now; this.sys(tgt, m.alpha ? 'sys.pack_alpha' : 'sys.pack', { n }); } }
   }
   respawnMob(m: Mob) {
     const c = this.camps[m.campId];
@@ -287,6 +303,7 @@ export class World {
   flags(t: Player | Mob): number {
     let f = 0;
     for (const s of Object.keys(t.status) as StatusKey[]) if (this.hasStatus(t, s)) f |= STATUS_FLAG[s];
+    if (t.kind === 'mob' && t.alpha) f |= F.ALPHA;
     return f;
   }
 
@@ -318,7 +335,7 @@ export class World {
         }
         tgt.contrib.set(src.id, (tgt.contrib.get(src.id) ?? 0) + dmg);
         if (!o.dot) { src.lastCombat = this.now; src.lastAggro = this.now; }
-        if (!tgt.target) tgt.target = src.id;
+        if (!tgt.target) { tgt.target = src.id; this.alertPack(tgt, src); }
         if (tgt.riftId >= 0) { const r = this.rifts.get(tgt.riftId); if (r) r.contrib.set(src.id, (r.contrib.get(src.id) ?? 0) + dmg); }
       }
       this.emit({ k: 'dmg', id: tgt.id, v: dmg, crit: o.crit, src: src?.id }, tgt.x, tgt.z);
@@ -460,7 +477,7 @@ export class World {
       const diff = p.d.level - m.lvl;
       const f = diff > 3 ? Math.max(0.1, 1 - 0.12 * (diff - 3)) : Math.min(1.25, 1 + 0.05 * -diff);
       if (!boss) {
-        this.addXp(p, mobXp(m.lvl) * f * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
+        this.addXp(p, mobXp(m.lvl) * f * (m.alpha ? PACK.alphaXp : 1) * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
         this.tutorial(p, 'kill'); this.huntKill(p, m); if (m.lvl >= p.d.level - 10) this.daily(p, 'kill');   // çok düşük seviye yaratık günlük göreve sayılmaz (kasma)
@@ -553,6 +570,11 @@ export class World {
     }
     if (r() < 0.028 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
     if (m.lvl >= KT.minLevel && p.d.level >= KT.minLevel && r() < KT.dropChance * dm) this.giveStone(p, 0);
+    if (m.alpha) {   // Sürü Başı ödülü: ek akçe, bir üst katman eşya şansı, Kut Taşı şansı
+      this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * (PACK.alphaGold - 1)) });
+      if (r() < PACK.alphaItemChance) { const it = makeItem(r, randomSlot(r), m.lvl, rollTier(r, PACK.alphaItemTier)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); }
+      if (p.d.level >= KT.minLevel && r() < PACK.alphaStone) this.giveStone(p, 0);
+    }
     if (r() < 0.012 * dm) this.spawnDrop(p, 'book', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'charm', m.x, m.z);
     if (r() < 0.006 * dm) this.spawnDrop(p, 'frag', m.x, m.z);
@@ -1154,7 +1176,7 @@ export class World {
           if (p.deadUntil > 0 || zoneAt(p.x, p.z) === 'safe') continue;
           const d = dist2(p, m); if (d < bd) { bd = d; b = p; }
         }
-        if (b) { tgt = b; m.target = b.id; }
+        if (b) { tgt = b; m.target = b.id; this.alertPack(m, b); }
       }
       let speed = def.speed * (this.hasStatus(m, 'slow') ? 0.5 : 1);
       if (m.bossId) this.bossSpecial(m, tgt, now);

@@ -41,7 +41,7 @@ export interface Me {
   hunt: { lv: number; k: [number, number] }; kt: KtState; fish: FishState; buffs: Buff[]; daily: DailyView; role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
 }
 /** bit bayrakları */
-export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024, PVP: 2048 } as const;
+export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024, PVP: 2048, ALPHA: 4096 } as const;
 export const STATUS_FLAG: Record<StatusKey, number> = { stun: F.STUN, slow: F.SLOW, poison: F.POISON, curse: F.CURSE, shield: F.SHIELD };
 
 export interface SnapPlayer { /** kostüm kodu (0 yok) */ cs: number; /** kuşanılan eşya görünümü (shared/appearance.ts) */ eq: number; i: number; n: string; b: number; l: number; x: number; z: number; r: number; h: number; H: number; f: number; sp: number; oy: string }
@@ -57,6 +57,7 @@ export type GameEvent =
   | { k: 'status'; id: number; s: StatusKey; dur: number }
   | { k: 'guard'; x: number; z: number; tx: number; tz: number }
   | { k: 'rift'; st: 'open' | 'wave' | 'boss' | 'closed' | 'fail'; x: number; z: number; wave?: number }
+  | { k: 'howl'; id: number; n: number }
   | { k: 'spawn'; id: number };
 export interface Snapshot {
   t: number; ack: number; you: { x: number; z: number; r: number; hp: number; f: number };

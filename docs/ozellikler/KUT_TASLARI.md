@@ -17,3 +17,8 @@
 # Yoldaş evrimi (aynı turda eklendi)
 `COMP_EVO` (shared/game.ts), `oba.evolve` (server/oba.ts), Oba panelindeki yoldaş kartı. Sv 6/12/18 yoldaş → Yiğit/Bahadır/Destan; bedel akçe (seviye ekonomisi birimi ×4/12/30) + 3/8/15 yazıt parçası; her aşama sefer akçesi +%12, eşya şansı +%8, süre −%3; 1. ve 3. aşamada yeni özellik.
 **Açık:** sefer kazancı en çok +%36 artar → ekonomi simülasyonu yeniden koşulmadı. "Yoldaş ömrü" yapılmadı (yol haritasında).
+
+---
+# Agresif sürüler ve çekme (aynı turda)
+`PACK` (shared/game.ts), `World.alertPack` / `campMobs` (server/world.ts), `F.ALPHA` + `howl` olayı (istemci: halka + "!" + ses). Yaratık hedef bulunca ya da ilk darbeyi alınca yakındaki (çağrı yarıçapı türe göre: Çakal 16, Albastı/Erlik 9, Tepegöz 7) hedefsiz kamp arkadaşları gelir; zincirleme YOK → kenardaki yaratığı uzaktan çekip sürüyü bölmek mümkün. Kampın ilk yaratığı (≥4'lük kamplarda) Sürü Başı: 1,8× can, 1,15× saldırı, tüm kampı çağırır; ödül ×2,5 XP, ek akçe, üst katman eşya şansı %60, Kut Taşı %25.
+**Açık:** zorluk/ekonomi etkisi simüle edilmedi (alfa XP/ödül faucet; sürü çağrısı solo av hızını düşürür). Mevcut bot simülasyonu testleri geçti ama çağrı davranışını ölçmüyor.

@@ -6,7 +6,7 @@ import { FISH, FISH_DEFS } from '@shared/fishing';
 import { EL, EL_KEYS } from '@shared/element';
 import { KT, KT_TYPES, KT_GRADES } from '@shared/kuttas';
 import { DAILY } from '@shared/daily';
-import { COMP_EVO } from '@shared/game';
+import { COMP_EVO, PACK } from '@shared/game';
 import { getLang, t } from './i18n';
 
 /**
@@ -47,6 +47,10 @@ export const ARTICLES: Article[] = [
 ## Seviye farkı
 - Kendinden yüksek yaratığa vuruşların azalır (her seviyede −%5, en çok −%65), yaratığın vuruşları artar (+%5, en çok ×2)
 - Düşük seviye yaratık az XP ve az ganimet verir
+## Sürüler ve çekme
+- Bir yaratık seni fark edince ya da ilk darbeyi alınca, aynı kamptaki YAKINDAKİ yaratıklar da gelir (Çakal ${PACK.call.cakal}, Albastı/Erlik ${PACK.call.albasti}, Tepegöz ${PACK.call.tepegoz} birim). Çağrı zincirleme değildir; yaratığın kendisinden ölçülür
+- Çekme: kampın kenarındaki bir yaratığı uzaktan vurup geri çekilirsen sürüyü bölersin; yaratıklar yuvalarından çok uzaklaşınca bırakıp döner ve iyileşir
+- Sürü Başı (kampta ${PACK.minCamp}+ yaratık varsa bir tane): iri ve ${PACK.alphaHp}× canlıdır, tüm kampı çağırır. Ödülü: ×${PACK.alphaXp} XP, ek akçe, bir üst katman eşya şansı ve Kut Taşı şansı
 ## Skill zinciri (combo)
 - Ritüel: ${['nara', 'sarsinti', 'savurma', 'zehir', 'hiddet'].map((s) => t('skill.' + s)).join(' → ')}
 - Doğru sırada ${f(COMBO.windowSec)} sn içinde basılan her halka hasarı +%${Math.round(COMBO.bonusPerLink * 100)} artırır (en çok ${COMBO.maxLinks} halka) ve bekleme süresinin %${Math.round(COMBO.cdRefund * 100)}'ini iade eder (yalnızca yaratıklara karşı)
@@ -56,6 +60,10 @@ export const ARTICLES: Article[] = [
 ## Level gap
 - Hitting higher-level mobs is reduced (−5% per level, at most −65%) and they hit you harder (+5%, at most ×2)
 - Low-level mobs give little XP and loot
+## Packs and pulling
+- When a creature notices you or takes the first hit, NEARBY creatures of the same camp join (Jackal ${PACK.call.cakal}, Albastı/Erlik ${PACK.call.albasti}, Tepegöz ${PACK.call.tepegoz} units). The call does not chain; it is measured from the struck creature
+- Pulling: hit a creature on the camp's edge from range and back away to split the pack; creatures far from home give up and return to heal
+- Pack Leader (one per camp with ${PACK.minCamp}+ creatures): bigger, ${PACK.alphaHp}× HP, calls the whole camp. Reward: ×${PACK.alphaXp} XP, extra gold, a tier-up item chance and a Kut Stone chance
 ## Skill chains (combo)
 - Ritual: ${['nara', 'sarsinti', 'savurma', 'zehir', 'hiddet'].map((s) => t('skill.' + s)).join(' → ')}
 - Each correct link within ${f(COMBO.windowSec)} s adds +${Math.round(COMBO.bonusPerLink * 100)}% damage (up to ${COMBO.maxLinks} links) and refunds ${Math.round(COMBO.cdRefund * 100)}% of the cooldown (PvE only)
