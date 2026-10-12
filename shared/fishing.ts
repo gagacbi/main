@@ -11,6 +11,10 @@ export const FISH = {
   /** olta geliştirme: L → L+1 */ rodMax: 10, rodNeed: (l: number) => 20 * l, rodCost: (l: number) => 400 * l, rodRate: (l: number) => (l <= 2 ? 0.8 : 0.5), rodFailLose: 0.1,
   /** vuruş bölgesi genişliği (0–1): olta seviyesiyle genişler */ zone: (l: number) => Math.min(0.34, 0.18 + 0.015 * l),
   ancestorBuffSec: 600, ancestorXpPct: 10,
+  /** Metin2'de 3 isabet yalnızca "yakalama şansı" verir: balık kaçabilir. Şans balığın nadirliğine, oltaya ve yeme bağlıdır; sonuç atışta sunucuda çekilir. */
+  catch: { common: 0.82, rare: 0.55, ata: 0.3, rodBonus: 0.015, rodBonusMax: 0.15, solucan: 0.05, luck: 0.1, max: 0.95, escapePtsChance: 0.15 },
+  /** balık ayıklama (Metin2 "öldürme" sonuçları): olasılıklar */
+  clean: { solucan: 0.4, kilcik: 0.4 /* kalan: balık suya kaçar */ },
 };
 export type FishId = 'sazan' | 'otsazani' | 'zargana' | 'hamsi' | 'levrek' | 'kadife' | 'kralyengeci' | 'altinsudak' | 'ata';
 export interface FishDef { id: FishId; w: number; rare: boolean; buff?: { k: EnchKey; v: number; sec: number }; cleanse?: boolean; ref: number }
@@ -36,6 +40,13 @@ export function rollFish(r: () => number, rod: number, bait: 'hamur' | 'solucan'
   for (let i = 0; i < ws.length; i++) { x -= ws[i]; if (x <= 0) return FISH_DEFS[i].id; }
   return 'sazan';
 }
+/** Bu atışta balığın tutunma olasılığı (zamanlama oyununu tamamlayınca) */
+export function catchChance(id: FishId, rod: number, bait: 'hamur' | 'solucan', luck: boolean): number {
+  const d = FISH_DEFS.find((f) => f.id === id)!; const base = id === 'ata' ? FISH.catch.ata : d.rare ? FISH.catch.rare : FISH.catch.common;
+  return Math.min(FISH.catch.max, base + Math.min(FISH.catch.rodBonusMax, FISH.catch.rodBonus * rod) + (bait === 'solucan' ? FISH.catch.solucan : 0) + (luck ? FISH.catch.luck : 0));
+}
+/** Arayüzde göstermek için: yaygın ve nadir balık yakalama şansı (balığın ne olduğu atıştan önce bilinmez) */
+export const catchRange = (rod: number, bait: 'hamur' | 'solucan', luck: boolean) => ({ common: catchChance('sazan', rod, bait, luck), rare: catchChance('altinsudak', rod, bait, luck) });
 export interface FishState { rod: number; pts: number; hamur: number; solucan: number; luck: number; stock: Partial<Record<FishId, number>>; caught: number; ancestor: boolean }
 export const newFishState = (): FishState => ({ rod: 0, pts: 0, hamur: 0, solucan: 0, luck: 0, stock: {}, caught: 0, ancestor: false });
 export interface Buff { id: string; k: EnchKey; v: number; until: number }

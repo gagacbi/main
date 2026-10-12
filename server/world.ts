@@ -22,7 +22,7 @@ import { goodAdd } from '../shared/goods';
 import * as oba from './oba';
 import { chronOf } from './chronicle';
 import { EL, EL_KEYS, elMult, type ElKey } from '../shared/element';
-import { FISH, EDIBLE, fishOf, newFishState, nearShore, rollFish, type Buff, type FishId } from '../shared/fishing';
+import { FISH, EDIBLE, catchChance, fishOf, newFishState, nearShore, rollFish, type Buff, type FishId } from '../shared/fishing';
 import { DAILY, dailyRoll, type DailyKind, type DailyState } from '../shared/daily';
 import { eqCode } from '../shared/appearance';
 import { HUNT, huntFor } from '../shared/hunt';
@@ -37,7 +37,7 @@ export class Player {
   x = 0; z = 0; rot = 0; dirx = 0; dirz = 0; lastInput = 0; atk = false; focus = 0; nextAtk = 0;
   cds = [0, 0, 0, 0, 0, 0]; comboSlot = -1; comboLinks = 0; comboUntil = 0; status: StatusMap = {}; stats!: Stats; hp = 1; deadUntil = 0;
   cosWarnAt = 0; kimizAt = 0; hotUntil = 0; hotPerSec = 0; lastCombat = 0; lastAggro = 0; lastPvpAgg = 0; lastPvp = 0; aggressorUntil = 0; protectUntil = 0; lastDamager = 0; tauntUntil = 0;
-  fishCast: { at: number; fish: FishId; bait: string } | null = null; fishAt = 0;
+  fishCast: { at: number; fish: FishId; bait: string; holds: boolean; chance: number } | null = null; fishAt = 0;
   duelWith = 0; duelInvite: { from: number; at: number } | null = null;
   meDirty = true; lastMeAt = 0; lastAck = 0; poisonAcc = 0; regenAcc = 0; goldFromMobs = 0;
   rate = { msgs: 0, rpcs: 0, chat: 0, win: 0 }; dropped = 0; lastRegenAt = 0;
@@ -808,13 +808,15 @@ export class World {
         if (this.now < p.fishAt) throw new GameError('fish_cd'); const bait = a.bait === 'solucan' ? 'solucan' : 'hamur'; if (f[bait] < 1) throw new GameError('fish_no_bait');
         if (this.now - p.lastCombat < 5000 && p.lastCombat > 0) throw new GameError('fish_combat');
         f[bait]--; const luck = f.luck > 0; if (luck) f.luck--; const fish = rollFish(this.ctx.rng, f.rod, bait, luck);
-        p.fishCast = { at: this.now, fish, bait }; p.fishAt = this.now + FISH.castCdSec * 1000; p.meDirty = true; this.ledger(p, 'fish.cast', { bait });
+        const chance = catchChance(fish, f.rod, bait, luck); const holds = this.ctx.rng() < chance;   // sonuç atışta çekilir; istemci yalnızca şansı görür
+        p.fishCast = { at: this.now, fish, bait, holds, chance }; p.fishAt = this.now + FISH.castCdSec * 1000; p.meDirty = true; this.ledger(p, 'fish.cast', { bait });
         return { sec: FISH.gameSec, hits: FISH.hitsNeeded, zone: FISH.zone(f.rod), big: !!fishOf(fish)?.rare };
       }
       case 'fish.reel': {
         const f = (d.fish ??= newFishState()); const c = p.fishCast; if (!c) throw new GameError('fish_nocast'); p.fishCast = null;
         const el = this.now - c.at; const hits = Math.floor(Number(a.hits) || 0);
         if (el < FISH.minReelSec * 1000 || el > (FISH.gameSec + 4) * 1000 || hits < FISH.hitsNeeded) { this.ledger(p, 'fish.miss', { hits }); p.meDirty = true; return { ok: false }; }
+        if (!c.holds) { let pg = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.catch.escapePtsChance) { f.pts++; pg = true; } this.ledger(p, 'fish.escape', { fish: c.fish, chance: Math.round(c.chance * 100) / 100 }); p.meDirty = true; return { ok: false, escaped: true, pts: pg }; }   // 3 isabet yetti ama balık kaçtı
         if (c.fish === 'ata') f.ancestor = true; else f.stock[c.fish] = (f.stock[c.fish] ?? 0) + 1;
         f.caught++; let gained = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.ptsChance) { f.pts++; gained = true; }
         this.ledger(p, 'fish.catch', { fish: c.fish }); this.daily(p, 'fish'); p.meDirty = true; return { ok: true, fish: c.fish, pts: gained };
@@ -825,6 +827,12 @@ export class World {
         d.gold -= cost; const ok = this.ctx.rng() < FISH.rodRate(f.rod);
         if (ok) { f.pts -= need; f.rod++; } else f.pts -= Math.ceil(f.pts * FISH.rodFailLose);
         this.ledger(p, 'fish.rod', { ok, rod: f.rod, gold: cost }); p.meDirty = true; return { ok, rod: f.rod };
+      }
+      case 'fish.clean': {   // balık ayıklama (Metin2 "öldürme"): solucan çıkabilir, kılçık kalabilir ya da balık suya kaçar
+        const f = (d.fish ??= newFishState()); const id = String(a.id) as FishId; if (!(EDIBLE as string[]).includes(id)) throw new GameError('bad_args'); this.alive(p);
+        if ((f.stock[id] ?? 0) < 1) throw new GameError('no_item'); f.stock[id]!--; const x = this.ctx.rng(); let res: 'solucan' | 'kilcik' | 'kacti' = 'kacti';
+        if (x < FISH.clean.solucan) { res = 'solucan'; f.solucan += 1 + (this.ctx.rng() < 0.3 ? 1 : 0); } else if (x < FISH.clean.solucan + FISH.clean.kilcik) res = 'kilcik';
+        this.ledger(p, 'fish.clean', { id, res }); p.meDirty = true; return { res };
       }
       case 'fish.eat': {
         const f = (d.fish ??= newFishState()); const id = String(a.id) as FishId; if (!(EDIBLE as string[]).includes(id)) throw new GameError('bad_args');

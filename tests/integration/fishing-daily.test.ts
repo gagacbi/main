@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { DAILY, dailyRoll } from '../../shared/daily';
-import { FISH, FISH_DEFS, rollFish } from '../../shared/fishing';
+import { FISH, FISH_DEFS, rollFish, catchChance } from '../../shared/fishing';
 import { goodAdd, goodGet, GOOD_KEYS } from '../../shared/goods';
 import { mulberry32 } from '../../shared/rng';
 import { makeRig } from '../sim/rig';
@@ -20,10 +20,19 @@ describe('Göl Avı', () => {
     const { rig, w, p } = shore(); call(w, p, 'fish.buy', { what: 'rod' }); call(w, p, 'fish.buy', { what: 'hamur', n: 20 });
     call(w, p, 'fish.cast', { bait: 'hamur' }); expect(call(w, p, 'fish.reel', { hits: 3 }).data.ok).toBe(false);   // 2,5 sn dolmadan
     rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(4); expect(call(w, p, 'fish.reel', { hits: 2 }).data.ok).toBe(false);
-    let got = 0; for (let i = 0; i < 12; i++) { rig.seconds(2); const c = call(w, p, 'fish.cast', { bait: 'hamur' }); if (!c.ok) break; rig.seconds(4); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.ok) got++; }
-    expect(got).toBeGreaterThan(5); const total = Object.values(p.d.fish!.stock).reduce((a, b) => a + (b ?? 0), 0) + (p.d.fish!.ancestor ? 1 : 0); expect(total).toBe(got);
+    let got = 0; for (let i = 0; i < 12; i++) { rig.seconds(2); const c = call(w, p, 'fish.cast', { bait: 'hamur' }); if (!c.ok) break; rig.seconds(4); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.ok) got++; else expect(r.data.escaped).toBe(true); }
+    expect(got).toBeGreaterThan(2); expect(got).toBeLessThan(12); const total = Object.values(p.d.fish!.stock).reduce((a, b) => a + (b ?? 0), 0) + (p.d.fish!.ancestor ? 1 : 0); expect(total).toBe(got);
     expect(call(w, p, 'fish.reel', { hits: 3 }).err).toBe('fish_nocast');   // tek kullanımlık
     goodAdd(p.d, 'fish_sazan', 2); expect(goodGet(p.d, 'fish_sazan')).toBeGreaterThanOrEqual(2); expect(GOOD_KEYS).toContain('fish_sazan');
+  });
+  test('tutma şansı: olta/solucan/şans yemiyle artar, üst sınırı aşmaz; kaçan balık envantere girmez; ayıklama sonuçları', () => {
+    expect(catchChance('sazan', 1, 'hamur', false)).toBeLessThan(catchChance('sazan', 10, 'hamur', false)); expect(catchChance('sazan', 1, 'solucan', false)).toBeGreaterThan(catchChance('sazan', 1, 'hamur', false));
+    expect(catchChance('altinsudak', 1, 'hamur', false)).toBeLessThan(catchChance('sazan', 1, 'hamur', false)); expect(catchChance('sazan', 10, 'solucan', true)).toBeLessThanOrEqual(FISH.catch.max);
+    const { rig, w, p } = shore(); call(w, p, 'fish.buy', { what: 'rod' }); call(w, p, 'fish.buy', { what: 'hamur', n: 5 }); let esc = 0, ok = 0;
+    for (let i = 0; i < 60; i++) { p.d.fish!.hamur = 3; rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(4); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.escaped) esc++; else if (r.data.ok) ok++; }
+    expect(esc).toBeGreaterThan(3); expect(ok).toBeGreaterThan(20); expect(Object.values(p.d.fish!.stock).reduce((a, b) => a + (b ?? 0), 0) + (p.d.fish!.ancestor ? 1 : 0)).toBe(ok);
+    p.d.fish!.stock = { sazan: 60 }; p.d.fish!.solucan = 0; const res: Record<string, number> = {}; for (let i = 0; i < 60; i++) { const r = call(w, p, 'fish.clean', { id: 'sazan' }); res[r.data.res] = (res[r.data.res] ?? 0) + 1; }
+    expect(res.solucan).toBeGreaterThan(0); expect(res.kilcik).toBeGreaterThan(0); expect(res.kacti).toBeGreaterThan(0); expect(p.d.fish!.stock.sazan).toBe(0); expect(call(w, p, 'fish.clean', { id: 'sazan' }).err).toBe('no_item');
   });
   test('nadir balık oranı yem, olta ve şans yemiyle artar; ağırlıklar tutarlı', () => {
     const rare = (rod: number, bait: 'hamur' | 'solucan', luck: boolean) => { const r = mulberry32(3); let n = 0; for (let i = 0; i < 20000; i++) { const id = rollFish(r, rod, bait, luck); if (FISH_DEFS.find((f) => f.id === id)!.rare) n++; } return n / 20000; };

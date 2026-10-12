@@ -18,7 +18,7 @@ import { emblemSvg } from './emblems';
 import { itemArtFrames } from '../game/itemart';
 import { EL, EL_KEYS, type ElKey } from '@shared/element';
 import type { MobType } from '@shared/game';
-import { FISH, FISH_DEFS, EDIBLE, fishOf, type FishId } from '@shared/fishing';
+import { FISH, FISH_DEFS, EDIBLE, fishOf, catchRange, type FishId } from '@shared/fishing';
 import { DAILY } from '@shared/daily';
 import { itemIcon, matIcon, hasMatIcon, slotGhost } from './itemicons';
 import { icon } from './icons';
@@ -449,7 +449,7 @@ export class Panels {
     const stock = EDIBLE.map((id) => ({ id, n: f.stock[id] ?? 0 })).filter((x) => x.n > 0);
     const buffTxt = (id: FishId) => { const d = fishOf(id)!; return d.cleanse ? t('fish.cleanse') : d.buff ? `${t('fish.buff.' + d.buff.k, { v: d.buff.v })} · ${Math.round(d.buff.sec / 60)} ${t('fish.min')}` : ''; };
     const buffs = m.buffs.length ? `<div class="sub">${t('fish.buffs')}</div><div class="row" style="flex-wrap:wrap;gap:6px">${m.buffs.map((b) => `<span class="chip">${icon('fish_' + b.id)}${t('fish.' + b.id)} <small>${fmtDur(b.until - this.g.net.now())}</small></span>`).join('')}</div>` : '';
-    const stockH = stock.length ? stock.map((x) => `<div class="card row" style="margin:4px 0"><div class="cell item mat" style="--tc:#4aa8ff">${icon('fish_' + x.id)}<span class="cnt">${x.n}</span></div><div class="grow"><b>${t('fish.' + x.id)}</b><div class="muted">${esc(buffTxt(x.id))}</div></div><button class="btn small primary" data-act="fisheat" data-id="${x.id}" ${inHubTown(this.g.pos.x, this.g.pos.z) ? '' : 'disabled'} title="${t('fish.cooktown')}">${t('fish.cook')}</button></div>`).join('') : `<div class="muted">${t('fish.none')}</div>`;
+    const stockH = stock.length ? stock.map((x) => `<div class="card row" style="margin:4px 0"><div class="cell item mat" style="--tc:#4aa8ff">${icon('fish_' + x.id)}<span class="cnt">${x.n}</span></div><div class="grow"><b>${t('fish.' + x.id)}</b><div class="muted">${esc(buffTxt(x.id))}</div></div><button class="btn small primary" data-act="fisheat" data-id="${x.id}" ${inHubTown(this.g.pos.x, this.g.pos.z) ? '' : 'disabled'} title="${t('fish.cooktown')}">${t('fish.cook')}</button><button class="btn small" data-act="fishclean" data-id="${x.id}">${t('fish.clean')}</button></div>`).join('') : `<div class="muted">${t('fish.none')}</div>`;
     const anc = f.ancestor ? `<div class="card" style="border-left:4px solid #4ab0e8;margin:8px 0"><b>${t('fish.ancestor.t')}</b><div class="muted">${t('fish.ancestor.d')}</div><div class="col" style="gap:6px;margin-top:6px">${(['release', 'cut', 'bait'] as const).map((c) => `<button class="btn small ${c === 'release' ? 'primary' : ''}" data-act="fishanc" data-v="${c}">${t('fish.ancestor.' + c)}</button>`).join('')}</div></div>` : '';
     const game = this.fg ? `<div class="fgame"><div class="muted">${this.fg.big ? t('fish.big') + ' ' : ''}${t('fish.game.hint')}</div><div class="fbar" data-act="fishhit"><div class="fzone"></div><div class="fcur"></div></div><div class="row" style="justify-content:space-between"><span>${t('fish.game.hits')}: <b class="fh">0</b>/${FISH.hitsNeeded}</span><span class="ft"></span></div></div>` : '';
     const rodRow = f.rod < 1 ? `<button class="btn primary" data-act="fishbuy" data-v="rod" ${m.gold >= FISH.rodPrice ? '' : 'disabled'}>${icon('rod')} ${t('fish.buyrod', { n: num(FISH.rodPrice) })}</button>`
@@ -458,7 +458,7 @@ export class Panels {
     const msg = this.fishMsg ? `<div class="card ${this.fishMsg.cls}" style="margin:8px 0">${this.fishMsg.text}</div>` : '';
     return this.shell(t('ui.fish'), 'rod', `<div style="min-width:520px;max-width:640px">${lowLv ? `<div class="card bad">${t('err.fish_level', { lvl: FISH.minLevel })}</div>` : ''}<div class="muted">${t('fish.hint')}</div>
       <div class="sub">${t('fish.rod')}</div>${rodRow}<div class="sub">${t('fish.bait.hamur')} / ${t('fish.bait.solucan')}</div>${baitRow}<div class="muted" style="font-size:12px">${t('fish.bait.hint')}</div>
-      ${msg}${anc}${game || (f.rod >= 1 ? `<button class="btn primary" style="width:100%;margin:10px 0;padding:10px" data-act="fishcast" ${lowLv || f[this.fishBait] < 1 ? 'disabled' : ''}>${icon('rod')} ${t('fish.cast')}</button>` : '')}
+      ${msg}${anc}${game ? '' : f.rod >= 1 ? (() => { const c = catchRange(f.rod, this.fishBait, f.luck > 0); return `<div class="muted" style="margin-top:8px">${t('fish.chance', { a: Math.round(c.common * 100), b: Math.round(c.rare * 100) })}</div>`; })() : ''}${game || (f.rod >= 1 ? `<button class="btn primary" style="width:100%;margin:10px 0;padding:10px" data-act="fishcast" ${lowLv || f[this.fishBait] < 1 ? 'disabled' : ''}>${icon('rod')} ${t('fish.cast')}</button>` : '')}
       <div class="sub">${t('fish.stock')}</div>${stockH}${buffs}</div>`);
   }
   async fishCast() {
@@ -487,7 +487,7 @@ export class Panels {
     const f = this.fg; if (!f) return; this.fg = null; cancelAnimationFrame(f.raf); if (f.key) window.removeEventListener('keydown', f.key, true); if (!report) return;
     const elapsedOk = true; void elapsedOk; const r = await this.g.net.rpc('fish.reel', { hits: f.hits });
     if (!r.ok) { this.fishMsg = { cls: 'bad', text: t('err.' + (r.err ?? 'internal')) }; }
-    else { const d = r.data as { ok: boolean; fish?: FishId; pts?: boolean }; if (d.ok) { this.fishMsg = { cls: 'good', text: `${t('fish.ok', { name: t('fish.' + d.fish) })}${d.pts ? ' · ' + t('fish.ptsgain') : ''}` }; this.g.audio.sfx('rare'); } else { this.fishMsg = { cls: 'bad', text: t('fish.miss') }; this.g.audio.sfx('err'); } }
+    else { const d = r.data as { ok: boolean; fish?: FishId; pts?: boolean; escaped?: boolean }; if (d.escaped) { this.fishMsg = { cls: 'bad', text: `${t('fish.escaped')}${d.pts ? ' · ' + t('fish.ptsgain') : ''}` }; this.g.audio.sfx('err'); } else if (d.ok) { this.fishMsg = { cls: 'good', text: `${t('fish.ok', { name: t('fish.' + d.fish) })}${d.pts ? ' · ' + t('fish.ptsgain') : ''}` }; this.g.audio.sfx('rare'); } else { this.fishMsg = { cls: 'bad', text: t('fish.miss') }; this.g.audio.sfx('err'); } }
     if (this.open === 'fish') this.render(true);
   }
 
@@ -588,6 +588,7 @@ export class Panels {
       case 'fishhit': this.fishHit(); return;
       case 'fishrod': { const r = await this.act('fish.rod'); if (r.ok) { const x = r.data as { ok: boolean; rod: number }; this.fishMsg = x.ok ? { cls: 'good', text: t('fish.rodok', { n: x.rod }) } : { cls: 'bad', text: t('fish.rodfail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } break; }
       case 'fisheat': { const r = await this.act('fish.eat', { id: d.id }); if (r.ok) this.g.audio.sfx('rare'); break; }
+      case 'fishclean': { const r = await this.act('fish.clean', { id: d.id }); if (r.ok) { const x = r.data as { res: string }; this.fishMsg = { cls: x.res === 'solucan' ? 'good' : 'bad', text: t('fish.clean.' + x.res) }; } break; }
       case 'fishanc': { await this.act('fish.ancestor', { choice: d.v }); break; }
       case 'invp': this.invPage = (d.v ?? 'items') as typeof this.invPage; break;
       case 'goto': await this.show(d.v as PanelName); return;

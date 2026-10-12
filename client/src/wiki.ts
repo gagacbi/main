@@ -220,6 +220,8 @@ ${Object.values(DUNGEONS).map((d) => `- ${t('map.' + d!.id)}: Lv ${d!.minLv}+, u
 ## Zamanlama oyunu
 - ${FISH.gameSec} sn içinde çizgi yeşil bölgedeyken tıkla (veya Boşluk): ${FISH.hitsNeeded} isabet balığı yakalar; ıska ${FISH.missPenaltySec} sn götürür
 - Hangi balığın geleceği atışta sunucuca belirlenir; ${FISH.minReelSec} sn dolmadan çekilen olta geçersizdir
+- Üç isabet kesin yakalama değildir: balık iğneyi tutmuş olmalı. Tutma şansı sıradan balıkta ~%${Math.round(FISH.catch.common*100)}, nadirde ~%${Math.round(FISH.catch.rare*100)}, Ata Balığı’nda ~%${Math.round(FISH.catch.ata*100)}; her olta seviyesi +%${(FISH.catch.rodBonus*100).toFixed(1)}, solucan +%${Math.round(FISH.catch.solucan*100)}, şans yemi +%${Math.round(FISH.catch.luck*100)} ekler (üst sınır %${Math.round(FISH.catch.max*100)}). Balık kaçarsa yem gider; yine de %${Math.round(FISH.catch.escapePtsChance*100)} şansla +1 olta puanı alınır
+- Ayıkla: elindeki balığı ayıklarsan %${Math.round(FISH.clean.solucan*100)} Solucan, %${Math.round(FISH.clean.kilcik*100)} Kılçık (boş) çıkar, kalanında balık elinden kayar
 ## Balıklar
 ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (nadir)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} dk` : ''}`).join('\n')}
 - Gölün Atası (çok nadir): serbest bırak (herkese ${FISH.ancestorBuffSec / 60} dk +%${FISH.ancestorXpPct} XP, Yıllık’a yazılır), kes (3 yazıt parçası + 1 tılsım) ya da yem yap (sonraki ${FISH.luckCasts} atışta nadir ×${FISH.luckMult})
@@ -233,6 +235,8 @@ ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.
 ## Timing game
 - Within ${FISH.gameSec} s, click (or Space) while the marker is in the green zone: ${FISH.hitsNeeded} hits land the fish; a miss costs ${FISH.missPenaltySec} s
 - The fish is decided on the server at the cast; a line reeled before ${FISH.minReelSec} s is void
+- Three hits are not a guaranteed catch: the fish must hold the hook. Base hold chance ~${Math.round(FISH.catch.common*100)}% common, ~${Math.round(FISH.catch.rare*100)}% rare, ~${Math.round(FISH.catch.ata*100)}% Ancestor Fish; each rod level +${(FISH.catch.rodBonus*100).toFixed(1)}%, worm +${Math.round(FISH.catch.solucan*100)}%, luck bait +${Math.round(FISH.catch.luck*100)}% (cap ${Math.round(FISH.catch.max*100)}%). If it escapes the bait is lost, but you still get +1 rod point with ${Math.round(FISH.catch.escapePtsChance*100)}% chance
+- Clean: cleaning a fish gives a Worm (${Math.round(FISH.clean.solucan*100)}%), bones (${Math.round(FISH.clean.kilcik*100)}%, nothing), otherwise it slips away
 ## Fish
 ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (rare)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} min` : ''}`).join('\n')}
 - Ancestor of the Lake (very rare): release it (everyone gets +${FISH.ancestorXpPct}% XP for ${FISH.ancestorBuffSec / 60} min, written in the Annals), cut it (3 inscription fragments + 1 charm) or use it as bait (rare ×${FISH.luckMult} for the next ${FISH.luckCasts} casts)
