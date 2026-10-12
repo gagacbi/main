@@ -10,16 +10,17 @@ import type { Game } from '../game/game';
 import { fmtDur, getLang, hasKey, num, t } from '../i18n';
 import { emblemSvg } from './emblems';
 import { icon } from './icons';
+import { TouchControls, isTouchDevice } from './touch';
 import { Panels, type PanelName } from './panels';
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
 
 export class UI {
-  root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
+  touch: TouchControls | null = null; root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
   slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
   constructor(public g: Game, root: HTMLElement) {
-    this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root);
+    this.root = root; g.ui = this; this.build(); this.panels = new Panels(g, root); if (isTouchDevice()) this.touch = new TouchControls(g, root);
   }
   sfx(n: string) { this.g.audio.sfx(n); }
 
@@ -221,7 +222,7 @@ export class UI {
     // çatlak çubuğu + pusula
     let near: { x: number; z: number; d: number; w: number; st: number; h: number; H: number } | null = null;
     for (const r of g.riftSnap) { const d = Math.hypot(r.x - g.pos.x, r.z - g.pos.z); if (!near || d < near.d) near = { x: r.x, z: r.z, d, w: r.w, st: r.st, h: r.h, H: r.H }; }
-    this.dunBar(); this.kimizHud();
+    this.dunBar(); this.kimizHud(); this.touch?.tick();
     const rb = this.e.riftbar;
     if (near && near.d < 70) { rb.style.display = 'block'; const sp = rb.querySelectorAll('.t span'); sp[0].textContent = t('rift.name'); sp[1].textContent = near.st === 0 ? t('rift.idle') : near.st === 2 ? t('rift.boss') : t('rift.wave', { n: near.w }); (rb.querySelector('.bar i') as HTMLElement).style.width = near.H ? `${(near.h / near.H) * 100}%` : '100%'; } else rb.style.display = 'none';
     const cp = this.e.compass; if (near && near.d > 28) {

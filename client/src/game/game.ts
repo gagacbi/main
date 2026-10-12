@@ -33,6 +33,7 @@ export class Game {
   me!: Me; prevMe: Me | null = null; myId = 0; myBoy: Boy = 'gok'; pred = new Predictor(); pos = this.pred.pos; rot = 0; hp = 1; flags = 0; selfView: View | null = null;
   campOcc: number[] = []; serverYou = { x: 0, z: 0 }; snap: Snapshot | null = null; snapAt = 0;
   drops = new Map<number, DropView>(); rifts = new Map<number, RiftView>(); riftSnap: SnapRift[] = []; npcs: Npc[] = [];
+  joy: { x: number; y: number } | null = null; private tps = new Map<number, { x: number; y: number }>(); private pinch = 0;
   keys = new Set<string>(); camYaw = -Math.PI / 2; camPitch = 1.0; camDist = 22; camTarget = new Vector3(0, 1.7, 0);
   focusId = 0; atkHeld = false; clickAttack = false; moveTarget: { x: number; z: number } | null = null; lastDir = { x: 0, z: 0 }; lastSend = 0;
   cdEnd = [0, 0, 0, 0, 0, 0]; cdTotal = SKILLS.map((s) => s.cd); castLock = 0; serverOffset = 0; time = 0; fps = 60; slowFrames = 0; typing = false;
@@ -239,13 +240,22 @@ export class Game {
     window.addEventListener('blur', () => { this.keys.clear(); this.setAttack(false); });
     c.addEventListener('contextmenu', (e) => e.preventDefault());
     c.addEventListener('pointerdown', (e) => {
-      this.audio.start(); c.focus(); this.downAt = performance.now(); this.downPos = { x: e.clientX, y: e.clientY };
+      if (e.pointerType === 'touch') { this.tps.set(e.pointerId, { x: e.clientX, y: e.clientY }); this.pinch = 0; if (this.tps.size > 1) this.downAt = 0; }
+      this.audio.start(); c.focus(); if (!(e.pointerType === 'touch' && this.tps.size > 1)) this.downAt = performance.now(); this.downPos = { x: e.clientX, y: e.clientY };
       if (e.button === 2 || e.button === 1) { this.dragging = true; this.lastX = e.clientX; this.lastY = e.clientY; c.setPointerCapture(e.pointerId); }
     });
     c.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') {   // 1 parmak: kamera döndür, 2 parmak: yakınlaştır
+        const prev = this.tps.get(e.pointerId); if (!prev) return; const cur = { x: e.clientX, y: e.clientY };
+        if (this.tps.size >= 2) { this.tps.set(e.pointerId, cur); const [a, b] = [...this.tps.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (this.pinch) this.camDist = Math.min(40, Math.max(9, this.camDist - (d - this.pinch) * 0.06)); this.pinch = d; return; }
+        if (Math.hypot(cur.x - this.downPos.x, cur.y - this.downPos.y) > 10) { this.camYaw -= (cur.x - prev.x) * 0.006; this.camPitch = Math.min(1.4, Math.max(0.4, this.camPitch - (cur.y - prev.y) * 0.005)); }
+        this.tps.set(e.pointerId, cur); return;
+      }
       if (!this.dragging) return; this.camYaw -= (e.clientX - this.lastX) * 0.006; this.camPitch = Math.min(1.4, Math.max(0.4, this.camPitch - (e.clientY - this.lastY) * 0.005)); this.lastX = e.clientX; this.lastY = e.clientY;
     });
+    c.addEventListener('pointercancel', (e) => { this.tps.delete(e.pointerId); this.pinch = 0; });
     c.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch') { const multi = this.tps.size > 1; this.tps.delete(e.pointerId); this.pinch = 0; if (multi) return; }
       if (this.dragging) { this.dragging = false; try { c.releasePointerCapture(e.pointerId); } catch { /* */ } return; }
       if (e.button === 0 && performance.now() - this.downAt < 400 && Math.hypot(e.clientX - this.downPos.x, e.clientY - this.downPos.y) < 8) this.click(e.clientX, e.clientY);
     });
@@ -301,6 +311,10 @@ export class Game {
   };
 
   private moveInput(): { x: number; z: number } {
+    if (this.joy) {   // sanal joystick: ekran yönü → kamera yönü
+      const fx = -Math.cos(this.camYaw), fz = -Math.sin(this.camYaw); const rx = fz, rz = -fx; this.moveTarget = null; this.clickAttack = false;
+      const x = fx * this.joy.y + rx * this.joy.x, z = fz * this.joy.y + rz * this.joy.x; const l = Math.hypot(x, z) || 1; return { x: x / l, z: z / l };
+    }
     let ix = 0, iz = 0; const k = this.keys;
     if (k.has('w') || k.has('arrowup')) iz += 1; if (k.has('s') || k.has('arrowdown')) iz -= 1; if (k.has('d') || k.has('arrowright')) ix += 1; if (k.has('a') || k.has('arrowleft')) ix -= 1;
     if (ix || iz) {

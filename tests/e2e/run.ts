@@ -448,6 +448,39 @@ const perf = await ev<{ fps: number; meshes: number; active: number; draw: numbe
 })()`);
 metrics.perf = perf; metrics.gl = await ev('g.gs.engine.getGlInfo()');
 check('F7.olcum', perf.cpuMs > 0, `Kare başına JS/CPU maliyeti=${perf.cpuMs} ms; aktif mesh=${perf.active}/${perf.meshes}; üçgen=${Math.round(perf.tris)}; (yazılım rasterleştirmede FPS=${perf.fps})`);
+if (want('dokunmatik')) {
+  // dokunmatik cihaz: telefon boyutu + dokunma; joystick oyuncuyu yürütür, saldırı düğmesi basılı tutulur, panel ekrana sığar
+  const tctx = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, locale: 'tr-TR' });
+  await tctx.addInitScript(() => { try { localStorage.setItem('kut.lang', 'tr'); localStorage.setItem('kut.q', 'low'); } catch { /* */ } });
+  const tp: Page = await tctx.newPage(); tp.setDefaultTimeout(120000); tp.on('pageerror', (e) => errors.push(e.message));
+  const TN = 'Dokun' + Math.floor(Math.random() * 900 + 100); const seedT = await new Bot(`ws://localhost:${srv.port}`, TN).join('gok'); await seedT.leave(); await sleep(300);
+  await page.goto('about:blank'); await tp.goto(`${url}?name=${TN}&pw=secret1&autoq=0`, { timeout: 120000 }); await tp.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
+  const tev = <T>(expr: string): Promise<T> => tp.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
+  check('T1.arayuz', !!(await tp.$('body.touch #tjoy')) && !!(await tp.$('.tatk')) && (await tp.evaluate(() => getComputedStyle(document.querySelector('.skillbar')!).right !== 'auto')), 'Dokunmatik cihazda joystick, saldırı düğmesi ve sağa alınmış beceri çubuğu var');
+  const cdp = await tctx.newCDPSession(tp); const jb = await (await tp.$('#tjoy'))!.boundingBox(); const jx = jb!.x + jb!.width / 2, jy = jb!.y + jb!.height / 2;
+  const tpl = [...world().players.values()].find((x) => x.name === TN)!; const x0 = tpl.x, z0 = tpl.z;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: jx, y: jy, id: 1 }] });
+  for (let i = 1; i <= 6; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: jx + i * 12, y: jy, id: 1 }] });
+  await sleep(2200); const joy = await tev<{ x: number; y: number } | null>('g.joy');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(400);
+  const moved = Math.hypot(tpl.x - x0, tpl.z - z0);
+  check('T2.joystick', !!joy && joy.x > 0.8 && moved > 3 && (await tev<boolean>('g.joy === null')), `Joystick sağa çekilince oyuncu ${moved.toFixed(1)} m yürüdü, bırakınca joystick sıfırlandı`);
+  const atkB = await (await tp.$('.tatk'))!.boundingBox();
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: atkB!.x + 20, y: atkB!.y + 20, id: 2 }] }); await sleep(300);
+  const held = await tev<boolean>('g.atkHeld'); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(300);
+  check('T3.saldiri', held && !(await tev<boolean>('g.atkHeld')), 'Saldırı düğmesi basılıyken saldırı açık, bırakınca kapanır');
+  const yaw0 = await tev<number>('g.camYaw'); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 420, y: 150, id: 3 }] });
+  for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 420 + i * 15, y: 150, id: 3 }] }); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  check('T4.kamera', Math.abs((await tev<number>('g.camYaw')) - yaw0) > 0.3, 'Tek parmak sürükleme kamerayı döndürür');
+  await tp.evaluate(() => (window as unknown as { __game: { ui: { open: (p: string) => void } } }).__game.ui.open('inv')); await sleep(800);
+  const pb = await tp.evaluate(() => { const r = document.querySelector('.panel')!.getBoundingClientRect(); return { w: r.width, h: r.height, l: r.left, t: r.top }; });
+  await tp.screenshot({ path: `${OUT}/t1-dokunmatik-panel.png` });
+  check('T5.panel-sigar', pb.w <= 844 && pb.h <= 390 && pb.l >= -1 && pb.t >= -1, `Envanter paneli 844×390 ekrana sığıyor (${Math.round(pb.w)}×${Math.round(pb.h)})`);
+  await tp.keyboard.press('Escape'); await tp.evaluate(() => (window as unknown as { __game: { ui: { panels: { close: () => void } } } }).__game.ui.panels.close()); await sleep(400);
+  await tp.screenshot({ path: `${OUT}/t2-dokunmatik-oyun.png` });
+  await tctx.close();
+}
+
 check('G.konsol', errors.filter((e) => !/AudioContext|favicon|WebGL|GPU stall|ReadPixels/i.test(e)).length === 0, 'Tarayıcı konsolunda hata yok' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 
 // kısmi (ONLY) koşularda önceki sonuçları koru: aynı kimlikli kontrol yenilenir, diğerleri kalır
