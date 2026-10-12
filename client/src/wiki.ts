@@ -7,6 +7,7 @@ import { EL, EL_KEYS } from '@shared/element';
 import { KT, KT_TYPES, KT_GRADES } from '@shared/kuttas';
 import { DAILY } from '@shared/daily';
 import { COMP_EVO, PACK } from '@shared/game';
+import { CHEST } from '@shared/chest';
 import { getLang, t } from './i18n';
 
 /**
@@ -149,6 +150,21 @@ Upgrading is risk and reward: high plusses cost a lot and many items burn on the
 - On failure ${KT.failLose} stones burn, 1 remains. Gold cost scales with level and grade
 ## Risk
 - Removing a stone (or replacing it) returns it with ${Math.round(KT.unsetKeep * 100)}% chance; otherwise it shatters`] },
+  { id: 'sandik', ic: 'bag', cat: 'grow', title: ['Boss anahtarı ve sandık', 'Boss keys & chests'], body: () => [
+`Saha ve zindan bosslarını yenince, ödül hakkı olan herkese bossun sınıfında bir anahtar düşer (Bronz: Sv ${CHEST.gradeMaxLv[0]} ve altı, Gümüş: Sv ${CHEST.gradeMaxLv[1]} ve altı, Altın: üstü).
+## Sandık
+- Her saha bossunun inin yakınında bir Kut Sandığı durur; yaklaşıp E ile aç. Aynı ya da daha yüksek sınıf anahtar açar (en düşük yeterli anahtar harcanır)
+- İçinden: akçe (boss ganimetinin kabaca %${Math.round(CHEST.gold[0] / 25 * 100)}–${Math.round(CHEST.gold[2] / 25 * 100)}’i), üst katman eşya, Kut Taşı şansı, kitap, tılsım ve yazıt parçası çıkar
+- Eşyalar yere düşer: topla. Anahtarlar pazarda takas edilmez
+## Not
+- Sandık sürekli durur; sınır anahtardır — yani boss avıdır. Zindan bossları da anahtar verir ve o anahtar her sandıkta kullanılabilir (sınıfı yetiyorsa)`,
+`Defeating a field or dungeon boss drops a key of the boss's grade to everyone who earned a reward (Bronze: Lv ${CHEST.gradeMaxLv[0]} and below, Silver: up to Lv ${CHEST.gradeMaxLv[1]}, Gold: above).
+## Chests
+- A Kut Chest stands near each field boss's lair; approach and press E. A key of the same or higher grade opens it (the lowest sufficient key is spent)
+- Contents: gold (roughly ${Math.round(CHEST.gold[0] / 25 * 100)}–${Math.round(CHEST.gold[2] / 25 * 100)}% of the boss loot), a higher-tier item, a chance of a Kut Stone, handbooks, charms and inscription fragments
+- Items fall to the ground — pick them up. Keys cannot be traded on the market
+## Note
+- The chest is always there; the limit is the key, i.e. boss hunting. Dungeon bosses also give keys, usable at any chest your key's grade covers`] },
   { id: 'element', ic: 'weapon', cat: 'grow', title: ['Element yazısı (silah)', 'Element scripts (weapons)'], body: () => [
 `Demirci’de ${EL.minUp} ve üstü silaha 6 elementten biri eklenir: ${EL_KEYS.map((k) => t('el.' + k)).join(', ')}.
 ## Etki

@@ -12,7 +12,7 @@ export type RpcOp =
   | 'equip' | 'unequip' | 'sell' | 'upgrade' | 'craft' | 'spec' | 'rankSkill' | 'respawn'
   | 'duel' | 'duelAccept' | 'oba.state' | 'oba.donate' | 'oba.claim' | 'oba.build' | 'oba.dispatch' | 'oba.evolve' | 'oba.collect'
   | 'inscription' | 'lang' | 'gm' | 'stone' | 'elder' | 'dreamSeen' | 'travel' | 'pvp' | 'dungeon.enter' | 'dungeon.leave' | 'cos' | 'kimiz.buy' | 'kimiz.use'
-  | 'chron' | 'ruin' | 'hunt.skip' | 'element' | 'kt.refine' | 'kt.set' | 'kt.unset' | 'fish.buy' | 'fish.cast' | 'fish.reel' | 'fish.rod' | 'fish.eat' | 'fish.clean' | 'fish.ancestor' | 'daily.claim' | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
+  | 'chron' | 'ruin' | 'hunt.skip' | 'element' | 'chest.open' | 'kt.refine' | 'kt.set' | 'kt.unset' | 'fish.buy' | 'fish.cast' | 'fish.reel' | 'fish.rod' | 'fish.eat' | 'fish.clean' | 'fish.ancestor' | 'daily.claim' | 'reroll' | 'market.browse' | 'market.list' | 'market.buy' | 'market.cancel' | 'market.mine' | 'market.claim';
 
 // ───────── Sunucu → İstemci ─────────
 export interface Welcome {
@@ -38,7 +38,7 @@ export interface Me {
   /** skill zinciri: son skill slotu (−1 yok), halka sayısı, bitiş (sunucu ms) */ combo: { s: number; n: number; u: number }; rested: number; restedCap: number; pvp: boolean; dun: DunInfo; cos: CostumeState; kimiz: number; kimizAt: number; rank: number; points: number; oymakId: number; oymakName: string;
   companions: Companion[]; expeditions: Expedition[]; tut: { step: number; prog: number }; lang: 'tr' | 'en';
   cds: number[]; dead: number; inscr: { frags: number; unlocked: number; thresholds: number[] };
-  hunt: { lv: number; k: [number, number] }; kt: KtState; fish: FishState; buffs: Buff[]; daily: DailyView; role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
+  hunt: { lv: number; k: [number, number] }; kt: KtState; keys: [number, number, number]; fish: FishState; buffs: Buff[]; daily: DailyView; role: 'player' | 'admin'; clues: string[]; shards: number; pendingDream: number; god: boolean;
 }
 /** bit bayrakları */
 export const F = { DEAD: 1, ATK: 2, STUN: 4, SLOW: 8, POISON: 16, CURSE: 32, SHIELD: 64, RED: 128, DUEL: 256, MOUNT: 512, BOSS: 1024, PVP: 2048, ALPHA: 4096 } as const;

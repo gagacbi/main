@@ -1,5 +1,5 @@
 {
- "at": "2026-10-12T18:58:15.674Z",
+ "at": "2026-10-12T19:05:45.590Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -257,151 +257,6 @@
    "detail": "Tılsımsız başarısızlıkta (+5 hedefi) eşya yok oldu"
   },
   {
-   "id": "D5.envanter",
-   "ok": true,
-   "detail": "Çanta paneli 7 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
-  },
-  {
-   "id": "D5c.donen-onizleme",
-   "ok": true,
-   "detail": "Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)"
-  },
-  {
-   "id": "D5d.ek-yuvalar",
-   "ok": true,
-   "detail": "Ek kuşanma yuvaları (kalkan, çizme, bilezik, küpe) kuşanılabiliyor: 5 yuva dolu"
-  },
-  {
-   "id": "D5b.envanter-v2",
-   "ok": true,
-   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=74022912)"
-  },
-  {
-   "id": "B4.uzmanlik-ui",
-   "ok": true,
-   "detail": "Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür"
-  },
-  {
-   "id": "B4.uzmanlik",
-   "ok": true,
-   "detail": "Kılıç Alp seçildi, sunucu doğruladı, model/istatistik değişti"
-  },
-  {
-   "id": "B3.kademe",
-   "ok": true,
-   "detail": "Savurma M1→M2 (kademe=2), puan + akçe harcandı"
-  },
-  {
-   "id": "S1.kut-yilligi",
-   "ok": true,
-   "detail": "Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür"
-  },
-  {
-   "id": "S2.wiki",
-   "ok": true,
-   "detail": "Oyun içi Wiki (U): 15 makale, Alp Avı kuralları ve örnek tablo görünür"
-  },
-  {
-   "id": "S3.alp-avi-hud",
-   "ok": true,
-   "detail": "Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür"
-  },
-  {
-   "id": "S4.gunluk",
-   "ok": true,
-   "detail": "Obanın Günlüğü (J): 4 görev, ilerleme çubukları, ödül türleri ve Günlük Hediye görünür"
-  },
-  {
-   "id": "S5.gol-avi",
-   "ok": true,
-   "detail": "Göl Avı paneli: olta seviyesi, yemler, olta at düğmesi, balık envanteri ve pişirme"
-  },
-  {
-   "id": "S6.zamanlama-oyunu",
-   "ok": true,
-   "detail": "Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor"
-  },
-  {
-   "id": "S7.element",
-   "ok": true,
-   "detail": "Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri"
-  },
-  {
-   "id": "S8.kut-sekmesi",
-   "ok": true,
-   "detail": "Demirci › Kut Taşları sekmesi: 6 tür, Tak/Saflaştır düğmeleri"
-  },
-  {
-   "id": "S8.kut-tak",
-   "ok": true,
-   "detail": "Taş takıldı (yuva sınıfı=1), istatistik sunucuda işlendi"
-  },
-  {
-   "id": "F6.tr",
-   "ok": true,
-   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
-  },
-  {
-   "id": "F6.en",
-   "ok": true,
-   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
-  },
-  {
-   "id": "C1.boy-secimi",
-   "ok": true,
-   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
-  },
-  {
-   "id": "A1.giris",
-   "ok": true,
-   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
-  },
-  {
-   "id": "C1.boy-kaydi",
-   "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt721"
-  },
-  {
-   "id": "F1.toon",
-   "ok": true,
-   "detail": "Toon materyal=44, kontur ağı=935, toplam ShaderMaterial=97"
-  },
-  {
-   "id": "F1.palet",
-   "ok": true,
-   "detail": "Sahnede 96 ayrı (3-bit) renk kovası: canlı palet"
-  },
-  {
-   "id": "F6.font",
-   "ok": true,
-   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
-  },
-  {
-   "id": "F4.hud",
-   "ok": true,
-   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 20 SVG ikon"
-  },
-  {
-   "id": "F4.yetenek-ikonlari",
-   "ok": true,
-   "detail": "Yetenek çubuğunda 7 renkli yetenek simgesi (game-icons)"
-  },
-  {
-   "id": "F4.yetenek-cubugu-altta",
-   "ok": true,
-   "detail": "Yetenek çubuğu ekranın altında (üst=612, alt=706, yükseklik=720)"
-  },
-  {
-   "id": "F5.ses",
-   "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=2.80 (kopuz/davul/bordo üretimi)"
-  },
-  {
-   "id": "F5.sessiz",
-   "ok": true,
-   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
-  },
-  {
    "id": "F3.yaratiklar",
    "ok": true,
    "detail": "Tepegöz yavrusu, Albastı, Erlik çırağı, çakal ve çatlak bekçisi sahnede: tepegoz, albasti, erlik, cakal, bekci"
@@ -447,9 +302,164 @@
    "detail": "Ganimet mıknatısı: akçe 5000→5013"
   },
   {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt669"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=44, kontur ağı=944, toplam ShaderMaterial=97"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 97 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 20 SVG ikon"
+  },
+  {
+   "id": "F4.yetenek-ikonlari",
+   "ok": true,
+   "detail": "Yetenek çubuğunda 7 renkli yetenek simgesi (game-icons)"
+  },
+  {
+   "id": "F4.yetenek-cubugu-altta",
+   "ok": true,
+   "detail": "Yetenek çubuğu ekranın altında (üst=612, alt=706, yükseklik=720)"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=3.50 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.00016735315148252994, sessizlikte enerji=0.000"
+  },
+  {
+   "id": "D5.envanter",
+   "ok": true,
+   "detail": "Çanta paneli 7 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
+  },
+  {
+   "id": "D5c.donen-onizleme",
+   "ok": true,
+   "detail": "Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)"
+  },
+  {
+   "id": "D5d.ek-yuvalar",
+   "ok": true,
+   "detail": "Ek kuşanma yuvaları (kalkan, çizme, bilezik, küpe) kuşanılabiliyor: 5 yuva dolu"
+  },
+  {
+   "id": "D5b.envanter-v2",
+   "ok": true,
+   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=74022912)"
+  },
+  {
+   "id": "B4.uzmanlik-ui",
+   "ok": true,
+   "detail": "Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür"
+  },
+  {
+   "id": "B4.uzmanlik",
+   "ok": true,
+   "detail": "Kılıç Alp seçildi, sunucu doğruladı, model/istatistik değişti"
+  },
+  {
+   "id": "B3.kademe",
+   "ok": true,
+   "detail": "Savurma M1→M2 (kademe=2), puan + akçe harcandı"
+  },
+  {
+   "id": "S1.kut-yilligi",
+   "ok": true,
+   "detail": "Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür"
+  },
+  {
+   "id": "S2.wiki",
+   "ok": true,
+   "detail": "Oyun içi Wiki (U): 16 makale, Alp Avı kuralları ve örnek tablo görünür"
+  },
+  {
+   "id": "S3.alp-avi-hud",
+   "ok": true,
+   "detail": "Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür"
+  },
+  {
+   "id": "S4.gunluk",
+   "ok": true,
+   "detail": "Obanın Günlüğü (J): 4 görev, ilerleme çubukları, ödül türleri ve Günlük Hediye görünür"
+  },
+  {
+   "id": "S5.gol-avi",
+   "ok": true,
+   "detail": "Göl Avı paneli: olta seviyesi, yemler, olta at düğmesi, balık envanteri ve pişirme"
+  },
+  {
+   "id": "S6.zamanlama-oyunu",
+   "ok": true,
+   "detail": "Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor"
+  },
+  {
+   "id": "S7.element",
+   "ok": true,
+   "detail": "Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri"
+  },
+  {
+   "id": "S8.kut-sekmesi",
+   "ok": true,
+   "detail": "Demirci › Kut Taşları sekmesi: 6 tür, Tak/Saflaştır düğmeleri"
+  },
+  {
+   "id": "S8.kut-tak",
+   "ok": true,
+   "detail": "Taş takıldı (yuva sınıfı=1), istatistik sunucuda işlendi"
+  },
+  {
+   "id": "S9.sandik-paneli",
+   "ok": true,
+   "detail": "Boss sandığına yaklaşıp E: sandık paneli, anahtar sayıları ve Aç düğmesi"
+  },
+  {
+   "id": "S9.sandik-ac",
+   "ok": true,
+   "detail": "Sandık açıldı, 1 anahtar harcandı (kalan 5/6), ganimet gösterildi"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=6.61 ms; aktif mesh=151/2603; üçgen=466566; (yazılım rasterleştirmede FPS=10)"
+   "detail": "Kare başına JS/CPU maliyeti=4.55 ms; aktif mesh=137/2843; üçgen=293078; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -458,15 +468,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 2.7978515625,
+  "audioPeak": 3.4970703125,
   "dropsSeenDuringLoot": 2,
   "perf": {
-   "fps": 10,
-   "meshes": 2603,
-   "active": 151,
+   "fps": 4,
+   "meshes": 2843,
+   "active": 137,
    "draw": 0,
-   "tris": 466566,
-   "cpuMs": 6.61
+   "tris": 293078,
+   "cpuMs": 4.55
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

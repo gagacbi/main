@@ -1,3 +1,4 @@
+import { CHEST, chestPos, gradeOfLevel, keyFor, normKeys } from '../shared/chest';
 import { KT, KT_TYPES, KT_GRADES, ktLines, ktNorm, type KtType } from '../shared/kuttas';
 import { dungeonDay } from '../shared/dungeon';
 import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
@@ -436,6 +437,7 @@ export class World {
       for (let i = 0; i < 3; i++) this.spawnDrop(p, 'frag', m.x, m.z);
       this.spawnDrop(p, 'mat', m.x, m.z, { m: 'ore', amount: irange(rng, 6, 12) });
       if (p.d.level >= KT.minLevel) { const n = 1 + (rng() < 0.5 ? 1 : 0); for (let i = 0; i < n; i++) this.giveStone(p, rng() < KT.bossGrade1 ? 1 : 0); }
+      { const kg = gradeOfLevel(m.lvl); const ks = (p.d.keys = normKeys(p.d.keys)); ks[kg]++; this.sys(p, 'sys.key.' + kg, {}); this.ledger(p, 'key.drop', { boss: m.bossId, grade: kg }); }
       this.ledger(p, 'boss.reward', { boss: m.bossId, tier: it.tier, gold });
       this.sys(p, 'sys.boss_reward', {});
     }
@@ -947,6 +949,16 @@ export class World {
       }
       case 'market.browse': case 'market.mine': case 'market.claim': case 'market.list': case 'market.cancel': case 'market.buy': return marketRpc(this, p, op, a);
       case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }
+      case 'chest.open': {
+        const n = Math.floor(Number(a.n)); const b = genBosses().find((x) => x.id === n); if (!b) throw new GameError('bad_args');
+        this.alive(p); this.near(p, chestPos(b), CHEST.interact); const grade = gradeOfLevel(b.level); const ks = (d.keys = normKeys(d.keys)); const kg = keyFor(ks, grade); if (kg < 0) throw new GameError('no_key');
+        ks[kg]--; const r = this.ctx.rng; const out: { gold: number; items: Item[]; stone: boolean; book: number; charm: number; frag: number } = { gold: 0, items: [], stone: false, book: 0, charm: 0, frag: 0 };
+        out.gold = Math.round(CHEST.goldAmount(grade, b.level) * (0.85 + r() * 0.3)); d.gold += out.gold;
+        for (let i = 0; i < CHEST.items[grade]; i++) { const it = makeItem(r, randomSlot(r), b.level, rollTier(r, CHEST.minTier[grade], 0.3)); out.items.push(it); this.spawnDrop(p, 'item', p.x, p.z, { item: it, t: it.tier, m: it.slot }); }
+        if (d.level >= KT.minLevel && r() < CHEST.stone[grade]) { this.giveStone(p, r() < CHEST.stoneG1[grade] ? 1 : 0); out.stone = true; }
+        out.book = irange(r, CHEST.books[grade][0], CHEST.books[grade][1]); d.bag.book += out.book; if (r() < CHEST.charm[grade]) { d.bag.charm++; out.charm = 1; } out.frag = irange(r, CHEST.frag[grade][0], CHEST.frag[grade][1]); this.addFrag(p, out.frag);
+        this.ledger(p, 'chest.open', { boss: n, grade, keyGrade: kg, gold: out.gold, items: out.items.length, stone: out.stone }); p.meDirty = true; this.save(p); return out;
+      }
       case 'stone': {
         const n = Math.floor(a.n); const st = genStones().find((s) => s.n === n); if (!st) throw new GameError('bad_stone');
         this.alive(p); this.near(p, st, 6);
@@ -1365,7 +1377,7 @@ export class World {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
       combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
-      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, kt: ktNorm(d.kt), fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
+      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, kt: ktNorm(d.kt), keys: normKeys(d.keys), fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
       role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,

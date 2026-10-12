@@ -19,6 +19,8 @@ import { itemArtFrames } from '../game/itemart';
 import { EL, EL_KEYS, type ElKey } from '@shared/element';
 import type { MobType } from '@shared/game';
 import { COMP_EVO, compEvo } from '@shared/game';
+import { CHEST, CHEST_GRADES, gradeOfLevel, keyFor } from '@shared/chest';
+import { genBosses } from '@shared/world';
 import { KT, KT_TYPES, KT_GRADES, ktLines, type KtType } from '@shared/kuttas';
 import { FISH, FISH_DEFS, EDIBLE, fishOf, catchRange, type FishId } from '@shared/fishing';
 import { DAILY } from '@shared/daily';
@@ -34,7 +36,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'fish' | 'daily' | 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom';
+export type PanelName = 'fish' | 'daily' | 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom' | 'chest';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -99,7 +101,7 @@ export class Panels {
 
   // ─── açma / kapama ───
   async show(n: PanelName) {
-    this.open = n; this.lastResult = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
+    this.open = n; this.lastResult = null; if (n === 'chest') this.chestRes = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
     if (n === 'oba') await this.refreshOba();
     if (n === 'elder') await this.g.net.rpc('elder');
     if (n === 'market') await this.loadMarket();
@@ -128,7 +130,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), fish: () => this.fishPanel(), daily: () => this.dailyPanel(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), fish: () => this.fishPanel(), daily: () => this.dailyPanel(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), chest: () => this.chestPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -449,6 +451,14 @@ export class Panels {
 
   // ─── Göl Avı ───
   fg: { endAt: number; hits: number; zone: number; zw: number; pos: number; dir: number; speed: number; big: boolean; raf: number; key: ((e: KeyboardEvent) => void) | null } | null = null;
+  chestN = 0; chestRes: { gold: number; items: Item[]; stone: boolean; book: number; charm: number; frag: number } | null = null;
+  /** Boss sandığı paneli */
+  chestPanel() {
+    const m = this.me; const b = genBosses().find((x) => x.id === this.chestN); if (!b) return this.shell(t('chest.t'), 'bag', `<div class="card bad">${t('err.bad_args')}</div>`);
+    const gr = gradeOfLevel(b.level); const kg = keyFor(m.keys, gr); const keyChips = CHEST_GRADES.map((n, g) => `<span class="chip ${g < gr ? 'dim' : ''}" style="border-color:${CHEST.colors[g]}"><span class="ktgem" style="--kc:${CHEST.colors[g]}"></span>${t('chest.key.' + n)} <b>${m.keys[g]}</b></span>`).join('');
+    const r = this.chestRes; const res = r ? `<div class="result good"><b>${t('chest.loot')}</b>: +${num(r.gold)} ${icon('akce')} ${r.items.map((it) => `<span style="color:${TIER_COLORS[it.tier]}">${esc(itemName(it))}</span>`).join(', ')}${r.stone ? ' · ' + t('chest.stone') : ''}${r.book ? ` · +${r.book} ${icon('book')}` : ''}${r.charm ? ` · +${r.charm} ${icon('charm')}` : ''}${r.frag ? ` · +${r.frag} ${icon('frag')}` : ''}</div>` : '';
+    return this.shell(t('chest.t'), 'bag', `<div style="min-width:420px"><div class="card" style="border-left:6px solid ${CHEST.colors[gr]}"><b>${t('chest.of', { n: t('boss.' + b.id) })}</b><div class="muted">${t('chest.grade')}: ${t('chest.key.' + CHEST_GRADES[gr])} · ${t('chest.need')}</div></div><div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${keyChips}</div><button class="btn primary" style="width:100%;padding:10px" data-act="chestopen" ${kg >= 0 ? '' : 'disabled'}>${kg >= 0 ? t('chest.open', { k: t('chest.key.' + CHEST_GRADES[kg]) }) : t('err.no_key')}</button>${res}<div class="muted" style="margin-top:8px">${t('chest.hint')}</div></div>`);
+  }
   /** Kut Taşları sekmesi (Demirci) */
   ktView() {
     const m = this.me; const kt = m.kt; const gem = (ty: KtType, g: number) => `<span class="ktgem g${g}" style="--kc:${KT.colors[ty]}" title="${t('kt.g' + g)}"></span>`;
@@ -613,6 +623,7 @@ export class Panels {
         if (r.ok) { const x = r.data as { ok?: boolean; kept?: boolean | null }; if (d.act === 'ktref') { this.lastResult = x.ok ? { cls: 'good', text: t('kt.refine.ok') } : { cls: 'bad', text: t('kt.refine.fail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } else { this.lastResult = x.kept === false ? { cls: 'bad', text: t('kt.broke') } : null; this.g.audio.sfx(x.kept === false ? 'err' : 'ui'); } this.render(true); }
         return;
       }
+      case 'chestopen': { const r = await this.act('chest.open', { n: this.chestN }); if (r.ok) { this.chestRes = r.data as typeof this.chestRes; this.g.audio.sfx('rare'); this.g.fx.burst('gold', this.g.pos.x, 1.2, this.g.pos.z, 40); this.render(true); } return; }
       case 'fishanc': { await this.act('fish.ancestor', { choice: d.v }); break; }
       case 'invp': this.invPage = (d.v ?? 'items') as typeof this.invPage; break;
       case 'goto': await this.show(d.v as PanelName); return;

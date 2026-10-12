@@ -7,7 +7,8 @@ import { LOOM_POS } from '@shared/costume';
 import { mulberry32 } from '@shared/rng';
 import { genRuins } from '@shared/chronicle';
 import { FISH } from '@shared/fishing';
-import { ROAD_HALF, ROAD_LEN, genStones, roadDist, worldObstacles } from '@shared/world';
+import { CHEST, chestPos, gradeOfLevel } from '@shared/chest';
+import { ROAD_HALF, ROAD_LEN, genBosses, genStones, roadDist, worldObstacles } from '@shared/world';
 import { drawEmblem } from '../ui/emblems';
 import { build, type PartSpec } from './meshkit';
 import { FOG_COLOR, SKY, addOutline, getViewK, registerFog, toonMaterial } from './toon';
@@ -200,7 +201,7 @@ export class World3D {
   mat: ShaderMaterial;
   constructor(public scene: Scene) {
     this.mat = toonMaterial(scene, { vertexColors: true });
-    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRuins(); this.makeRegions(); this.makeLoom(); this.makeFishDock();
+    this.makeSky(); this.makeGround(); this.makeMountains(); this.makeClouds(); this.makeTrees(); this.makeRocks(); this.makeGrass(); this.makeHub(); this.makePropShadows(); this.makeStones(); this.makeRuins(); this.makeChests(); this.makeRegions(); this.makeLoom(); this.makeFishDock();
   }
   isGround(m: { name?: string } | null | undefined) { return !!m && (m === (this.ground as unknown) || this.grounds.includes(m as Mesh)); }
 
@@ -328,6 +329,19 @@ export class World3D {
       const glow = build(sc, 'balbalglow' + st.n, [{ k: 'box', w: 0.5, h: 0.07, dp: 0.06, p: [0, 1.9, 0.78], c: '#7fe0ff' }, { k: 'box', w: 0.07, h: 0.5, dp: 0.06, p: [0, 1.75, 0.78], c: '#7fe0ff' }, { k: 'box', w: 0.3, h: 0.06, dp: 0.06, p: [0, 1.5, 0.74], c: '#7fe0ff' },
         { k: 'sphere', d: 0.12, p: [-0.28, 3.68, 0.64], c: '#9fefff' }, { k: 'sphere', d: 0.12, p: [0.28, 3.68, 0.64], c: '#9fefff' }]);
       glow.material = gm; glow.parent = m; this.stones.push({ n: st.n, x: st.x, z: st.z, glow, mat: gm, seen: false });
+    }
+  }
+  /** Boss sandıkları: her bossun inini işaretler; sınıfa göre renkli (bronz/gümüş/altın) */
+  private makeChests() {
+    const sc = this.scene;
+    for (const b of genBosses()) {
+      const g = gradeOfLevel(b.level); const c = CHEST.colors[g]; const pos = chestPos(b);
+      const body: PartSpec[] = [
+        { k: 'box', w: 1.7, h: 0.85, dp: 1.1, p: [0, 0.43, 0], c: '#6b4524', c2: '#8a5c30' }, { k: 'cyl', db: 0.55, dt: 0.55, h: 1.7, p: [0, 1.05, 0], c: '#7c5129', c2: '#9a6a3a', seg: 10, r: [0, 0, 1.5708] },
+        { k: 'box', w: 1.78, h: 0.14, dp: 1.18, p: [0, 0.86, 0], c }, { k: 'box', w: 0.16, h: 1.15, dp: 1.2, p: [-0.55, 0.62, 0], c }, { k: 'box', w: 0.16, h: 1.15, dp: 1.2, p: [0.55, 0.62, 0], c },
+        { k: 'box', w: 0.28, h: 0.34, dp: 0.1, p: [0, 0.78, 0.58], c: '#ffe08a', gloss: 0.6 },
+      ];
+      const m = build(sc, 'chest' + b.id, body); m.material = this.mat; m.position.set(pos.x, 0, pos.z); m.rotation.y = Math.atan2(-pos.x, -pos.z) + 0.3; addOutline(m, sc).parent = m; this.root.addChild(m);
     }
   }
   ruins: { n: number; mat: ShaderMaterial; seen: boolean }[] = [];

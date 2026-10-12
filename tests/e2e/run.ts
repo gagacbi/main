@@ -1,6 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium, type Browser, type Page } from 'playwright';
 import { startGameServer } from '../../server/index';
+import { genBosses } from '../../shared/world';
+import { chestPos } from '../../shared/chest';
 import { HUB, HUB_R, UPGRADE_RATE, makeItem } from '../../shared/game';
 import { mulberry32 } from '../../shared/rng';
 import { Bot } from '../integration/helpers';
@@ -191,6 +193,9 @@ if (want('paneller')) {
     const ktTxt = (await page.textContent('.panel')) ?? ''; check('S8.kut-sekmesi', /Alp Taşı/.test(ktTxt) && /Saflaştır/.test(ktTxt) && /Tak/.test(ktTxt), 'Demirci › Kut Taşları sekmesi: 6 tür, Tak/Saflaştır düğmeleri');
     await page.click('[data-act="ktset"][data-ty="alp"][data-g="1"]'); await sleep(900); check('S8.kut-tak', pl(NAME).d.kt!.eq[0] === 1 && /\+2/.test((await page.textContent('.panel')) ?? ''), `Taş takıldı (yuva sınıfı=${pl(NAME).d.kt!.eq[0]}), istatistik sunucuda işlendi`);
     await page.click('.tab2[data-v="up"]'); await sleep(300); await page.keyboard.press('Escape'); await sleep(300); }
+  { const mm = pl(NAME); const bd = genBosses()[0]; const cp = chestPos(bd); mm.x = cp.x + 1; mm.z = cp.z; mm.d.keys = [2, 2, 2]; mm.meDirty = true; await sleep(1500); await page.keyboard.press('e'); await sleep(900); await shot('13c-sandik');
+    const cTxt = (await page.textContent('.panel')) ?? ''; check('S9.sandik-paneli', /Kut Sandığı/.test(cTxt) && /anahtar/i.test(cTxt), 'Boss sandığına yaklaşıp E: sandık paneli, anahtar sayıları ve Aç düğmesi');
+    await page.click('[data-act="chestopen"]'); await sleep(1000); const used = mm.d.keys!.reduce((a, b) => a + b, 0); check('S9.sandik-ac', used === 5 && /Sandıktan çıkanlar/.test((await page.textContent('.panel')) ?? ''), `Sandık açıldı, 1 anahtar harcandı (kalan ${used}/6), ganimet gösterildi`); await page.keyboard.press('Escape'); await sleep(300); }
   await page.keyboard.press('Escape');
 }
 

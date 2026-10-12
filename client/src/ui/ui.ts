@@ -89,7 +89,7 @@ export class UI {
     if (k === 'q') { void this.useKimiz(); }
     if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
   }
-  open(p: PanelName | 'elder' | 'smith' | 'oba' | 'inscr' | 'loom', toggle = false) {
+  open(p: PanelName | 'elder' | 'smith' | 'oba' | 'inscr' | 'loom' | 'chest', toggle = false) {
     if (p === 'oba' || p === 'smith' || p === 'elder' || p === 'inscr') {
       // etkileşimli paneller NPC/binaya yakınlık ister; uzaktaysa yalnızca bilgi gösterilir
     }
@@ -233,7 +233,7 @@ export class UI {
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
     q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '') + this.huntHtml(m) + this.dailyHtml(m);
     // etkileşim ipucu
-    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key))}`; } else this.e.prompt.style.display = 'none';
+    const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key.startsWith('chest:') ? 'chest' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
     if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.innerHTML = (left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : '') + this.deathHint(); }

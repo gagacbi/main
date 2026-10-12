@@ -22,3 +22,14 @@
 # Agresif sürüler ve çekme (aynı turda)
 `PACK` (shared/game.ts), `World.alertPack` / `campMobs` (server/world.ts), `F.ALPHA` + `howl` olayı (istemci: halka + "!" + ses). Yaratık hedef bulunca ya da ilk darbeyi alınca yakındaki (çağrı yarıçapı türe göre: Çakal 16, Albastı/Erlik 9, Tepegöz 7) hedefsiz kamp arkadaşları gelir; zincirleme YOK → kenardaki yaratığı uzaktan çekip sürüyü bölmek mümkün. Kampın ilk yaratığı (≥4'lük kamplarda) Sürü Başı: 1,8× can, 1,15× saldırı, tüm kampı çağırır; ödül ×2,5 XP, ek akçe, üst katman eşya şansı %60, Kut Taşı %25.
 **Açık:** zorluk/ekonomi etkisi simüle edilmedi (alfa XP/ödül faucet; sürü çağrısı solo av hızını düşürür). Mevcut bot simülasyonu testleri geçti ama çağrı davranışını ölçmüyor.
+
+---
+# Boss anahtarı ve sandık (aynı turda)
+`shared/chest.ts`, `chest.open` RPC, Me.keys, Kut Sandığı paneli, 3D sandık modeli (her saha bossunun inine). Boss ölünce ödül hakkı olan herkese bossun sınıfında (Bronz ≤Sv19, Gümüş ≤Sv39, Altın) bir anahtar; sandık aynı/yüksek sınıf anahtarla açılır (en düşük yeterli harcanır). Ganimet: akçe (boss akçesinin ~%24–64'ü), üst katman eşya (yere düşer), Kut Taşı şansı %35/55/85, kitap, tılsım, parça. Anahtarlar pazarda takas edilmez.
+**Açık:** ekonomi simülasyonu yok (yeni faucet: sandık akçesi + eşya + taş); zindan içinde sandık yok (zindan bossu anahtarı veriyor); anahtar HUD göstergesi yalnızca sandık panelinde.
+
+# Balıkçılık tutma şansı (aynı turda)
+Metin2 viki'sinde yüzde yoktur (3 isabet yalnızca "şans" verir, bilinmeyen eşya = başarısızlık, olta puanı yine kazanılabilir, balık ayıklanınca solucan/kılçık çıkar). Kut'ta: tutma şansı sıradan %82, nadir %55, Ata %30 + olta seviyesi başına %1,5 (en çok +%15) + solucan %5 + şans yemi %10 (üst sınır %95). Sonuç atışta sunucuca belirlenir; kaçarsa yem gider, %15 olta puanı. Balık Ayıkla: %40 solucan, %40 kılçık, %20 kaçar. Bot riski: isabet sayısı hâlâ istemci bildirimli ama kaçma olasılığı kazancı sınırlar (ölçülmedi).
+
+# Dokunmatik kontrol (aynı turda)
+`client/src/ui/touch.ts`: joystick, basılı tutulan saldırı düğmesi, E düğmesi, 1 parmak kamera, 2 parmak yakınlaştırma, panel/beceri çubuğu mobil düzeni. Chromium 844×390 dokunmatik emülasyonunda test edildi (e2e T1–T5). **Gerçek cihazda denenmedi**; görev kutusu mobilde gizli.
