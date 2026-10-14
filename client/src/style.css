@@ -347,3 +347,5 @@ body.touch.panel-open .tjoy, body.touch.panel-open .tbtns, body.touch.panel-open
 @keyframes ktpulse { to { filter: brightness(1.4); } } .chip.dim { opacity: .45; }
 .chip.evo { font-weight: 800; } .chip.evo.e1 { background: #cfe8c8; } .chip.evo.e2 { background: #f5dd9a; } .chip.evo.e3 { background: linear-gradient(90deg, #ffd46a, #ff9a5a); box-shadow: 0 0 8px rgba(255,170,80,.7); }
 .plate.alpha .hpbar { width: 96px; height: 9px; } .plate.alpha .nm { color: #ffb36a; text-shadow: 0 0 6px rgba(255,120,40,.7); }
+.compass.guide { filter: hue-rotate(160deg) saturate(1.4); }
+.gemimg { vertical-align: middle; filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); } .chip .gemimg { margin: -4px 2px -4px -4px; }

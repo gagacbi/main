@@ -9,13 +9,14 @@ import { costumeBounds, costumeRef, COSTUME, COS_MATS, DAY, LOOKS, LOOM_POS, add
 import { ENH, KIMIZ, gatePos, upgradeCost as upCost } from '../../../shared/game';
 import { GOOD_KEYS, goodBounds, goodGet, goodRef, kimizPrice, type GoodKey } from '../../../shared/goods';
 import type { Mob, Player } from '../../../server/world';
+import { chestRoutine, elementRoutine, evolveRoutine, fishTrade, ktRoutine } from './newsys';
 import type { Arch } from './archetypes';
 import type { Engine } from './engine';
 
 /** harcama modeli: flexible_proportional (bakiye/gelirle orantılı) | baseline_heavy (önce aktivitenin zorunlu giderleri, kalan üzerinden isteğe bağlı) */
 export const SPEND_MODEL: 'flexible_proportional' | 'baseline_heavy' = process.env.POP_SPEND === 'baseline_heavy' ? 'baseline_heavy' : 'flexible_proportional';
 export type Activity = 'farm' | 'boss' | 'rift' | 'pvp' | 'dun';
-export interface Params { /** v1.1 deney: risk iştahı (0–1), yükseltme bütçe oranı (0.05–0.30, günlük akçenin payı), ilerleme isteği (0–1, günlük deneme olasılığı) */ riskAppetite?: number; upBudget?: number; progDesire?: number; skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean }
+export interface Params { /** v1.1 deney: risk iştahı (0–1), yükseltme bütçe oranı (0.05–0.30, günlük akçenin payı), ilerleme isteği (0–1, günlük deneme olasılığı) */ riskAppetite?: number; upBudget?: number; progDesire?: number; skill: number; retreat: number; offset: number; safeUp: number; riskUp: number; charm: boolean; book: boolean; defAware: boolean; smartWeapon: boolean; spec: Spec; sellP: number; buyP: number; fightBack: boolean; skillOrder: number[]; obaDil: number; /** PvP bayrağı açık mı */ flag?: boolean; /** kostümle ilgilenir */ cos?: boolean; cosWeekly?: boolean; cosChase?: number; /** mini haritayı (kamp seviyesi + doluluk) okur */ readsMap: boolean; /** yeni sistemler: balık payı (günlük dakika oranı), yalnızca balıkçı, bot (makro), buf tüketicisi, Kut Taşı, element, evrim */ fish?: number; fisher?: boolean; fishBot?: boolean; fishBait?: 'hamur' | 'solucan'; buffUser?: boolean; ktOn?: boolean; ktMaxGrade?: number; eleOn?: boolean; evoOn?: boolean }
 export interface DayRec { kzUsed?: number; kzShort?: number; kzBought?: number; day: number; level: number; prog: number; gold: number; worth: number; kills: number; deaths: number; minutes: number; bossKills: number; riftCloses: number; pvpKills: number; pvpDeaths: number; marketNet: number; upgrades: number; destroyed: number; income: Record<string, number>; expense: Record<string, number> }
 
 const SLOTS: Slot[] = ['weapon', 'armor', 'helmet', 'amulet'];
@@ -79,8 +80,8 @@ export class Agent {
   progress() { return this.d.level + (this.d.level >= 50 ? 0 : this.d.xp / xpToNext(this.d.level)); }
 
   // ───────────── yurtta bakım (gerçek RPC'ler) ─────────────
-  private rpc(op: Parameters<Engine['rig']['world']['rpcRun']>[1], a: unknown = {}) { try { return { ok: true as const, data: this.w.rpcRun(this.p, op, a) as any }; } catch (e) { return { ok: false as const, err: (e as Error).message }; } }
-  private at(x: number, z: number) { this.p.x = x; this.p.z = z; }
+  rpc(op: Parameters<Engine['rig']['world']['rpcRun']>[1], a: unknown = {}) { try { return { ok: true as const, data: this.w.rpcRun(this.p, op, a) as any }; } catch (e) { return { ok: false as const, err: (e as Error).message }; } }
+  at(x: number, z: number) { this.p.x = x; this.p.z = z; }
   town() {
     const p = this.p; const d = this.d; const r = this.eng.rng; const w = this.w;
     p.deadUntil = 0; this.at(HUB.demirci.x - 2, HUB.demirci.z);
@@ -103,7 +104,8 @@ export class Agent {
     this.sellJunk();
     // oba
     if (this.par.obaDil > r()) this.obaTrip();
-    this.buyKimiz(this.plannedMin); this.applyFlag(); this.goodsTrade(); this.costumeRoutine();
+    this.at(HUB.demirci.x - 2, HUB.demirci.z); ktRoutine(this); elementRoutine(this); chestRoutine(this);
+    this.buyKimiz(this.plannedMin); this.applyFlag(); this.goodsTrade(); fishTrade(this); this.costumeRoutine();
     this.at(HUB.demirci.x - 2, HUB.demirci.z); w.recalc(p);
   }
   /** ana tehdit türü: en çok hasar alınan tür (yeterli veri yoksa kamp/boss tehdit karışımı) */
@@ -217,6 +219,7 @@ export class Agent {
       const o = info.data; if (!o.upgrade) for (const b of ['demir', 'otag'] as const) { if (o.nextCost[b] && this.rpc('oba.build', { b }).ok) break; }
     }
     for (const e of [...d.expeditions]) if (this.w.now >= e.endAt) { const res = this.rpc('oba.collect', { expId: e.id }); if (res.ok) this.reward('sefer döndü'); }
+    evolveRoutine(this);
     for (const c of d.companions) if (!d.expeditions.some((e) => e.compId === c.id) && d.expeditions.length < (info.ok ? info.data.slots : 2)) this.rpc('oba.dispatch', { compId: c.id, hours: 12 });
   }
 
@@ -305,6 +308,7 @@ export class Agent {
     };
     const minBatch = (k: GoodKey) => (k === 'ore' || k === 'hide' || k === 'wood' ? 40 : k === 'lif' ? 20 : 1);
     for (const k of GOOD_KEYS) {
+      if (k.startsWith('fish_')) continue;   // balık: küçük partilerle fishTrade
       const surplus = goodGet(d, k) - keep(k); if (surplus < minBatch(k) || !(this.arch.market.sell > r()) || !mk.canList(this)) continue;
       const qty = surplus; const unit = mk.goodUnit(k); const b = goodBounds(k, qty);
       const price = Math.max(b.min, Math.min(b.max, Math.round(unit * qty * (0.9 + r() * 0.2))));
@@ -333,7 +337,7 @@ export class Agent {
 
   /** kımız stoğu. flexible: etkinliğe göre sabit hedef, yalnızca kasa rahatsa. baseline_heavy: aktivitenin ZORUNLU gideri — beklenen savaş dakikası × ölçülen tüketim hızı (bakiyeye bağlı değil); yetmezse eksik loglanır ve ajan daha temkinli oynar */
   buyKimiz(plannedMin = 20) {
-    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; const have = (d.kimiz ?? 0); const price = kimizPrice(d.level);
+    if (process.env.POP_NOKIMIZ || this.par.fisher) return; const d = this.d; if (d.level < 10) return; const have = (d.kimiz ?? 0); const price = kimizPrice(d.level);
     if (SPEND_MODEL === 'baseline_heavy') {
       const heavy = ['boss', 'rift', 'pvp', 'dun'].includes(this.activity); const expect = Math.ceil(this.kzRate * plannedMin * (heavy ? 1.3 : 1) * 1.15 + 0.5);
       const want = Math.min(KIMIZ.maxStack - have, expect - have); if (want <= 0) { this.shortage = Math.max(0, this.shortage - 1); return; }
@@ -348,7 +352,7 @@ export class Agent {
   }
   /** dilim dışı (ölçeklenen) dakikaların kımız tüketimi: ölçülen tüketim hızı × dakika. baseline_heavy: stok yetmezse kasası elveriyorsa alır (zorunlu gider), yoksa eksik loglanır */
   extraKimiz(minutes: number) {
-    if (process.env.POP_NOKIMIZ) return; const d = this.d; if (d.level < 10) return; let n = Math.round(this.kzRate * minutes * (0.85 + 0.3 * this.eng.rng())); const price = kimizPrice(d.level);
+    if (process.env.POP_NOKIMIZ || this.par.fisher) return; const d = this.d; if (d.level < 10) return; let n = Math.round(this.kzRate * minutes * (0.85 + 0.3 * this.eng.rng())); const price = kimizPrice(d.level);
     while (n-- > 0) {
       if ((d.kimiz ?? 0) < 1) { if (SPEND_MODEL === 'baseline_heavy' && d.gold >= price) { this.at(HUB.demirci.x - 2, HUB.demirci.z); const r = this.rpc('kimiz.buy', { n: 1 }); if (r.ok) { this.ext.kimizBought = (this.ext.kimizBought ?? 0) + 1; this.ext.kimizSpend = (this.ext.kimizSpend ?? 0) + r.data.cost; } }
         if ((d.kimiz ?? 0) < 1) { this.ext.kimizShort = (this.ext.kimizShort ?? 0) + n + 1; this.shortage = Math.min(3, this.shortage + 1); break; } }
@@ -411,6 +415,7 @@ export class Agent {
   }
   /** her tick: hangi etkinlik varsa onu yürüt */
   step(ix: { campMobs: Map<number, Mob[]>; bosses: Mob[]; riftMobs: Map<number, Mob[]> }) {
+    if (this.par.fisher) { this.stop(); this.w.onAttack(this.p, { on: false }); return; }   // balık botu: kıyıda oturur (balık rutini dilim sonunda)
     if (this.activity === 'farm') this.sliceFarmWall++;
     const p = this.p; const w = this.w; const risky = zoneAt(p.x, p.z) === 'risky';
     if (p.deadUntil > 0) { try { w.respawn(p); } catch { /* erken */ } this.resting = true; return; }

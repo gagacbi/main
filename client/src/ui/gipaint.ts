@@ -25,5 +25,11 @@ const UI: Record<string, [string, P3]> = {
   fish_kralyengeci: ['crab', ['#ffc4b0', '#e0553a', '#7a2214']], fish_altinsudak: ['porcupinefish', ['#fff3b0', '#f2bb3b', '#a8691a']], fish_ata: ['whale-tail', ['#c8f0ff', '#4ab0e8', '#1e5a9a']],
   hamur: ['sliced-bread', ['#fff0d0', '#e0b070', '#8a6030']], solucan: ['earth-worm', ['#ffc8c0', '#e07a7a', '#8a3a3a']], rod: ['fishing-pole', ['#e3c797', '#b9814a', '#6a4a28']], daily: ['scroll-unfurled', ['#fff3d0', '#e8c070', '#9a6a28']],
   kimiz: ['waterskin', ['#fff8dc', '#e6d9a8', '#9a8450']],
+  key_0: ['boss-key', ['#ffd7a3', '#dd8f46', '#8a4f22']], key_1: ['boss-key', ['#f4f7fc', '#aeb9cb', '#5f6c80']], key_2: ['boss-key', GOLD],
+  chest: ['locked-chest', ['#e3b27a', '#b9783a', '#6a3f1c']], chest_open: ['open-treasure-chest', GOLD], gems: ['gems', ['#ffd0e8', '#e45aa0', '#8a1f5a']], pack: ['wolf-howl', ['#ffe0b0', '#f08a3c', '#a23c1c']],
+  sound: ['sound-on', ['#fff3b0', '#f2bb3b', '#a8691a']], mute: ['sound-off', ['#e8e2d4', '#a8a090', '#5a5446']], close: ['cross-mark', ['#ffd0c8', '#e0604a', '#8a2a1c']],
+  loom: ['spinning-wheel', ['#fff0d0', '#e8a85a', '#8a4f22']], nazar: ['evil-eyes', ['#d8ecff', '#4a8ae0', '#1e3a8a']], dugum: ['knot', ['#ffe0b0', '#d08a4a', '#7a4a22']],
+  boncuk: ['prayer-beads', ['#ffd0e8', '#e45aa0', '#8a1f5a']], kagit: ['papyrus', ['#fff3d0', '#e8d8a0', '#9a8a50']], rift: ['portal', ['#e8d0ff', '#a05ae0', '#4a1f8a']], chat: ['chat-bubble', ['#e8f4ff', '#8fb8f2', '#3a5aa8']],
+  weapon: ['anvil', ['#e4e8ee', '#8d98a8', '#4a5262']],
 };
 export function uiIcon(k: string): string | null { const m = UI[k]; return m ? paint(m[0], m[1][0], m[1][1], m[1][2], 'gi') : null; }

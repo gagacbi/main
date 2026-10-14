@@ -165,6 +165,21 @@ Upgrading is risk and reward: high plusses cost a lot and many items burn on the
 - Items fall to the ground — pick them up. Keys cannot be traded on the market
 ## Note
 - The chest is always there; the limit is the key, i.e. boss hunting. Dungeon bosses also give keys, usable at any chest your key's grade covers`] },
+  { id: 'rehber', ic: 'stele', cat: 'play', title: ['Alp Rehberi (görevler)', 'Alp Guide (quests)'], body: () => [
+`Çekirdek öğretici (5 adım: Otlak, bağış, bina, sefer, yükseltme) bitince Ak Sakal sana ikinci kitabını verir: **Alp Rehberi**. Sağdaki görev kutusunda en çok 3 açık görev görünür; başlığa tıklayınca tam liste açılır (ya da görev kutusundaki başlık).
+## Nasıl çalışır
+- Her görev bir sistemi öğretir ve onu gerçekten kullandırır: Kımız, balıkçılık, Kut Taşı, sandık, yoldaş evrimi, element, zindan...
+- Görevler seviyeyle açılır; bazıları öncekini ister (olta → balık → pişirme). Dilediğin sırayla yapabilirsin
+- Pusula oku, hedefin (iskele, Demirci, Otağ, sandık...) yönünü gösterir
+- Ödüller küçük ve tek seferliktir (kitap, yem, parça, tılsım, bir Kut Taşı); amaç zengin etmek değil, sistemi tanıtmaktır
+- Eski oyuncular: zaten yaptığın görevler ödülsüz tamamlanmış sayılır`,
+`When the core tutorial (5 steps: Meadow, donate, build, expedition, upgrade) ends, Ak Sakal hands you his second book: the **Alp Guide**. The quest box on the right shows up to 3 open tasks; click its title for the full list.
+## How it works
+- Each task teaches a system and makes you actually use it: Kımız, fishing, Kut Stones, chests, companion evolution, Element, dungeons...
+- Tasks unlock with level; some need the previous one (rod → fish → cooking). Do them in any order
+- The compass arrow points toward the target (pier, Smith, Otağ, chest...)
+- Rewards are small and one-time (handbooks, bait, fragments, a charm, one Kut Stone); the goal is to introduce the systems, not to make you rich
+- Veterans: tasks you already did count as done without a reward`] },
   { id: 'element', ic: 'weapon', cat: 'grow', title: ['Element yazısı (silah)', 'Element scripts (weapons)'], body: () => [
 `Demirci’de ${EL.minUp} ve üstü silaha 6 elementten biri eklenir: ${EL_KEYS.map((k) => t('el.' + k)).join(', ')}.
 ## Etki
@@ -267,7 +282,7 @@ ${Object.values(DUNGEONS).map((d) => `- ${t('map.' + d!.id)}: Lv ${d!.minLv}+, u
 ## Zamanlama oyunu
 - ${FISH.gameSec} sn içinde çizgi yeşil bölgedeyken tıkla (veya Boşluk): ${FISH.hitsNeeded} isabet balığı yakalar; ıska ${FISH.missPenaltySec} sn götürür
 - Hangi balığın geleceği atışta sunucuca belirlenir; ${FISH.minReelSec} sn dolmadan çekilen olta geçersizdir
-- Üç isabet kesin yakalama değildir: balık iğneyi tutmuş olmalı. Tutma şansı sıradan balıkta ~%${Math.round(FISH.catch.common*100)}, nadirde ~%${Math.round(FISH.catch.rare*100)}, Ata Balığı’nda ~%${Math.round(FISH.catch.ata*100)}; her olta seviyesi +%${(FISH.catch.rodBonus*100).toFixed(1)}, solucan +%${Math.round(FISH.catch.solucan*100)}, şans yemi +%${Math.round(FISH.catch.luck*100)} ekler (üst sınır %${Math.round(FISH.catch.max*100)}). Balık kaçarsa yem gider; yine de %${Math.round(FISH.catch.escapePtsChance*100)} şansla +1 olta puanı alınır
+- Üç isabet kesin yakalama değildir: balık iğneyi tutmuş olmalı. Tutma şansı sıradan balıkta ~%${Math.round(FISH.catch.common*100)}, nadirde ~%${Math.round(FISH.catch.rare*100)}, Ata Balığı’nda ~%${Math.round(FISH.catch.ata*100)}; her olta seviyesi +%${(FISH.catch.rodBonus*100).toFixed(1)}, solucan +%${Math.round(FISH.catch.solucan*100)}, şans yemi +%${Math.round(FISH.catch.luck*100)} ekler (üst sınır %${Math.round(FISH.catch.max*100)}). Günde ${FISH.fatigueAfter} yakalamadan sonra balıklar ürker (şans ×${FISH.fatigueMult}); ertesi gün yenilenir. Balık kaçarsa yem gider; yine de %${Math.round(FISH.catch.escapePtsChance*100)} şansla +1 olta puanı alınır
 - Ayıkla: elindeki balığı ayıklarsan %${Math.round(FISH.clean.solucan*100)} Solucan, %${Math.round(FISH.clean.kilcik*100)} Kılçık (boş) çıkar, kalanında balık elinden kayar
 ## Balıklar
 ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (nadir)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} dk` : ''}`).join('\n')}
@@ -282,7 +297,7 @@ ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.
 ## Timing game
 - Within ${FISH.gameSec} s, click (or Space) while the marker is in the green zone: ${FISH.hitsNeeded} hits land the fish; a miss costs ${FISH.missPenaltySec} s
 - The fish is decided on the server at the cast; a line reeled before ${FISH.minReelSec} s is void
-- Three hits are not a guaranteed catch: the fish must hold the hook. Base hold chance ~${Math.round(FISH.catch.common*100)}% common, ~${Math.round(FISH.catch.rare*100)}% rare, ~${Math.round(FISH.catch.ata*100)}% Ancestor Fish; each rod level +${(FISH.catch.rodBonus*100).toFixed(1)}%, worm +${Math.round(FISH.catch.solucan*100)}%, luck bait +${Math.round(FISH.catch.luck*100)}% (cap ${Math.round(FISH.catch.max*100)}%). If it escapes the bait is lost, but you still get +1 rod point with ${Math.round(FISH.catch.escapePtsChance*100)}% chance
+- Three hits are not a guaranteed catch: the fish must hold the hook. Base hold chance ~${Math.round(FISH.catch.common*100)}% common, ~${Math.round(FISH.catch.rare*100)}% rare, ~${Math.round(FISH.catch.ata*100)}% Ancestor Fish; each rod level +${(FISH.catch.rodBonus*100).toFixed(1)}%, worm +${Math.round(FISH.catch.solucan*100)}%, luck bait +${Math.round(FISH.catch.luck*100)}% (cap ${Math.round(FISH.catch.max*100)}%). After ${FISH.fatigueAfter} catches in a day the fish get spooked (odds ×${FISH.fatigueMult}); it resets next day. If it escapes the bait is lost, but you still get +1 rod point with ${Math.round(FISH.catch.escapePtsChance*100)}% chance
 - Clean: cleaning a fish gives a Worm (${Math.round(FISH.clean.solucan*100)}%), bones (${Math.round(FISH.clean.kilcik*100)}%, nothing), otherwise it slips away
 ## Fish
 ${FISH_DEFS.filter((f) => f.id !== 'ata').map((f) => `- ${t('fish.' + f.id)}${f.rare ? ' (rare)' : ''}: ${f.cleanse ? t('fish.cleanse') : f.buff ? `${t('fish.buff.' + f.buff.k, { v: f.buff.v })}, ${Math.round(f.buff.sec / 60)} min` : ''}`).join('\n')}

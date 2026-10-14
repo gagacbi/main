@@ -1,3 +1,4 @@
+import { GUIDE, GUIDE_ACKS, guideNorm, guideOpen, guideTask, type GuideEv, type GuideTask } from '../shared/guide';
 import { CHEST, chestPos, gradeOfLevel, keyFor, normKeys } from '../shared/chest';
 import { KT, KT_TYPES, KT_GRADES, ktLines, ktNorm, type KtType } from '../shared/kuttas';
 import { dungeonDay } from '../shared/dungeon';
@@ -9,7 +10,7 @@ import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
   type Boy, type DmgKind, type EnchKey, type Item, type MatKey, type MobType, type Slot, type Spec, type Stats, type StatusKey, } from '../shared/game';
 import { F, STATUS_FLAG, type ChatMsg, type GameEvent, type Me, type RpcOp, type RpcRes, type SnapDrop, type Snapshot } from '../shared/protocol';
-import { ECON, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos, PACK } from '../shared/game';
+import { ECON, FEATURES, GATE_LINKS, KIMIZ, PVP_FLAG, gatePos, PACK } from '../shared/game';
 import { kimizPrice } from '../shared/goods';
 import { MAPS, type MapId, regionAt, regionById, isDungeonRegion } from '../shared/maps';
 import { dist, dist2, genBosses, genAllCamps, genStones, stepMove, type BossDef, type Camp } from '../shared/world';
@@ -121,11 +122,12 @@ export class World {
     const lvl = Math.max(1, c.level + irange(this.ctx.rng, -1, 1));
     const m = this.makeMob(type, lvl, c.x + Math.cos(a) * d, c.z + Math.sin(a) * d, c.id);
     const list = this.campMobs.get(c.id) ?? []; this.campMobs.set(c.id, list);
-    if (list.length === 0 && c.count >= PACK.minCamp) { m.alpha = true; m.maxHp = m.hp = Math.round(m.hp * PACK.alphaHp); m.atk *= PACK.alphaAtk; }   // her kampın ilk yaratığı Sürü Başı
+    if (FEATURES.packs && list.length === 0 && c.count >= PACK.minCamp) { m.alpha = true; m.maxHp = m.hp = Math.round(m.hp * PACK.alphaHp); m.atk *= PACK.alphaAtk; }   // her kampın ilk yaratığı Sürü Başı
     list.push(m); return m;
   }
   /** Sürü çağrısı: yaratık yeni hedef bulunca aynı kamptaki, yakındaki hedefsiz yaratıkları aynı oyuncuya yöneltir (zincirleme yok) */
   alertPack(m: Mob, tgt: Player) {
+    if (!FEATURES.packs) return;
     if (m.campId < 0 || m.riftId >= 0 || m.dun || m.bossId || m.dummy) return; const rad = PACK.call[m.type] * (m.alpha ? PACK.alphaCall : 1); if (rad <= 0) return;
     let n = 0; for (const q of this.campMobs.get(m.campId) ?? []) {
       if (q === m || q.dead || q.target || this.hasStatus(q, 'stun') || dist2(q, m) > rad * rad) continue;
@@ -146,7 +148,7 @@ export class World {
     const d: PlayerData = JSON.parse(row.data);
     d.pvp ??= false; d.clues ??= []; d.dreams ??= 0; d.shards ??= 0; d.pendingDream ??= 0; // eski kayıtlar için
     const p = new Player(this.nid(), row.id, row.name, row.boy, d, row.oymak_id, row.points, send, kick);
-    p.role = row.role ?? 'player';
+    p.role = row.role ?? 'player'; if (d.tut.step >= TUTORIAL_STEPS.length && !d.guide) this.guideSync(p);
     const now = this.now;
     // Çevrimdışı dinlenmiş deneyim
     if (d.loggedOutAt > 0) {
@@ -216,7 +218,7 @@ export class World {
     p.d.xp += xp;
     while (p.d.level < MAX_LEVEL && p.d.xp >= xpToNext(p.d.level)) {
       p.d.xp -= xpToNext(p.d.level); p.d.level++; p.d.skillPts++;
-      this.recalc(p); p.hp = p.stats.maxHp;
+      this.recalc(p); p.hp = p.stats.maxHp; this.guideUnlock(p);
       this.emit({ k: 'lvl', id: p.id, lvl: p.d.level }, p.x, p.z);
       this.sys(p, 'sys.levelup', { lvl: p.d.level });
       if (p.d.level === SPEC_LEVEL) this.sys(p, 'sys.spec_ready');
@@ -234,13 +236,14 @@ export class World {
   }
   /** Günlük görev ilerlemesi; görev dolunca ödül otomatik verilir, dördü bitince Günlük Hediye */
   daily(p: Player, kind: DailyKind, n = 1) {
+    if (!FEATURES.daily) return;
     const d = p.d; if (d.level < DAILY.minLevel) return; const st = this.dailyOf(p); let changed = false;
     for (const t of st.tasks) {
       if (t.k !== kind || t.claimed) continue; t.done = Math.min(t.need, t.done + n); changed = true;
       if (t.done >= t.need) {
         t.claimed = true;
         if (t.reward === 'xp') this.addXp(p, xpToNext(d.level) * DAILY.xpPct, false); else if (t.reward === 'kimiz') d.kimiz = (d.kimiz ?? 0) + DAILY.rewardKimiz; else if (t.reward === 'book') d.bag.book += DAILY.rewardBook; else goodAdd(d, 'lif', DAILY.rewardLif);
-        this.ledger(p, 'daily.reward', { k: t.k, reward: t.reward }); this.sys(p, 'sys.daily_done', { r: t.reward });
+        this.ledger(p, 'daily.reward', { k: t.k, reward: t.reward }); this.guide(p, 'daily'); this.sys(p, 'sys.daily_done', { r: t.reward });
         this.chronDaily(p);
       }
     }
@@ -263,7 +266,7 @@ export class World {
       d.bag.book += def.book; d.bag.charm += def.charm;
     }
     this.ledger(p, 'hunt.reward', { lv: h.lv, late, item: !late && def.item, book: late ? 0 : def.book, charm: late ? 0 : def.charm });
-    this.sys(p, 'sys.hunt_done', { lv: h.lv }); d.hunt = { lv: h.lv + 1, k: [0, 0] }; p.meDirty = true; if (!late) this.daily(p, 'hunt');
+    this.sys(p, 'sys.hunt_done', { lv: h.lv }); d.hunt = { lv: h.lv + 1, k: [0, 0] }; p.meDirty = true; if (!late) { this.daily(p, 'hunt'); this.guide(p, 'hunt'); }
   }
   /** Kut Yıllığı'na olay yazar; çağ değişirse herkese duyurur. `first` verilirse yalnızca o ilk ise yazılır. */
   chron(k: ChronKind, who: string, a: number, b: number, first?: string) {
@@ -281,6 +284,32 @@ export class World {
     if (titlesOf(d.clues).length > before) this.sys(p, 'sys.title');
     return true;
   }
+  // ───────────── Alp Rehberi ─────────────
+  /** Rehber olayı: açık görevlerin sayacını artırır; dolunca tek seferlik ödül verilir. Çekirdek öğretici bitmeden sayılmaz. */
+  guide(p: Player, ev: GuideEv, n = 1) {
+    if (p.d.tut.step < TUTORIAL_STEPS.length) return; const g = (p.d.guide = guideNorm(p.d.guide)); let changed = false;
+    for (const t of GUIDE) {
+      if (t.ev !== ev || !guideOpen(g, t, p.d.level)) continue;
+      const v = (g.prog[t.id] ?? 0) + n; g.prog[t.id] = Math.min(t.need, v); changed = true; if (v >= t.need) this.guideDone(p, t, true);
+    }
+    if (changed) p.meDirty = true;
+  }
+  private guideDone(p: Player, t: GuideTask, reward: boolean) {
+    const g = (p.d.guide = guideNorm(p.d.guide)); if (g.done.includes(t.id)) return; g.done.push(t.id); g.prog[t.id] = t.need; if (!reward) return;
+    const d = p.d; const r = t.reward; if (r.gold) d.gold += r.gold; if (r.book) d.bag.book += r.book; if (r.charm) d.bag.charm += r.charm; if (r.frag) this.addFrag(p, r.frag); if (r.kimiz) d.kimiz = (d.kimiz ?? 0) + r.kimiz;
+    if (r.hamur || r.solucan) { const f = (d.fish ??= newFishState()); f.hamur += r.hamur ?? 0; f.solucan += r.solucan ?? 0; }
+    if (r.stone) this.giveStone(p, 0, true);
+    this.ledger(p, 'guide', { id: t.id, gold: r.gold ?? 0, ...r }); this.sys(p, 'sys.guide.' + t.id, {}); if (GUIDE.every((x) => g.done.includes(x.id))) this.sys(p, 'sys.guide_all', {}); p.meDirty = true;
+  }
+  /** seviye atlayınca yeni açılan rehber görevlerini duyurur */
+  guideUnlock(p: Player) { if (p.d.tut.step < TUTORIAL_STEPS.length) return; const g = guideNorm(p.d.guide); for (const t of GUIDE) if (t.minLevel === p.d.level && guideOpen(g, t, p.d.level)) this.sys(p, 'sys.guide_new.' + t.id, {}); }
+  /** Eski kayıtlar / yeni açılış: koşulu zaten sağlanmış görevler ÖDÜLSÜZ tamamlanmış sayılır */
+  guideSync(p: Player) {
+    const d = p.d; const g = (d.guide = guideNorm(d.guide)); const mark = (id: string, ok: boolean) => { if (ok) { const t = guideTask(id); if (t) this.guideDone(p, t, false); } };
+    mark('equip', Object.keys(d.equip).length > 0); mark('hunt', (d.hunt?.lv ?? HUNT.first) > HUNT.first); mark('fishrod', (d.fish?.rod ?? 0) >= 1); mark('fish', (d.fish?.caught ?? 0) >= 3);
+    mark('ktfound', !!d.kt && (d.kt.eq.some((x) => x >= 0) || d.kt.s.some((r) => r.some((n) => n > 0)))); mark('ktset', !!d.kt && d.kt.eq.some((x) => x >= 0));
+    mark('evolve', d.companions.some((c) => (c.evo ?? 0) >= 1)); mark('element', !!d.equip.weapon?.el); void g;
+  }
   tutorial(p: Player, kind: (typeof TUTORIAL_STEPS)[number], n = 1) {
     const t = p.d.tut;
     if (TUTORIAL_STEPS[t.step] !== kind) return;
@@ -290,7 +319,7 @@ export class World {
       p.d.gold += rw.gold ?? 0; p.d.bag.charm += rw.charm ?? 0;
       this.ledger(p, 'tutorial', { kind, ...rw });
       t.step++; t.prog = 0;
-      this.sys(p, 'sys.tut_done', { step: t.step });
+      this.sys(p, 'sys.tut_done', { step: t.step }); if (t.step >= TUTORIAL_STEPS.length) { this.guideSync(p); this.sys(p, 'sys.guide_open', {}); }
     }
     p.meDirty = true;
   }
@@ -437,7 +466,7 @@ export class World {
       for (let i = 0; i < 3; i++) this.spawnDrop(p, 'frag', m.x, m.z);
       this.spawnDrop(p, 'mat', m.x, m.z, { m: 'ore', amount: irange(rng, 6, 12) });
       if (p.d.level >= KT.minLevel) { const n = 1 + (rng() < 0.5 ? 1 : 0); for (let i = 0; i < n; i++) this.giveStone(p, rng() < KT.bossGrade1 ? 1 : 0); }
-      { const kg = gradeOfLevel(m.lvl); const ks = (p.d.keys = normKeys(p.d.keys)); ks[kg]++; this.sys(p, 'sys.key.' + kg, {}); this.ledger(p, 'key.drop', { boss: m.bossId, grade: kg }); }
+      if (FEATURES.chest) { const kg = gradeOfLevel(m.lvl); const ks = (p.d.keys = normKeys(p.d.keys)); ks[kg]++; this.sys(p, 'sys.key.' + kg, {}); this.ledger(p, 'key.drop', { boss: m.bossId, grade: kg }); this.guide(p, 'bosskey'); }
       this.ledger(p, 'boss.reward', { boss: m.bossId, tier: it.tier, gold });
       this.sys(p, 'sys.boss_reward', {});
     }
@@ -482,7 +511,7 @@ export class World {
         this.addXp(p, mobXp(m.lvl) * f * (m.alpha ? PACK.alphaXp : 1) * (m.riftId >= 0 ? 1.3 : 1) * (this.pvpActive(p) ? 1 + PVP_FLAG.bonus : 1), true);
         p.d.counters.kills++;
         if (p.d.rank < 0 && ++p.d.rankKills >= RANK_RECOVER_KILLS) { p.d.rank++; p.d.rankKills = 0; this.sys(p, 'sys.rank_up'); p.meDirty = true; }
-        this.tutorial(p, 'kill'); this.huntKill(p, m); if (m.lvl >= p.d.level - 10) this.daily(p, 'kill');   // çok düşük seviye yaratık günlük göreve sayılmaz (kasma)
+        if (m.alpha) this.guide(p, 'alpha'); this.tutorial(p, 'kill'); this.huntKill(p, m); if (m.lvl >= p.d.level - 10) this.daily(p, 'kill');   // çok düşük seviye yaratık günlük göreve sayılmaz (kasma)
         this.rollDrops(p, m, share);
       }
     }
@@ -570,7 +599,7 @@ export class World {
       const it = makeItem(r, randomSlot(r), m.lvl, rollTier(r));
       this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
     }
-    if (r() < 0.028 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
+    { const roll = r(); if (FEATURES.extraDrops && roll < 0.010 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); } }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
     if (m.lvl >= KT.minLevel && p.d.level >= KT.minLevel && r() < KT.dropChance * dm) this.giveStone(p, 0);
     if (m.alpha) {   // Sürü Başı ödülü: ek akçe, bir üst katman eşya şansı, Kut Taşı şansı
       this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * (PACK.alphaGold - 1)) });
@@ -582,9 +611,10 @@ export class World {
     if (r() < 0.006 * dm) this.spawnDrop(p, 'frag', m.x, m.z);
   }
   /** Kut Taşı ver (rastgele tür) */
-  giveStone(p: Player, grade: number) {
+  giveStone(p: Player, grade: number, fromGuide = false) {
+    if (!FEATURES.kt) return;
     const kt = (p.d.kt = ktNorm(p.d.kt)); const ti = Math.floor(this.ctx.rng() * KT_TYPES.length); kt.s[ti][grade]++;
-    this.ledger(p, 'kt.found', { t: KT_TYPES[ti], g: grade }); this.sys(p, 'sys.kt.' + KT_TYPES[ti], { g: grade + 1 }); p.meDirty = true;
+    this.ledger(p, 'kt.found', { t: KT_TYPES[ti], g: grade }); this.sys(p, 'sys.kt.' + KT_TYPES[ti], { g: grade + 1 }); p.meDirty = true; if (!fromGuide) this.guide(p, 'ktfound');
   }
   giveItem(p: Player, it: Item) {
     if (p.d.items.length >= BAG_SIZE) return false;
@@ -634,7 +664,7 @@ export class World {
     // zincir: pencere içinde "devamı" olan skill → +%hasar ve bekleme iadesi; halka sayısı artar
     const chained = this.now < p.comboUntil && comboFollows(p.comboSlot, slot);
     const links = chained ? Math.min(COMBO.maxLinks, p.comboLinks + 1) : 0;
-    p.cds[slot] = this.now + sk.cd * 1000;   // bekleme iadesi (zincir) yalnız yaratıklara vurunca: PvP'de iade yok (dengeyi bozmasın)
+    this.guide(p, 'skill'); p.cds[slot] = this.now + sk.cd * 1000;   // bekleme iadesi (zincir) yalnız yaratıklara vurunca: PvP'de iade yok (dengeyi bozmasın)
     p.comboSlot = sk.id === 'hiddet' ? -1 : slot; p.comboLinks = sk.id === 'hiddet' ? 0 : links; p.comboUntil = this.now + COMBO.windowSec * 1000;
     if (chained) this.emit({ k: 'fx', fx: 'combo', x: p.x, z: p.z, r: 2 + links, o: p.id }, p.x, p.z);
     p.lastAggro = this.now;
@@ -702,13 +732,14 @@ export class World {
 
   rpcRun(p: Player, op: RpcOp, a: any): unknown {
     const d = p.d;
+    if ((op.startsWith('fish.') && !FEATURES.fish) || (op === 'element' && !FEATURES.element) || (op.startsWith('kt.') && !FEATURES.kt) || (op === 'chest.open' && !FEATURES.chest) || (op === 'oba.evolve' && !FEATURES.evo)) throw new GameError('forbidden');   // yalnızca A/B kontrol kolu
     switch (op) {
       case 'equip': {
         this.alive(p);
         const i = d.items.findIndex((x) => x.id === a.id); if (i < 0) throw new GameError('no_item');
         const it = d.items[i]; if (it.lvlReq > d.level) throw new GameError('level_low', { lvl: it.lvlReq });
         const old = d.equip[it.slot]; d.items.splice(i, 1); if (old) d.items.push(old);
-        d.equip[it.slot] = it; this.recalc(p); return null;
+        d.equip[it.slot] = it; this.recalc(p); this.guide(p, 'equip'); return null;
       }
       case 'unequip': {
         const s = a.slot as Slot; const it = d.equip[s]; if (!it) throw new GameError('no_item');
@@ -753,7 +784,7 @@ export class World {
         if (p.hp >= p.stats.maxHp) throw new GameError('kimiz_full_hp');
         const pvp = this.now - p.lastPvp < 10000; const mult = pvp ? KIMIZ.pvpMult : 1;
         (d.tel ??= { onlineSec: 0, combatSec: 0, kimizUsed: 0 }).kimizUsed++; d.kimiz!--; p.kimizAt = this.now + KIMIZ.cooldownSec * 1000; p.hotUntil = this.now + KIMIZ.healSec * 1000; p.hotPerSec = (p.stats.maxHp * KIMIZ.healPct * mult) / KIMIZ.healSec;
-        this.ledger(p, 'kimiz.use', { pvp }); this.emit({ k: 'fx', fx: 'holy', x: p.x, z: p.z, r: 2, o: p.id } as never, p.x, p.z); p.meDirty = true; return { hot: Math.round(p.hotPerSec * KIMIZ.healSec) };
+        this.guide(p, 'kimiz'); this.ledger(p, 'kimiz.use', { pvp }); this.emit({ k: 'fx', fx: 'holy', x: p.x, z: p.z, r: 2, o: p.id } as never, p.x, p.z); p.meDirty = true; return { hot: Math.round(p.hotPerSec * KIMIZ.healSec) };
       }
       case 'pvp': {
         this.alive(p); const on = !!a.on; if (on === !!d.pvp) return null;
@@ -809,7 +840,7 @@ export class World {
         oba.dispatch(this.ctx, p, a.compId, a.hours); this.tutorial(p, 'expedition'); p.meDirty = true; return oba.obaInfo(this.ctx, p);
       }
       case 'oba.evolve': {
-        this.near(p, HUB.otag, HUB.interactOtag); const r = oba.evolve(this.ctx, p, String(a.compId)); this.recalc(p); p.meDirty = true; this.save(p); return r;
+        this.near(p, HUB.otag, HUB.interactOtag); const r = oba.evolve(this.ctx, p, String(a.compId)); this.guide(p, 'evolve'); this.recalc(p); p.meDirty = true; this.save(p); return r;
       }
       case 'oba.collect': {
         this.near(p, HUB.otag, HUB.interactOtag);
@@ -832,7 +863,7 @@ export class World {
       // ───── Göl Avı ─────
       case 'fish.buy': {
         const f = (d.fish ??= newFishState()); this.alive(p); if (!nearShore(p.x, p.z)) throw new GameError('fish_far'); const what = String(a.what); const n = Math.max(1, Math.min(50, Math.floor(Number(a.n ?? 1)) || 1));
-        if (what === 'rod') { if (f.rod >= 1) throw new GameError('fish_has_rod'); if (d.gold < FISH.rodPrice) throw new GameError('no_gold'); d.gold -= FISH.rodPrice; f.rod = 1; this.ledger(p, 'fish.buy', { what, gold: FISH.rodPrice }); }
+        if (what === 'rod') { if (f.rod >= 1) throw new GameError('fish_has_rod'); if (d.gold < FISH.rodPrice) throw new GameError('no_gold'); d.gold -= FISH.rodPrice; f.rod = 1; this.ledger(p, 'fish.buy', { what, gold: FISH.rodPrice }); this.guide(p, 'fishrod'); }
         else if (what === 'hamur' || what === 'solucan') { const cost = FISH.bait[what] * n; if (d.gold < cost) throw new GameError('no_gold'); d.gold -= cost; f[what] += n; this.ledger(p, 'fish.buy', { what, n, gold: cost }); }
         else throw new GameError('bad_args');
         p.meDirty = true; return null;
@@ -843,9 +874,9 @@ export class World {
         if (this.now < p.fishAt) throw new GameError('fish_cd'); const bait = a.bait === 'solucan' ? 'solucan' : 'hamur'; if (f[bait] < 1) throw new GameError('fish_no_bait');
         if (this.now - p.lastCombat < 5000 && p.lastCombat > 0) throw new GameError('fish_combat');
         f[bait]--; const luck = f.luck > 0; if (luck) f.luck--; const fish = rollFish(this.ctx.rng, f.rod, bait, luck);
-        const chance = catchChance(fish, f.rod, bait, luck); const holds = this.ctx.rng() < chance;   // sonuç atışta çekilir; istemci yalnızca şansı görür
+        const day = dungeonDay(this.now); if (f.day !== day) { f.day = day; f.today = 0; } const tired = (f.today ?? 0) >= FISH.fatigueAfter; const chance = catchChance(fish, f.rod, bait, luck) * (tired ? FISH.fatigueMult : 1); const holds = this.ctx.rng() < chance;   // sonuç atışta çekilir; istemci yalnızca şansı görür
         p.fishCast = { at: this.now, fish, bait, holds, chance }; p.fishAt = this.now + FISH.castCdSec * 1000; p.meDirty = true; this.ledger(p, 'fish.cast', { bait });
-        return { sec: FISH.gameSec, hits: FISH.hitsNeeded, zone: FISH.zone(f.rod), big: !!fishOf(fish)?.rare };
+        return { sec: FISH.gameSec, hits: FISH.hitsNeeded, zone: FISH.zone(f.rod), big: !!fishOf(fish)?.rare, tired };
       }
       case 'fish.reel': {
         const f = (d.fish ??= newFishState()); const c = p.fishCast; if (!c) throw new GameError('fish_nocast'); p.fishCast = null;
@@ -853,8 +884,8 @@ export class World {
         if (el < FISH.minReelSec * 1000 || el > (FISH.gameSec + 4) * 1000 || hits < FISH.hitsNeeded) { this.ledger(p, 'fish.miss', { hits }); p.meDirty = true; return { ok: false }; }
         if (!c.holds) { let pg = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.catch.escapePtsChance) { f.pts++; pg = true; } this.ledger(p, 'fish.escape', { fish: c.fish, chance: Math.round(c.chance * 100) / 100 }); p.meDirty = true; return { ok: false, escaped: true, pts: pg }; }   // 3 isabet yetti ama balık kaçtı
         if (c.fish === 'ata') f.ancestor = true; else f.stock[c.fish] = (f.stock[c.fish] ?? 0) + 1;
-        f.caught++; let gained = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.ptsChance) { f.pts++; gained = true; }
-        this.ledger(p, 'fish.catch', { fish: c.fish }); this.daily(p, 'fish'); p.meDirty = true; return { ok: true, fish: c.fish, pts: gained };
+        f.caught++; f.today = (f.today ?? 0) + 1; let gained = false; if (f.rod < FISH.rodMax && this.ctx.rng() < FISH.ptsChance) { f.pts++; gained = true; }
+        this.ledger(p, 'fish.catch', { fish: c.fish }); this.daily(p, 'fish'); this.guide(p, 'fishcatch'); p.meDirty = true; return { ok: true, fish: c.fish, pts: gained };
       }
       case 'fish.rod': {
         const f = (d.fish ??= newFishState()); this.alive(p); if (f.rod < 1) throw new GameError('fish_no_rod'); if (f.rod >= FISH.rodMax) throw new GameError('max_rank');
@@ -875,7 +906,7 @@ export class World {
         const def = fishOf(id)!; f.stock[id]!--;
         if (def.cleanse) { for (const k of ['stun', 'slow', 'curse', 'poison'] as StatusKey[]) delete p.status[k]; }
         if (def.buff) { const b: Buff = { id, k: def.buff.k, v: def.buff.v, until: this.now + def.buff.sec * 1000 }; d.buffs = [...(d.buffs ?? []).filter((x) => x.id !== id), b]; this.recalc(p); }
-        this.ledger(p, 'fish.eat', { id }); p.meDirty = true; return null;
+        this.ledger(p, 'fish.eat', { id }); this.guide(p, 'fisheat'); p.meDirty = true; return null;
       }
       case 'fish.ancestor': {
         const f = (d.fish ??= newFishState()); if (!f.ancestor) throw new GameError('no_item'); const ch = String(a.choice); f.ancestor = false;
@@ -924,7 +955,7 @@ export class World {
         if (op === 'kt.set') {
           if (kt.s[ti][g] < 1) throw new GameError('no_item'); kt.s[ti][g]--; const old = kt.eq[ti]; let kept = true;
           if (old >= 0) { kept = rng() < KT.unsetKeep; if (kept) kt.s[ti][old]++; } kt.eq[ti] = g;
-          this.ledger(p, 'kt.set', { t: a.type, g, old, kept }); this.recalc(p); this.save(p); return { kept: old < 0 ? null : kept };
+          this.ledger(p, 'kt.set', { t: a.type, g, old, kept }); this.recalc(p); this.guide(p, 'ktset'); this.save(p); return { kept: old < 0 ? null : kept };
         }
         if (g >= KT_GRADES - 1) throw new GameError('max_rank'); if (kt.s[ti][g] < KT.refineNeed) throw new GameError('kt_few', { n: KT.refineNeed });
         const cost = KT.refineCost(g, d.level); if (d.gold < cost) throw new GameError('no_gold'); d.gold -= cost;
@@ -937,7 +968,7 @@ export class World {
         if (it.slot !== 'weapon' || it.up < EL.minUp) throw new GameError('el_need_up', { n: EL.minUp });
         if (op === 'add') {
           if (it.el) throw new GameError('el_has'); const el = a.el as ElKey; if (!EL_KEYS.includes(el)) throw new GameError('bad_args'); const cost = EL.addCost(it.ilvl); if (d.gold < cost) throw new GameError('no_gold');
-          d.gold -= cost; it.el = { k: el, p: irange(this.ctx.rng, 1, EL.addMax) }; this.ledger(p, 'element', { op, item: it.id, el, gold: cost, power: it.el.p });
+          d.gold -= cost; it.el = { k: el, p: irange(this.ctx.rng, 1, EL.addMax) }; this.ledger(p, 'element', { op, item: it.id, el, gold: cost, power: it.el.p }); this.guide(p, 'element');
         } else if (op === 'swap') {
           if (!it.el) throw new GameError('el_none'); const el = a.el as ElKey; if (!EL_KEYS.includes(el) || el === it.el.k) throw new GameError('bad_args'); const cost = EL.swapCost(it.ilvl); if (d.gold < cost) throw new GameError('no_gold');
           d.gold -= cost; it.el = { k: el, p: it.el.p }; this.ledger(p, 'element', { op, item: it.id, el, gold: cost });
@@ -949,6 +980,7 @@ export class World {
       }
       case 'market.browse': case 'market.mine': case 'market.claim': case 'market.list': case 'market.cancel': case 'market.buy': return marketRpc(this, p, op, a);
       case 'gm': { if (p.role !== 'admin') throw new GameError('forbidden'); const out = runGm(this, p, String(a.line ?? '')); this.ledger(p, 'gm', { line: String(a.line ?? '').slice(0, 200) }); p.meDirty = true; return out; }
+      case 'tut.ack': { const k = String(a.k) as GuideEv; if (!GUIDE_ACKS.includes(k)) throw new GameError('bad_args'); this.guide(p, k); return null; }
       case 'chest.open': {
         const n = Math.floor(Number(a.n)); const b = genBosses().find((x) => x.id === n); if (!b) throw new GameError('bad_args');
         this.alive(p); this.near(p, chestPos(b), CHEST.interact); const grade = gradeOfLevel(b.level); const ks = (d.keys = normKeys(d.keys)); const kg = keyFor(ks, grade); if (kg < 0) throw new GameError('no_key');
@@ -957,7 +989,7 @@ export class World {
         for (let i = 0; i < CHEST.items[grade]; i++) { const it = makeItem(r, randomSlot(r), b.level, rollTier(r, CHEST.minTier[grade], 0.3)); out.items.push(it); this.spawnDrop(p, 'item', p.x, p.z, { item: it, t: it.tier, m: it.slot }); }
         if (d.level >= KT.minLevel && r() < CHEST.stone[grade]) { this.giveStone(p, r() < CHEST.stoneG1[grade] ? 1 : 0); out.stone = true; }
         out.book = irange(r, CHEST.books[grade][0], CHEST.books[grade][1]); d.bag.book += out.book; if (r() < CHEST.charm[grade]) { d.bag.charm++; out.charm = 1; } out.frag = irange(r, CHEST.frag[grade][0], CHEST.frag[grade][1]); this.addFrag(p, out.frag);
-        this.ledger(p, 'chest.open', { boss: n, grade, keyGrade: kg, gold: out.gold, items: out.items.length, stone: out.stone }); p.meDirty = true; this.save(p); return out;
+        this.ledger(p, 'chest.open', { boss: n, grade, keyGrade: kg, gold: out.gold, items: out.items.length, stone: out.stone }); this.guide(p, 'chest'); p.meDirty = true; this.save(p); return out;
       }
       case 'stone': {
         const n = Math.floor(a.n); const st = genStones().find((s) => s.n === n); if (!st) throw new GameError('bad_stone');
@@ -1377,7 +1409,7 @@ export class World {
       name: p.name, boy: p.boy, level: d.level, xp: d.xp, xpNext: d.level >= MAX_LEVEL ? KUT_PER_POINT : xpToNext(d.level), kut: d.kut, gold: d.gold, spec: d.spec,
       hp: Math.round(p.hp), stats: p.stats, skillRanks: d.skillRanks, skillPts: d.skillPts, bag: d.bag, items: d.items, equip: d.equip,
       combo: { s: p.comboSlot, n: p.comboLinks, u: p.comboUntil }, rested: Math.round(d.rested), restedCap: restedCap(d.level), pvp: !!d.pvp, dun: dunInfo(this, p), cos: cosOf(p), kimiz: d.kimiz ?? 0, kimizAt: p.kimizAt, rank: d.rank, points: p.points, oymakId: p.oymakId, oymakName: o.name,
-      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, kt: ktNorm(d.kt), keys: normKeys(d.keys), fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
+      companions: d.companions, expeditions: d.expeditions, tut: d.tut, hunt: d.hunt ?? { lv: HUNT.first, k: [0, 0] }, kt: ktNorm(d.kt), guide: guideNorm(d.guide), keys: normKeys(d.keys), fish: d.fish ?? newFishState(), buffs: (d.buffs ?? []).filter((b) => b.until > this.now), daily: this.dailyOf(p), lang: d.lang,
       cds: p.cds.map((c) => Math.max(0, (c - now) / 1000)), dead: p.deadUntil > 0 ? Math.max(0, (p.deadUntil - now) / 1000) : 0,
       inscr: { frags, unlocked: INSCRIPTIONS.filter((t) => frags >= t).length, thresholds: INSCRIPTIONS },
       role: p.role, clues: d.clues, shards: d.shards, pendingDream: d.pendingDream, god: p.god,

@@ -18,19 +18,21 @@ if (process.env.POP_KZ_CAL) process.on('exit', () => { for (const [k, c] of Obje
 import { Agent, DEFAULT_ORDER, SPEND_MODEL, type DayRec, type Params } from './agent';
 import { ARCHS, specOf, type Arch } from './archetypes';
 import { MarketModel } from './market-model';
+import { buffRoutine, extraFish, fishRoutine, fishTrade } from './newsys';
+import { PACK, FEATURES } from '../../../shared/game';
 
 export const SLICES = [{ hour: 4, gapH: 7 }, { hour: 11, gapH: 6 }, { hour: 17, gapH: 4 }, { hour: 21, gapH: 7 }];
 export interface SliceLog { day: number; slice: number; online: number; riftsOpened: number; riftsClosed: number; riftsFailed: number; bossKills: number; occBuckets: Record<string, { n: number; rate: number }>; campUse: Record<number, number>; tickMs: number }
 
 export class Engine {
   rig: Rig; rng: () => number; day = 0; agents: Agent[] = []; occupancy = new Map<number, number>(); market: MarketModel;
-  byPid = new Map<number, Agent>(); byDb = new Map<number, Agent>(); sliceLogs: SliceLog[] = []; ledgerMark = 0;
+  byPid = new Map<number, Agent>(); byDb = new Map<number, Agent>(); sliceLogs: SliceLog[] = []; ledgerMark = 0; supply0 = 0;
   stats = { crafted: 0, craftGold: 0, lostBagFull: 0, rerolls: 0, rerollGold: 0 }; bossFights: { day: number; boss: number; sec: number; deaths: number; participants: number }[] = []; pvpLog: { day: number; k: number; v: number; dl: number }[] = [];
-  econ: { day: number; supply: number; sources: Record<string, number>; sinks: Record<string, number>; mkt: { sales: number; volume: number; tax: number; fees: number; listed: number; avgRatio: number }; gini: number }[] = [];
+  econ: { day: number; supply: number; sources: Record<string, number>; sinks: Record<string, number>; mkt: { fishSales?: number; fishVolume?: number; sales: number; volume: number; tax: number; fees: number; listed: number; avgRatio: number }; gini: number; resid?: number }[] = [];
   dunLog: { day: number; d: string; n: number; sec: number; state: string }[] = []; dunDeaths = 0; private dunSeen = new Map<number, { t0: number; n: number; d: string }>();
   private bossStart = new Map<number, number>(); private bossDeaths = new Map<number, number>(); private riftOpen = 0; private riftDone = 0; private riftFail = 0;
   constructor(public seed: number, public n: number, public W = 10) {
-    this.rng = mulberry32(seed ^ 0x51ed); this.rig = makeRig(seed, { headless: true, spawnCamps: true, riftEvery: [150, 300] }); this.market = new MarketModel(this); this.seedAgents(); this.instrument();
+    this.rng = mulberry32(seed ^ 0x51ed); this.rig = makeRig(seed, { headless: true, spawnCamps: true, riftEvery: [150, 300] }); this.market = new MarketModel(this); this.seedAgents(); this.instrument(); this.supply0 = this.totalSupply();
   }
   // ───────────── kuruluş ─────────────
   private pickArch(): Arch { let t = this.rng() * ARCHS.reduce((s, a) => s + a.weight, 0); for (const a of ARCHS) if ((t -= a.weight) < 0) return a; return ARCHS[0]; }
@@ -42,7 +44,7 @@ export class Engine {
       const par: Params = {
         skill: this.range(arch.skill), retreat: this.range(arch.retreat), offset: Math.round(this.range(arch.offset)), safeUp: arch.upgrade.safeUp, riskUp: arch.upgrade.riskUp, charm: arch.upgrade.charm, book: arch.upgrade.book,
         defAware: r() < arch.defAware, smartWeapon: r() < arch.smartWeapon, spec: specOf(arch, r), sellP: arch.market.sell, buyP: arch.market.buy, fightBack: r() < arch.pvp.fightBack,
-        skillOrder: r() < 0.7 ? DEFAULT_ORDER : [...DEFAULT_ORDER].sort(() => r() - 0.5), obaDil: arch.oba, flag: r() < arch.x.flag, cos: r() < arch.x.cos, cosWeekly: r() < arch.x.weekly, cosChase: arch.x.chase * r(), readsMap: process.env.POP_NOMAP ? false : r() < 0.5,
+        skillOrder: r() < 0.7 ? DEFAULT_ORDER : [...DEFAULT_ORDER].sort(() => r() - 0.5), obaDil: arch.oba, flag: r() < arch.x.flag, cos: r() < arch.x.cos, cosWeekly: r() < arch.x.weekly, cosChase: arch.x.chase * r(), fish: arch.y.fish * (0.5 + r()), fisher: !!arch.y.fisher, fishBot: !!arch.y.bot, fishBait: r() < arch.y.solucan ? 'solucan' : 'hamur', buffUser: r() < arch.y.buff, ktOn: r() < arch.y.kt, eleOn: r() < arch.y.ele, evoOn: r() < arch.y.evo, readsMap: process.env.POP_NOMAP ? false : r() < 0.5,
       };
       { const q = mulberry32(this.seed * 7919 + i * 104729 + 17); par.riskAppetite = q(); par.upBudget = 0.05 + 0.25 * q(); par.progDesire = q(); }   // ayrı RNG akışı: ana simülasyon akışını kaydırmaz
       const p = this.rig.add(boy, 'player', (d) => this.seedData(d, L, par, arch));
@@ -113,7 +115,7 @@ export class Engine {
     // giriş (gerçek join: dinlenmiş XP, rüya, posta teslimi)
     for (const { a } of online) { const row = this.rig.db.playerById(a.dbId)!; a.p = w.join(row, () => {}, () => {}); this.byPid.set(a.p.id, a); a.sliceFarmTicks = a.sliceFarmWall = a.sliceFarmKills = a.sliceFarmDeaths = 0; a.sliceStartKills = a.tot.kills; a.sliceStartDeaths = a.tot.deaths; }
     this.market.invalidate();
-    for (const { a, mins } of online) { a.pickMap(); a.pickActivity(); a.plannedMin = mins[si]; a.town(); a.enterMap(); if (a.map !== 'bozkir' && a.activity !== 'farm' && !['dun'].includes(a.activity)) { if (a.activity === 'boss' && !a.pickBoss()) a.activity = 'farm'; } if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
+    for (const { a, mins } of online) { a.pickMap(); a.pickActivity(); a.plannedMin = mins[si]; a.town(); buffRoutine(a, mins[si]); a.enterMap(); if (a.map !== 'bozkir' && a.activity !== 'farm' && !['dun'].includes(a.activity)) { if (a.activity === 'boss' && !a.pickBoss()) a.activity = 'farm'; } if (a.p.hp < a.p.stats.maxHp * 0.6) a.resting = true; if (a.activity === 'farm' || !a.camp) a.pickCamp(); }
     // dünya zaten giriş yapanlarla başlar: gerçek tick'ler
     const ticks = this.W * 600; const occStat: Record<number, { sum: number; n: number }> = {}; const campUse: Record<number, number> = {}; const bossTouch = new Set<number>();
     for (let t = 0; t < ticks; t++) {
@@ -138,7 +140,10 @@ export class Engine {
       const wallMin = a.sliceFarmWall / 600;
       if (wallMin >= 1) { a.rate = a.rate * 0.5 + (a.sliceFarmKills / wallMin) * 0.5; a.deathRate = a.deathRate * 0.5 + (a.sliceFarmDeaths / wallMin) * 0.5; }
       const o = occStat[a.idx]; if (o && farmMin >= 1) { const avg = o.sum / Math.max(1, o.n); const b = avg <= 1.5 ? '1' : avg <= 3.5 ? '2-3' : avg <= 6.5 ? '4-6' : avg <= 10.5 ? '7-10' : '11+'; const e = (log.occBuckets[b] ??= { n: 0, rate: 0 }); e.n++; e.rate += a.sliceFarmKills / farmMin; }
-      if (extraMin > 0) { this.extrapolate(a, extraMin); a.extraKimiz(extraMin); }
+      let farmExtra = extraMin;
+      if (FEATURES.fish && a.par.fisher) { fishRoutine(a, mins[si]); fishTrade(a); farmExtra = 0; }
+      else if (FEATURES.fish && (a.par.fish ?? 0) > 0.005 && extraMin > 0) { const fm = Math.min(extraMin, (a.par.fish ?? 0) * mins[si]); if (fm >= 1) { fishRoutine(a, fm); fishTrade(a); farmExtra = extraMin - fm; } }
+      if (farmExtra > 0) { this.extrapolate(a, farmExtra); a.extraKimiz(farmExtra); extraFish(a, farmExtra); }
       if (a.kzCombatMin > 0.5) { const k = ['boss', 'rift', 'pvp', 'dun'].includes(a.activity) ? 'heavy' : 'normal'; const c = (KZ_CAL[k] ??= { used: 0, want: 0, min: 0 }); c.used += a.kzUsedSlice; c.want += a.kzWantSlice; c.min += a.kzCombatMin; }
       if (a.kzCombatMin > 0.5 && SPEND_MODEL !== 'baseline_heavy') { a.kzRate = a.kzRate * 0.5 + (a.kzUsedSlice / a.kzCombatMin) * 0.5; }   // baseline_heavy: sabit temel oran (ölçülmez) a.kzCombatMin = 0; a.kzUsedSlice = 0; a.kzWantSlice = 0;
       a.town(); a.farmMin += farmMin;
@@ -180,12 +185,12 @@ export class Engine {
   }
   private killEquivalent(a: Agent, c: Camp, lvl: number) {
     const w = this.rig.world; const p = a.p; const type = c.types[Math.floor(this.rng() * c.types.length)]; const ml = Math.max(1, lvl + Math.floor(this.rng() * 3) - 1);
-    const m = w.makeMob(type, ml, p.x, p.z, -1); w.mobs.delete(m.id);
+    const m = w.makeMob(type, ml, p.x, p.z, -1); w.mobs.delete(m.id); const alpha = FEATURES.packs && c.count >= PACK.minCamp && this.rng() < 1 / c.count; if (alpha) m.alpha = true;
     const diff = p.d.level - ml; const f = diff > 3 ? Math.max(0.1, 1 - 0.12 * (diff - 3)) : Math.min(1.25, 1 + 0.05 * -diff);
-    if (p.d.level < MAX_LEVEL || true) w.addXp(p, mobXp(ml) * f, true);
-    p.d.counters.kills++; w.rollDrops(p, m, 1);
+    if (p.d.level < MAX_LEVEL || true) w.addXp(p, mobXp(ml) * f * (alpha ? PACK.alphaXp : 1), true);
+    p.d.counters.kills++; w.huntKill(p, m); if (ml >= p.d.level - 10) w.daily(p, 'kill'); w.rollDrops(p, m, 1);
   }
-  private collectDrops(a: Agent) {
+  collectDrops(a: Agent) {
     const w = this.rig.world; const p = a.p;
     for (const [id, dr] of [...w.drops]) { if (dr.owner !== p.id) continue; if (!w.collectDrop(p, dr)) { a.tot.lostBagFull++; this.stats.lostBagFull++; } w.drops.delete(id); }
   }
@@ -200,25 +205,33 @@ export class Engine {
       case 'boss.reward': add(income, 'boss', x.gold); break; case 'rift.reward': add(income, 'çatlak', x.gold); break; case 'exp.collect': add(income, 'sefer', x.gold); break; case 'tutorial': add(income, 'öğretici', x.gold ?? 0); break;
       case 'market.sale': add(income, 'pazar satış', x.proceeds); net += x.proceeds; break; case 'market.buy': add(expense, 'pazar alış', x.price); net -= x.price; break;
       case 'market.list': add(expense, 'ilan ücreti', x.fee); net -= x.fee; break; case 'kimiz.buy': add(expense, 'kımız', x.gold); break; case 'dungeon.fee': add(expense, 'zindan ücreti', x.fee); break; case 'cos.loom': add(expense, 'kostüm: tezgâh', x.gold); break; case 'cos.craft': add(expense, 'kostüm: üretim', x.gold); break; case 'cos.ench': add(expense, 'kostüm: efsun', x.gold); break; case 'cos.look': add(expense, 'kostüm: görünüm', x.gold); break; case 'cos.extend': add(expense, 'kostüm: uzatma', x.gold); break; case 'cos.shop': add(expense, 'kostüm: şans eşyası', x.gold); break;
-      case 'upgrade': add(expense, x.target > 9 ? 'artı +10…+15' : 'artı basma', x.gold); break; case 'reroll': add(expense, 'efsun yenileme', x.gold); break; case 'craft': add(expense, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(expense, 'beceri', x.gold ?? 0); break; case 'oba.build': add(expense, 'oba', x.gold ?? 0); break; } }
+      case 'upgrade': add(expense, x.target > 9 ? 'artı +10…+15' : 'artı basma', x.gold); break; case 'reroll': add(expense, 'efsun yenileme', x.gold); break; case 'craft': add(expense, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(expense, 'beceri', x.gold ?? 0); break; case 'oba.build': add(expense, 'oba', x.gold ?? 0); break;
+      case 'chest.open': add(income, 'sandık', x.gold); break; case 'guide': add(income, 'rehber', x.gold ?? 0); break; case 'fish.buy': add(expense, 'balık: olta/yem', x.gold); break; case 'fish.rod': add(expense, 'balık: olta geliştirme', x.gold); break; case 'element': add(expense, 'element yazısı', x.gold ?? 0); break; case 'kt.refine': add(expense, 'Kut Taşı saflaştırma', x.gold); break; case 'comp.evolve': add(expense, 'yoldaş evrimi', x.gold); break; } }
     const prog = d.level + (d.level >= 50 ? 0 : d.xp / xpToNext(d.level));
     let worth = d.gold; for (const it of d.items) worth += vendorOfItem(it); for (const it of Object.values(d.equip)) if (it) worth += vendorOfItem(it as Item);
     return { kzUsed: a.ext.kimizUsed ?? 0, kzShort: a.ext.kimizShort ?? 0, kzBought: a.ext.kimizBought ?? 0, day: this.day, level: d.level, prog: +prog.toFixed(2), gold: d.gold, worth, kills: a.tot.kills + a.tot.extraKills - m.kills0, deaths: a.tot.deaths + a.tot.extraDeaths - m.deaths0, minutes: Math.round(a.tot.minutes - m.min0), bossKills: a.tot.bossKills - m.boss0, riftCloses: a.tot.riftCloses - m.rift0, pvpKills: a.tot.pvpKills - m.pk0, pvpDeaths: a.tot.pvpDeaths - m.pd0, marketNet: net, upgrades: a.tot.upgradesOk - m.up0, destroyed: a.tot.destroyed - m.ds0, income, expense };
   }
+  /** toplam akçe arzı: oyuncu kasaları + posta içindeki akçe */
+  totalSupply(): number {
+    const db = this.rig.db.db; const row = db.prepare("SELECT COALESCE(SUM(gold),0) g FROM mail WHERE kind='gold'").get() as unknown as { g: number };
+    return this.agents.reduce((s, a) => s + (JSON.parse(this.rig.db.playerById(a.dbId)!.data).gold as number), 0) + row.g;
+  }
   private recordEcon() {
     const db = this.rig.db.db; const rows = db.prepare('SELECT kind, detail FROM ledger WHERE id > ? ORDER BY id').all(this.ledgerMark) as unknown as { kind: string; detail: string }[];
     this.ledgerMark = (db.prepare('SELECT COALESCE(MAX(id),0) m FROM ledger').get() as unknown as { m: number }).m;
-    const sources: Record<string, number> = {}; const sinks: Record<string, number> = {}; let sales = 0, vol = 0, tax = 0, fees = 0, listed = 0, ratioSum = 0;
+    const sources: Record<string, number> = {}; const sinks: Record<string, number> = {}; let sales = 0, vol = 0, tax = 0, fees = 0, listed = 0, ratioSum = 0, fishN = 0, fishVol = 0;
     const add = (o: Record<string, number>, k: string, v: number) => { o[k] = (o[k] ?? 0) + Math.round(v); };
     for (const l of rows) { const x = JSON.parse(l.detail); switch (l.kind) {
-      case 'mob.gold': add(sources, 'yaratık', x.gold); break; case 'sell': add(sources, 'NPC satış', x.price); break; case 'clue': add(sources, 'gizem', x.gold); break; case 'milestone': add(sources, 'kilometre taşı', x.gold); break; case 'boss.reward': add(sources, 'boss (altın yağmuru dahil)', 0); break; case 'exp.collect': add(sources, 'sefer', x.gold); break;
+      case 'mob.gold': add(sources, 'yaratık', x.gold); break; case 'sell': add(sources, 'NPC satış', x.price); break; case 'clue': add(sources, 'gizem', x.gold); break; case 'milestone': add(sources, 'kilometre taşı', x.gold); break; case 'boss.reward': add(sources, 'boss (altın yağmuru dahil)', 0); break; case 'exp.collect': add(sources, 'sefer', x.gold); break; case 'chest.open': add(sources, 'sandık', x.gold); break; case 'guide': add(sources, 'rehber', x.gold ?? 0); break; case 'tutorial': add(sources, 'öğretici', x.gold ?? 0); break;
+      case 'fish.buy': add(sinks, 'balık: olta/yem', x.gold); break; case 'fish.rod': add(sinks, 'balık: olta geliştirme', x.gold); break; case 'element': add(sinks, 'element yazısı', x.gold ?? 0); break; case 'kt.refine': add(sinks, 'Kut Taşı saflaştırma', x.gold); break; case 'comp.evolve': add(sinks, 'yoldaş evrimi', x.gold); break;
       case 'upgrade': add(sinks, x.target > 9 ? 'artı +10…+15' : 'artı basma', x.gold); break; case 'reroll': add(sinks, 'efsun yenileme', x.gold); break; case 'craft': add(sinks, 'üretim', x.gold ?? 0); break; case 'skill.rank': add(sinks, 'beceri', x.gold ?? 0); break; case 'oba.build': add(sinks, 'oba', x.gold ?? 0); break; case 'kimiz.buy': add(sinks, 'kımız', x.gold); break; case 'dungeon.fee': add(sinks, 'zindan ücreti', x.fee); break; case 'dungeon.refund': add(sinks, 'zindan ücreti', -(DUN_FEE[x.d] ?? 0)); break;
       case 'cos.loom': add(sinks, 'kostüm: tezgâh', x.gold); break; case 'cos.craft': add(sinks, 'kostüm: üretim', x.gold); break; case 'cos.ench': add(sinks, 'kostüm: efsun', x.gold); break; case 'cos.look': add(sinks, 'kostüm: görünüm', x.gold); break; case 'cos.extend': add(sinks, 'kostüm: uzatma', x.gold); break; case 'cos.shop': add(sinks, 'kostüm: şans eşyası', x.gold); break;
-      case 'market.list': add(sinks, 'pazar ilan ücreti', x.fee); fees += x.fee; listed++; break; case 'market.sale': add(sinks, 'pazar vergisi', x.tax); tax += x.tax; sales++; vol += x.price; ratioSum += x.price / Math.max(1, marketRefFromVendor(x.vendor)); break; } }
+      case 'market.list': add(sinks, 'pazar ilan ücreti', x.fee); fees += x.fee; listed++; break; case 'market.sale': add(sinks, 'pazar vergisi', x.tax); tax += x.tax; sales++; vol += x.price; if (typeof x.item === 'string' && x.item.startsWith('fish_')) { fishN++; fishVol += x.price; } ratioSum += x.price / Math.max(1, marketRefFromVendor(x.vendor)); break; } }
     const row = db.prepare("SELECT COALESCE(SUM(gold),0) g FROM mail WHERE kind='gold'").get() as unknown as { g: number };
     const golds = this.agents.map((a) => (JSON.parse(this.rig.db.playerById(a.dbId)!.data).gold as number)); const supply = golds.reduce((s, g) => s + g, 0) + row.g;
     const sorted = golds.slice().sort((x, y) => x - y); let cum = 0; let gi = 0; sorted.forEach((g, i) => { cum += g; gi += cum - g / 2 + 0 * i; }); const gini = sorted.length && supply ? 1 - (2 * gi) / (sorted.length * supply) : 0;
-    this.econ.push({ day: this.day, supply, sources, sinks, mkt: { sales, volume: vol, tax, fees, listed, avgRatio: sales ? +(ratioSum / sales).toFixed(2) : 0 }, gini: +gini.toFixed(3) });
+    const prev = this.econ.length ? this.econ[this.econ.length - 1].supply : this.supply0; const flow = Object.values(sources).reduce((a, b) => a + b, 0) - Object.values(sinks).reduce((a, b) => a + b, 0); const resid = supply - prev - flow;
+    this.econ.push({ day: this.day, supply, resid, sources, sinks, mkt: { fishSales: fishN, fishVolume: fishVol, sales, volume: vol, tax, fees, listed, avgRatio: sales ? +(ratioSum / sales).toFixed(2) : 0 }, gini: +gini.toFixed(3) });
   }
 }
 const DUN_FEE: Record<string, number> = { demir: 900, golge: 2200 };

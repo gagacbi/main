@@ -196,6 +196,12 @@ if (want('paneller')) {
   { const mm = pl(NAME); const bd = genBosses()[0]; const cp = chestPos(bd); mm.x = cp.x + 1; mm.z = cp.z; mm.d.keys = [2, 2, 2]; mm.meDirty = true; await sleep(1500); await page.keyboard.press('e'); await sleep(900); await shot('13c-sandik');
     const cTxt = (await page.textContent('.panel')) ?? ''; check('S9.sandik-paneli', /Kut Sandığı/.test(cTxt) && /anahtar/i.test(cTxt), 'Boss sandığına yaklaşıp E: sandık paneli, anahtar sayıları ve Aç düğmesi');
     await page.click('[data-act="chestopen"]'); await sleep(1000); const used = mm.d.keys!.reduce((a, b) => a + b, 0); check('S9.sandik-ac', used === 5 && /Sandıktan çıkanlar/.test((await page.textContent('.panel')) ?? ''), `Sandık açıldı, 1 anahtar harcandı (kalan ${used}/6), ganimet gösterildi`); await page.keyboard.press('Escape'); await sleep(300); }
+  { const mm = pl(NAME); mm.x = HUB.demirci.x + 20; mm.z = HUB.demirci.z; mm.d.level = Math.max(mm.d.level, 30); mm.d.tut = { step: 5, prog: 0 }; (mm.d as { guide?: unknown }).guide = { done: ['skill', 'equip'], prog: {} }; mm.meDirty = true; await sleep(1800);
+    const qTxt = (await page.textContent('#quest')) ?? ''; check('S10.rehber-hud', /Alp Rehberi/.test(qTxt), 'Çekirdek öğretici bitince görev kutusunda "Alp Rehberi" ve açık görevler görünür: ' + qTxt.replace(/\s+/g, ' ').slice(0, 90));
+    const arrow = await page.evaluate(() => { const c = document.getElementById('compass')!; return getComputedStyle(c).display !== 'none'; }); check('S10.pusula', arrow, 'Rehber hedefi (Demirci / iskele…) için pusula oku görünür');
+    await page.evaluate(() => (document.querySelector('#quest [data-p="guide"]') as HTMLElement).click()); await sleep(1800); await shot('13d-rehber'); const gTxt = (await page.textContent('.panel')) ?? '';
+    check('S10.rehber-paneli', /Göl iskelesinden olta al/.test(gTxt) && /Kut Taşı/.test(gTxt) && /Ödül|akçe|kitap/.test(gTxt), 'Rehber paneli: tüm görevler, ne için/nerede, ödül çipleri'); await page.keyboard.press('Escape'); await sleep(300);
+    const g0 = mm.d.gold; await page.evaluate("window.__game.ui.open('wiki')"); await sleep(900); check('S10.wiki-ack', ((mm.d as { guide?: { done: string[] } }).guide?.done ?? []).includes('wiki') && mm.d.gold - g0 >= 50, 'Wiki açılınca "Rehber\'i aç" görevi sunucuda tamamlandı ve ödül işlendi'); await page.keyboard.press('Escape'); await sleep(300); }
   await page.keyboard.press('Escape');
 }
 

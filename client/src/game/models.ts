@@ -1,4 +1,4 @@
-import { itemSpecs } from './itemart';
+import { bandPal, itemSpecs, pieceGem } from './itemart';
 import { scaleSpecs } from './meshkit';
 import type { EqLook } from '@shared/appearance';
 import { LOOKS } from '@shared/costume';
@@ -59,11 +59,22 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
   const stocky = kind === 'demirci' ? 1.18 : 1;
 
   // bacaklar
-  const legSpec = (): PartSpec[] => [
-    { k: 'cyl', d: 0.26, h: 0.62, p: [0, -0.33, 0], c: robe ? main : '#4b3a55', c2: robe ? main : '#5a4766' },
-    { k: 'sphere', d: 0.38, s: [1, 0.72, 1.35], p: [0, -0.64, 0.07], c: LEATHER },
-    { k: 'torus', d: 0.28, th: 0.07, p: [0, -0.5, 0], c: accent },
-  ];
+  const legSpec = (): PartSpec[] => {
+    const bt = kind === 'player' ? o.eq?.boots : undefined;
+    const base: PartSpec[] = [
+      { k: 'cyl', d: 0.26, h: 0.62, p: [0, -0.33, 0], c: robe ? main : '#4b3a55', c2: robe ? main : '#5a4766' },
+      { k: 'sphere', d: 0.38, s: [1, 0.72, 1.35], p: [0, -0.64, 0.07], c: bt ? bandPal(bt.band).w : LEATHER },
+      { k: 'torus', d: 0.28, th: 0.07, p: [0, -0.5, 0], c: accent },
+    ];
+    if (!bt) return base;
+    // kuşanılan çizme: bant malzemesinde konçlu çizme; yüksek bantta metal kaplama ve kademe taşı
+    const pal = bandPal(bt.band); const gem = pieceGem(bt.tier, bt.band);
+    base.push({ k: 'cyl', dt: 0.4, db: 0.36, h: 0.5, p: [0, -0.42, 0], c: pal.m, c2: pal.d, gloss: 0.25 }, { k: 'torus', d: 0.46, th: 0.1, p: [0, -0.18, 0], c: pal.l, gloss: 0.5 },
+      { k: 'sphere', d: 0.52, s: [1.05, 0.7, 1.55], p: [0, -0.66, 0.1], c: pal.m, c2: pal.d, gloss: 0.25 }, { k: 'sphere', d: 0.32, s: [1, 0.8, 0.8], p: [0, -0.64, 0.34], c: pal.l, gloss: 0.5 });
+    if (bt.band >= 2) base.push({ k: 'box', w: 0.22, h: 0.3, dp: 0.05, p: [0, -0.4, 0.17], c: pal.l, c2: pal.m, gloss: 0.7 });
+    if (bt.band >= 1) base.push({ k: 'sphere', d: 0.1, p: [0, -0.24, 0.19], c: gem, gloss: 0.8 });
+    return base;
+  };
   rig.part('legL', legSpec(), [-0.2, 0.8, 0]); rig.part('legR', legSpec(), [0.2, 0.8, 0]);
 
   // gövde
@@ -110,6 +121,10 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
     for (const sd of [-1, 1]) for (let i = 0; i < 5; i++) head.push({ k: 'sphere', d: 0.2 - i * 0.012, p: [sd * (0.5 + i * 0.03), -0.18 - i * 0.2, -0.08 - i * 0.02], s: [1, 1.15, 1], c: HAIR });
     head.push({ k: 'sphere', d: 1.02, s: [1, 0.74, 1], p: [0, 0.12, -0.1], c: HAIR });
   }
+  if (kind === 'player' && o.eq?.earring) {   // kuşanılan küpe: kulakta halka + sarkan taş (iki yanda)
+    const er = o.eq.earring; const pal = bandPal(er.band); const gem = pieceGem(er.tier, er.band);
+    for (const sd of [-1, 1]) head.push({ k: 'torus', d: 0.26, th: 0.05, p: [sd * 0.5, -0.1, 0.12], r: [0, Math.PI / 2, 0], c: pal.m, c2: pal.l, gloss: 0.7 }, { k: 'sphere', d: 0.16 + er.band * 0.015, p: [sd * 0.53, -0.3, 0.12], s: [0.8, 1.2, 0.8], c: gem, gloss: 0.9 }, ...(er.band >= 3 ? [{ k: 'sphere', d: 0.06, p: [sd * 0.51, -0.37, 0.1], c: pal.l, gloss: 0.8 } as PartSpec] : []));
+  }
   rig.part('head', head, [0, 1.74, 0]);
 
   // başlık
@@ -147,6 +162,8 @@ export function buildHuman(scene: Scene, o: HumanOpts): Rig {
     { k: 'torus', d: 0.3, th: 0.07, p: [0, -0.48, 0], c: kind === 'demirci' ? '#3a2616' : accent },
     { k: 'sphere', d: 0.3 * stocky, p: [0, -0.58, 0.02], c: SKIN },
     { k: 'sphere', d: 0.3, p: [0, 0, 0], c: main },
+    ...(kind === 'player' && o.eq?.bracelet ? ((): PartSpec[] => { const br = o.eq!.bracelet!; const pal = bandPal(br.band); const gem = pieceGem(br.tier, br.band);
+      return [{ k: 'torus', d: 0.42, th: 0.15, p: [0, -0.43, 0], c: pal.m, c2: pal.l, gloss: 0.6 }, { k: 'torus', d: 0.4, th: 0.06, p: [0, -0.52, 0], c: pal.l, gloss: 0.7 }, { k: 'sphere', d: 0.18, p: [0, -0.43, 0.2], c: gem, gloss: 0.9 }, ...(br.band >= 3 ? [{ k: 'sphere', d: 0.08, p: [0.15, -0.43, 0.08], c: gem, gloss: 0.9 } as PartSpec, { k: 'sphere', d: 0.08, p: [-0.15, -0.43, 0.08], c: gem, gloss: 0.9 } as PartSpec] : [])]; })() : []),
   ];
   rig.part('armL', sleeve(), [-0.52 * stocky, 1.38, 0]); rig.part('armR', sleeve(), [0.52 * stocky, 1.38, 0]);
 

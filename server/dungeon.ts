@@ -157,7 +157,7 @@ export function dungeonBossDown(w: World, m: { id: number; lvl: number; bossId: 
     w.spawnDrop(p, 'mat', m.x, m.z, { m: 'ore', amount: def.ore });
     const s = dunState(p, now); s.clears[def.id] = (s.clears[def.id] ?? 0) + 1;
     w.dungeonLoot(p, def.id);
-    w.ledger(p, 'dungeon.reward', { d: def.id, tier: it.tier, gold }); w.daily(p, 'dungeon'); w.sys(p, 'sys.dun_won', { s: DUNGEON_EXIT_SEC }); p.meDirty = true;
+    w.ledger(p, 'dungeon.reward', { d: def.id, tier: it.tier, gold }); w.daily(p, 'dungeon'); w.guide(p, 'dungeon'); w.sys(p, 'sys.dun_won', { s: DUNGEON_EXIT_SEC }); p.meDirty = true;
   }
 }
 

@@ -1,5 +1,5 @@
 {
- "at": "2026-10-12T19:05:45.590Z",
+ "at": "2026-10-14T21:27:19.327Z",
  "results": [
   {
    "id": "F2.boy-kimlik",
@@ -324,7 +324,7 @@
   {
    "id": "C1.boy-kaydi",
    "ok": true,
-   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt669"
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt922"
   },
   {
    "id": "F1.toon",
@@ -334,7 +334,7 @@
   {
    "id": "F1.palet",
    "ok": true,
-   "detail": "Sahnede 97 ayrı (3-bit) renk kovası: canlı palet"
+   "detail": "Sahnede 92 ayrı (3-bit) renk kovası: canlı palet"
   },
   {
    "id": "F6.font",
@@ -359,7 +359,7 @@
   {
    "id": "F5.ses",
    "ok": true,
-   "detail": "AudioContext=running, çıkış tepe enerjisi=3.50 (kopuz/davul/bordo üretimi)"
+   "detail": "AudioContext=running, çıkış tepe enerjisi=3.64 (kopuz/davul/bordo üretimi)"
   },
   {
    "id": "F5.sessiz",
@@ -384,7 +384,7 @@
   {
    "id": "D5b.envanter-v2",
    "ok": true,
-   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=74022912)"
+   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=19546872840192)"
   },
   {
    "id": "B4.uzmanlik-ui",
@@ -409,7 +409,7 @@
   {
    "id": "S2.wiki",
    "ok": true,
-   "detail": "Oyun içi Wiki (U): 16 makale, Alp Avı kuralları ve örnek tablo görünür"
+   "detail": "Oyun içi Wiki (U): 17 makale, Alp Avı kuralları ve örnek tablo görünür"
   },
   {
    "id": "S3.alp-avi-hud",
@@ -457,9 +457,29 @@
    "detail": "Sandık açıldı, 1 anahtar harcandı (kalan 5/6), ganimet gösterildi"
   },
   {
+   "id": "S10.rehber-hud",
+   "ok": true,
+   "detail": "Çekirdek öğretici bitince görev kutusunda \"Alp Rehberi\" ve açık görevler görünür: Alp Rehberi 2/18 · +12 dahaRehber'i (U) aç 0/1İlk Alp Avı'nı bitir 0/1Göl iskelesinden olt"
+  },
+  {
+   "id": "S10.pusula",
+   "ok": true,
+   "detail": "Rehber hedefi (Demirci / iskele…) için pusula oku görünür"
+  },
+  {
+   "id": "S10.rehber-paneli",
+   "ok": true,
+   "detail": "Rehber paneli: tüm görevler, ne için/nerede, ödül çipleri"
+  },
+  {
+   "id": "S10.wiki-ack",
+   "ok": true,
+   "detail": "Wiki açılınca \"Rehber'i aç\" görevi sunucuda tamamlandı ve ödül işlendi"
+  },
+  {
    "id": "F7.olcum",
    "ok": true,
-   "detail": "Kare başına JS/CPU maliyeti=4.55 ms; aktif mesh=137/2843; üçgen=293078; (yazılım rasterleştirmede FPS=4)"
+   "detail": "Kare başına JS/CPU maliyeti=7 ms; aktif mesh=92/2624; üçgen=307980; (yazılım rasterleştirmede FPS=4)"
   },
   {
    "id": "G.konsol",
@@ -468,15 +488,15 @@
   }
  ],
  "metrics": {
-  "audioPeak": 3.4970703125,
+  "audioPeak": 3.6376953125,
   "dropsSeenDuringLoot": 2,
   "perf": {
    "fps": 4,
-   "meshes": 2843,
-   "active": 137,
+   "meshes": 2624,
+   "active": 92,
    "draw": 0,
-   "tris": 293078,
-   "cpuMs": 4.55
+   "tris": 307980,
+   "cpuMs": 7
   },
   "gl": {
    "vendor": "Google Inc. (Google)",

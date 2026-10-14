@@ -3,6 +3,7 @@ import '@fontsource/nunito/latin-400.css'; import '@fontsource/nunito/latin-ext-
 import './style.css';
 import type { Boy } from '@shared/game';
 import { startGallery } from './gallery';
+import { startIconSheet } from './iconsheet';
 import { Game } from './game/game';
 import { setLang, getLang, t } from './i18n';
 import type { Quality } from './game/scene';
@@ -16,6 +17,7 @@ const params = new URLSearchParams(location.search);
 async function boot() {
   setLang(getLang());
   if (params.has('gallery')) { startGallery(canvas); return; }
+  if (params.has('icons')) { startIconSheet(); return; }
   if (params.has('items')) { const { itemSheet } = await import('./itemsheet'); itemSheet(); return; }
   const test = document.createElement('canvas'); if (!test.getContext('webgl2') && !test.getContext('webgl')) { uiRoot.innerHTML = `<div class="conn on"><div class="felt" style="padding:28px 40px"><h2 style="font-family:var(--f-head)">${t('err.webgl')}</h2></div></div>`; return; }
   let q: Quality = 'high'; try { q = (params.get('q') as Quality) || (localStorage.getItem('kut.q') as Quality) || 'high'; } catch { /* */ }

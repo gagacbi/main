@@ -1,6 +1,9 @@
 import { COMBO, BOY_COLORS, HUB, HUB_PLAZA_R, HUB_R, HUB_WALL_R, gatePos, zoneAt, SKILLS, SKILL_RANK_LABEL, TUTORIAL_STEPS, TUTORIAL_TARGET, WORLD_R, MAX_LEVEL, type DmgKind } from '@shared/game';
 import { eraName } from '../chron';
 import { huntFor } from '@shared/hunt';
+import { GUIDE, guideActive, guideDoneCount, guideNorm } from '@shared/guide';
+import { CHEST, chestPos } from '@shared/chest';
+import { FISH } from '@shared/fishing';
 import { genRuins } from '@shared/chronicle';
 import { F, type ChatMsg, type Me } from '@shared/protocol';
 import { ROAD_HALF, ROAD_LEN, genAllCamps, genBosses, genStones, worldObstacles } from '@shared/world';
@@ -225,19 +228,39 @@ export class UI {
     this.dunBar(); this.kimizHud(); this.touch?.tick();
     const rb = this.e.riftbar;
     if (near && near.d < 70) { rb.style.display = 'block'; const sp = rb.querySelectorAll('.t span'); sp[0].textContent = t('rift.name'); sp[1].textContent = near.st === 0 ? t('rift.idle') : near.st === 2 ? t('rift.boss') : t('rift.wave', { n: near.w }); (rb.querySelector('.bar i') as HTMLElement).style.width = near.H ? `${(near.h / near.H) * 100}%` : '100%'; } else rb.style.display = 'none';
-    const cp = this.e.compass; if (near && near.d > 28) {
-      const dx = near.x - g.pos.x, dz = near.z - g.pos.z; const fx = -Math.cos(g.camYaw), fz = -Math.sin(g.camYaw); const rx = fz, rz = -fx;
-      const ang = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz); cp.style.display = 'block'; cp.style.transform = `translate(${Math.sin(ang) * Math.min(innerWidth, innerHeight) * 0.34}px, ${-Math.cos(ang) * Math.min(innerWidth, innerHeight) * 0.34}px) rotate(${ang}rad)`; cp.title = `${Math.round(near.d)}m`;
+    const cp = this.e.compass; let pt: { x: number; z: number; d: number; kind: 'rift' | 'guide' } | null = near && near.d > 28 ? { x: near.x, z: near.z, d: near.d, kind: 'rift' } : null;
+    if (!pt) { const gt = this.coreTarget() ?? this.guideTarget(); if (gt) { const d = Math.hypot(gt.x - g.pos.x, gt.z - g.pos.z); if (d > 14) pt = { x: gt.x, z: gt.z, d, kind: 'guide' }; } }
+    if (pt) {
+      const dx = pt.x - g.pos.x, dz = pt.z - g.pos.z; const fx = -Math.cos(g.camYaw), fz = -Math.sin(g.camYaw); const rx = fz, rz = -fx;
+      const ang = Math.atan2(dx * rx + dz * rz, dx * fx + dz * fz); cp.style.display = 'block'; cp.classList.toggle('guide', pt.kind === 'guide'); cp.style.transform = `translate(${Math.sin(ang) * Math.min(innerWidth, innerHeight) * 0.34}px, ${-Math.cos(ang) * Math.min(innerWidth, innerHeight) * 0.34}px) rotate(${ang}rad)`; cp.title = `${Math.round(pt.d)}m`;
     } else cp.style.display = 'none';
     // görev takibi
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
-    q.innerHTML = `<div class="h">${icon('stele')}${t('ui.tut')}</div>` + TUTORIAL_STEPS.map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + (st >= 5 ? `<div class="row cur"><div class="cb">★</div><div>${t('tut.end')}</div></div>` : '') + this.huntHtml(m) + this.dailyHtml(m);
+    q.innerHTML = (st >= TUTORIAL_STEPS.length ? '' : `<div class="h">${icon('stele')}${t('ui.tut')}</div>`) + (st >= TUTORIAL_STEPS.length ? [] : TUTORIAL_STEPS).map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + this.guideHtml(m) + this.huntHtml(m) + this.dailyHtml(m);
     // etkileşim ipucu
     const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key.startsWith('chest:') ? 'chest' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
     const dead = (g.flags & F.DEAD) !== 0; this.e.death.style.display = dead ? 'grid' : 'none';
     if (dead) { const left = Math.max(0, 3 - (performance.now() - g.deadSince) / 1000); (this.e.respawn as HTMLButtonElement).disabled = left > 0; this.e.deadp.innerHTML = (left > 0 ? t('ui.respawnIn', { n: Math.ceil(left) }) : '') + this.deathHint(); }
     void dt;
+  }
+  /** Alp Rehberi özeti (görev kutusu): çekirdek öğretici bitince en çok 3 açık görev; başlığa tıklayınca tam liste */
+  guideHtml(m: Me): string {
+    if (m.tut.step < TUTORIAL_STEPS.length) return ''; const g = guideNorm(m.guide); const act = guideActive(g, m.level, 3); const done = guideDoneCount(g);
+    const rows = act.map((tk, i) => `<div class="row ${i === 0 ? 'cur' : ''}"><div class="cb"></div><div>${t('guide.' + tk.id)} <span class="prog">${g.prog[tk.id] ?? 0}/${tk.need}</span></div></div>`).join('') || `<div class="row"><div class="cb">·</div><div class="muted">${t('guide.none')}</div></div>`;
+    const more = GUIDE.filter((x) => !g.done.includes(x.id) && m.level >= x.minLevel).length - act.length;
+    return `<div class="h hunth" data-p="guide" style="cursor:pointer">${icon('stele')}${t('guide.hud')} <small>${done}/${GUIDE.length}${more > 0 ? ' · ' + t('guide.more', { n: more }) : ''}</small></div>${rows}`;
+  }
+  /** çekirdek öğretici adımının hedefi (pusula) */
+  coreTarget(): { x: number; z: number } | null {
+    const st = this.g.me.tut.step; const to = [HUB.gate, HUB.otag, HUB.otag, HUB.otag, HUB.demirci][st]; return to ? { x: to.x, z: to.z } : null;
+  }
+  /** Rehber hedefinin dünya konumu (pusula oku için) */
+  guideTarget(): { x: number; z: number; key: string } | null {
+    const m = this.g.me; const act = guideActive(guideNorm(m.guide), m.level, 3).find((tk) => tk.where); if (!act || m.tut.step < TUTORIAL_STEPS.length) return null; const w = act.where!;
+    const p = this.g.pos; const pts: Record<string, { x: number; z: number }[]> = { demirci: [HUB.demirci], otag: [HUB.otag], fish: [{ x: FISH.pond.x, z: FISH.pond.z }], aksakal: [HUB.akSakal], gate: [HUB.gate], stele: [HUB.stele], loom: [LOOM_POS], chest: genBosses().map((b) => chestPos(b)) };
+    const list = pts[w] ?? []; let best: { x: number; z: number } | null = null; let bd = Infinity; for (const q of list) { const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < bd) { bd = d; best = q; } }
+    void CHEST; return best ? { x: best.x, z: best.z, key: act.id } : null;
   }
   /** Günlük görev özeti (görev kutusu): tamamlanan/toplam, tıklayınca günlük paneli */
   dailyHtml(m: Me): string {

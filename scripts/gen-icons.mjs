@@ -10,6 +10,7 @@ gladius machete two-handed-sword zeus-sword stiletto trench-knife bowie-knife po
 axe-swing earth-crack megaphone viking-shield thunder-struck sword-slice quake-stomp wolf-howl tribal-shield lightning-storm snake-bite tipi compass character stone-tablet skull-crossed-bones crown trophy hourglass sword-clash portal
 round-shield bordered-shield spiked-shield dragon-shield leather-boot fur-boot metal-boot steeltoe-boots greaves bracer bracers gauntlet earrings drop-earrings pearl-earring crystal-earrings
 tropical-fish clownfish double-fish school-of-fish flatfish angler-fish crab porcupinefish whale-tail sliced-bread earth-worm scroll-unfurled fish-bucket seahorse
+boss-key locked-chest open-treasure-chest gems wolf-howl sound-on sound-off cross-mark spinning-wheel evil-eyes knot prayer-beads papyrus portal chat-bubble anvil
 fishing-pole fishing-hook fish-cooked sword-slice shield poison-bottle lightning-storm shouting earth-spit knapsack backpack crossed-swords skills open-book`.split(/\s+/).filter(Boolean);
 const out = {}; const miss = [];
 for (const n of NAMES) { const i = src[n]; if (!i) { miss.push(n); continue; } out[n] = i.body.replace(/<\/?g[^>]*>/g, '').trim(); }

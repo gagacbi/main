@@ -19,6 +19,8 @@ import { itemArtFrames } from '../game/itemart';
 import { EL, EL_KEYS, type ElKey } from '@shared/element';
 import type { MobType } from '@shared/game';
 import { COMP_EVO, compEvo } from '@shared/game';
+import { chestArtUrl, gemArtUrl } from '../game/itemart';
+import { GUIDE, guideDoneCount, guideNorm, guideOpen } from '@shared/guide';
 import { CHEST, CHEST_GRADES, gradeOfLevel, keyFor } from '@shared/chest';
 import { genBosses } from '@shared/world';
 import { KT, KT_TYPES, KT_GRADES, ktLines, type KtType } from '@shared/kuttas';
@@ -36,7 +38,7 @@ const ELDER_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg"
   <ellipse cx="42" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="78" cy="72" rx="5" ry="3.4" fill="#ff9a8a" opacity=".6"/><ellipse cx="60" cy="68" rx="3.4" ry="2.8" fill="#e0a97f"/>
   <path d="M28 40 Q28 18 60 14 Q92 18 92 40 Q92 44 88 44 L32 44 Q28 44 28 40 Z" fill="#fff" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/><path d="M26 44 Q60 52 94 44 L94 38 Q60 46 26 38 Z" fill="#dfe8f8" stroke="#1a1230" stroke-width="3" stroke-linejoin="round"/>
   <circle cx="60" cy="12" r="6" fill="#f2c14e" stroke="#1a1230" stroke-width="2.5"/><path d="M40 28 Q60 20 80 28" fill="none" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/></svg>`;
-export type PanelName = 'fish' | 'daily' | 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom' | 'chest';
+export type PanelName = 'fish' | 'daily' | 'wiki' | 'inv' | 'char' | 'skills' | 'smith' | 'oba' | 'elder' | 'inscr' | 'settings' | 'help' | 'gm' | 'market' | 'gate' | 'loom' | 'chest' | 'guide';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const enchLine = (e: { k: string; v: number }) => `${t('ench.' + e.k)} +${e.v}%`;
 
@@ -104,7 +106,8 @@ export class Panels {
     this.open = n; this.lastResult = null; if (n === 'chest') this.chestRes = null; this.el.classList.add('open'); this.g.ui.sfx('ui');
     if (n === 'oba') await this.refreshOba();
     if (n === 'elder') await this.g.net.rpc('elder');
-    if (n === 'market') await this.loadMarket();
+    if (n === 'market') { await this.loadMarket(); void this.g.net.rpc('tut.ack', { k: 'market' }); }
+    if (n === 'wiki') void this.g.net.rpc('tut.ack', { k: 'wiki' });
     clearInterval(this.obaTimer); if (n === 'loom') this.obaTimer = window.setInterval(() => { if (this.open !== 'loom') return; const now = this.g.net.now(); let again = false; this.el.querySelectorAll<HTMLElement>('[data-cd]').forEach((x) => { const left = Number(x.dataset.cd) - now; x.textContent = fmtDur(left); if (left <= 0) again = true; }); if (again) this.render(true); }, 500);
     this.render();
     if (n === 'oba') { clearInterval(this.obaTimer); this.obaTimer = window.setInterval(() => { if (this.open === 'oba') this.tickOba(); }, 500); }
@@ -130,7 +133,7 @@ export class Panels {
     if (!this.open || !this.me) return;
     const sc = keepScroll ? (this.el.querySelector('.body') as HTMLElement | null)?.scrollTop ?? 0 : 0;
     const sc2 = keepScroll ? (this.el.querySelector('.itemlist') as HTMLElement | null)?.scrollTop ?? 0 : 0;
-    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), fish: () => this.fishPanel(), daily: () => this.dailyPanel(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), chest: () => this.chestPanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
+    const fn = { inv: () => this.inv(), char: () => this.char(), skills: () => this.skills(), smith: () => this.smith(), oba: () => this.obaPanel(), elder: () => this.elder(), inscr: () => this.inscr(), wiki: () => this.wiki(), fish: () => this.fishPanel(), daily: () => this.dailyPanel(), gm: () => this.gm(), market: () => this.market(), gate: () => this.gatePanel(), loom: () => this.loomPanel(), chest: () => this.chestPanel(), guide: () => this.guidePanel(), settings: () => this.settings(), help: () => this.help() }[this.open];
     const hadFocus = document.activeElement?.id === 'gmline'; this.el.innerHTML = fn();
     if (hadFocus) { const gi = this.el.querySelector('#gmline') as HTMLInputElement | null; gi?.focus(); gi?.setSelectionRange(gi.value.length, gi.value.length); }
     const b = this.el.querySelector('.body') as HTMLElement | null; if (b && sc) b.scrollTop = sc; const il = this.el.querySelector('.itemlist') as HTMLElement | null; if (il && sc2) il.scrollTop = sc2;
@@ -452,22 +455,35 @@ export class Panels {
   // ─── Göl Avı ───
   fg: { endAt: number; hits: number; zone: number; zw: number; pos: number; dir: number; speed: number; big: boolean; raf: number; key: ((e: KeyboardEvent) => void) | null } | null = null;
   chestN = 0; chestRes: { gold: number; items: Item[]; stone: boolean; book: number; charm: number; frag: number } | null = null;
+  /** Alp Rehberi paneli: tüm görevler (açık / kilitli / tamam), ne için ve nerede */
+  guidePanel() {
+    const m = this.me; const g = guideNorm(m.guide); const total = GUIDE.length; const done = guideDoneCount(g);
+    const rewardChips = (r: Record<string, number | undefined>) => Object.entries(r).filter(([, v]) => v).map(([k, v]) => `<span class="chip">${k === 'gold' ? icon('akce') : k === 'stone' ? this.gemImg('alp', 1, 18) : k === 'hamur' || k === 'solucan' ? icon(k) : icon(k)}${v} ${t('guide.r.' + k)}</span>`).join('');
+    const rows = GUIDE.map((tk) => {
+      const isDone = g.done.includes(tk.id); const open = guideOpen(g, tk, m.level); const prev = tk.after ? GUIDE.find((x) => x.id === tk.after) : null;
+      const prog = g.prog[tk.id] ?? 0; const lock = isDone ? '' : m.level < tk.minLevel ? t('guide.locked', { n: tk.minLevel }) : prev && !g.done.includes(prev.id) ? t('guide.after', { t: t('guide.' + prev.id) }) : '';
+      return `<div class="card row ${isDone ? 'doneh' : open ? '' : 'dim'}" style="margin:5px 0"><div class="cb">${isDone ? '✓' : ''}</div><div class="grow"><b>${t('guide.' + tk.id)}</b>${open ? `<span class="chip" style="margin-left:6px">${prog}/${tk.need}</span>` : ''}<div class="muted">${t('guide.' + tk.id + '.d')}</div>${lock ? `<div class="muted" style="color:#a0652a">🔒 ${lock}</div>` : ''}${tk.where && !isDone ? `<div class="muted">${t('guide.where')}: <b>${t('guide.w.' + tk.where)}</b></div>` : ''}</div><div class="col" style="gap:3px;align-items:flex-end">${rewardChips(tk.reward as Record<string, number | undefined>)}</div></div>`;
+    }).join('');
+    return this.shell(t('guide.title'), 'stele', `<div style="min-width:520px;max-width:680px"><div class="row"><div class="grow muted">${t('guide.sub')}</div><span class="chip">${t('guide.progress', { a: done, b: total })}</span></div><div class="ratebar mid" style="margin:6px 0"><i style="width:${Math.round((done / total) * 100)}%"></i></div>${rows}</div>`);
+  }
   /** Boss sandığı paneli */
   chestPanel() {
     const m = this.me; const b = genBosses().find((x) => x.id === this.chestN); if (!b) return this.shell(t('chest.t'), 'bag', `<div class="card bad">${t('err.bad_args')}</div>`);
-    const gr = gradeOfLevel(b.level); const kg = keyFor(m.keys, gr); const keyChips = CHEST_GRADES.map((n, g) => `<span class="chip ${g < gr ? 'dim' : ''}" style="border-color:${CHEST.colors[g]}"><span class="ktgem" style="--kc:${CHEST.colors[g]}"></span>${t('chest.key.' + n)} <b>${m.keys[g]}</b></span>`).join('');
+    const gr = gradeOfLevel(b.level); const kg = keyFor(m.keys, gr); const keyChips = CHEST_GRADES.map((n, g) => `<span class="chip ${g < gr ? 'dim' : ''}" style="border-color:${CHEST.colors[g]}">${icon('key_' + g)}${t('chest.key.' + n)} <b>${m.keys[g]}</b></span>`).join('');
     const r = this.chestRes; const res = r ? `<div class="result good"><b>${t('chest.loot')}</b>: +${num(r.gold)} ${icon('akce')} ${r.items.map((it) => `<span style="color:${TIER_COLORS[it.tier]}">${esc(itemName(it))}</span>`).join(', ')}${r.stone ? ' · ' + t('chest.stone') : ''}${r.book ? ` · +${r.book} ${icon('book')}` : ''}${r.charm ? ` · +${r.charm} ${icon('charm')}` : ''}${r.frag ? ` · +${r.frag} ${icon('frag')}` : ''}</div>` : '';
-    return this.shell(t('chest.t'), 'bag', `<div style="min-width:420px"><div class="card" style="border-left:6px solid ${CHEST.colors[gr]}"><b>${t('chest.of', { n: t('boss.' + b.id) })}</b><div class="muted">${t('chest.grade')}: ${t('chest.key.' + CHEST_GRADES[gr])} · ${t('chest.need')}</div></div><div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${keyChips}</div><button class="btn primary" style="width:100%;padding:10px" data-act="chestopen" ${kg >= 0 ? '' : 'disabled'}>${kg >= 0 ? t('chest.open', { k: t('chest.key.' + CHEST_GRADES[kg]) }) : t('err.no_key')}</button>${res}<div class="muted" style="margin-top:8px">${t('chest.hint')}</div></div>`);
+    return this.shell(t('chest.t'), 'bag', `<div style="min-width:420px"><div class="card row" style="border-left:6px solid ${CHEST.colors[gr]}">${(() => { const u = chestArtUrl(gr); return u ? `<img src="${u}" width="64" height="64" alt="" style="margin-right:10px">` : ''; })()}<div><b>${t('chest.of', { n: t('boss.' + b.id) })}</b><div class="muted">${t('chest.grade')}: ${t('chest.key.' + CHEST_GRADES[gr])} · ${t('chest.need')}</div></div></div><div class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0">${keyChips}</div><button class="btn primary" style="width:100%;padding:10px" data-act="chestopen" ${kg >= 0 ? '' : 'disabled'}>${kg >= 0 ? t('chest.open', { k: t('chest.key.' + CHEST_GRADES[kg]) }) : t('err.no_key')}</button>${res}<div class="muted" style="margin-top:8px">${t('chest.hint')}</div></div>`);
   }
+  /** 3B çizilmiş Kut Taşı simgesi (WebGL yoksa renkli baklava) */
+  gemImg(ty: KtType, g: number, sz = 30) { const u = gemArtUrl(ty, g); return u ? `<img class="gemimg" src="${u}" width="${sz}" height="${sz}" alt="">` : `<span class="ktgem g${g}" style="--kc:${KT.colors[ty]}"></span>`; }
   /** Kut Taşları sekmesi (Demirci) */
   ktView() {
-    const m = this.me; const kt = m.kt; const gem = (ty: KtType, g: number) => `<span class="ktgem g${g}" style="--kc:${KT.colors[ty]}" title="${t('kt.g' + g)}"></span>`;
+    const m = this.me; const kt = m.kt; const gem = (ty: KtType, g: number) => `<span title="${t('kt.g' + g)}">${this.gemImg(ty, g, 30)}</span>`;
     const lines = ktLines(kt).map((l) => `${t('ench.' + l.k)} +${l.v}`).join(' · ');
     const rows = KT_TYPES.map((ty, i) => {
       const eq = kt.eq[i]; const cells = Array.from({ length: KT_GRADES }, (_, g) => { const n = kt.s[i][g]; if (!n && !(g < KT_GRADES - 1 && false)) return `<span class="chip dim">${gem(ty, g)}<b>0</b></span>`;
         const cost = g < KT_GRADES - 1 ? KT.refineCost(g, m.level) : 0;
         return `<span class="chip">${gem(ty, g)}<b>${n}</b></span>` + `<button class="btn xs" data-act="ktset" data-ty="${ty}" data-g="${g}" title="${t('kt.set.tip')}">${t('kt.set')}</button>` + (g < KT_GRADES - 1 && n >= KT.refineNeed ? `<button class="btn xs" data-act="ktref" data-ty="${ty}" data-g="${g}" ${m.gold >= cost ? '' : 'disabled'} title="${t('kt.refine.tip', { c: num(cost), r: Math.round(KT.refineRate[g] * 100) })}">${t('kt.refine')} ${num(cost)} · %${Math.round(KT.refineRate[g] * 100)}</button>` : ''); }).join('');
-      return `<div class="card" style="margin:5px 0"><div class="row" style="gap:8px;flex-wrap:wrap"><b style="color:${KT.colors[ty]}">◆ ${t('kt.' + ty)}</b><span class="muted">${t('ench.' + KT.stat[ty])} ${eq >= 0 ? '+' + KT.val[ty][eq] : ''}</span><span class="grow"></span>${eq >= 0 ? `<span class="chip on">${gem(ty, eq)} ${t('kt.g' + eq)}</span><button class="btn xs" data-act="ktunset" data-ty="${ty}">${t('kt.unset')}</button>` : `<span class="muted">${t('kt.empty')}</span>`}</div><div class="row" style="flex-wrap:wrap;gap:4px;margin-top:6px">${cells}</div></div>`;
+      return `<div class="card" style="margin:5px 0"><div class="row" style="gap:8px;flex-wrap:wrap"><b style="color:${KT.colors[ty]}">${this.gemImg(ty, Math.max(0, eq), 26)} ${t('kt.' + ty)}</b><span class="muted">${t('ench.' + KT.stat[ty])} ${eq >= 0 ? '+' + KT.val[ty][eq] : ''}</span><span class="grow"></span>${eq >= 0 ? `<span class="chip on">${gem(ty, eq)} ${t('kt.g' + eq)}</span><button class="btn xs" data-act="ktunset" data-ty="${ty}">${t('kt.unset')}</button>` : `<span class="muted">${t('kt.empty')}</span>`}</div><div class="row" style="flex-wrap:wrap;gap:4px;margin-top:6px">${cells}</div></div>`;
     }).join('');
     const lowLv = m.level < KT.minLevel;
     return `<div class="muted">${t('kt.hint', { n: KT.refineNeed, l: KT.failLose, k: Math.round(KT.unsetKeep * 100) })}</div>${lowLv ? `<div class="card bad">${t('err.kt_level', { n: KT.minLevel })}</div>` : ''}<div class="card" style="border-left:4px solid var(--gold)"><b>${t('kt.total')}</b><div class="muted">${lines || t('kt.none')}</div></div>${rows}` + (this.lastResult ? `<div class="result ${this.lastResult.cls}">${this.lastResult.text}</div>` : '');
@@ -492,7 +508,7 @@ export class Panels {
   }
   async fishCast() {
     const r = await this.g.net.rpc('fish.cast', { bait: this.fishBait }); if (!r.ok) { this.g.ui.toast(t('err.' + (r.err ?? 'internal'), (r.p as Record<string, number>) ?? {}), 'warn'); this.g.audio.sfx('err'); return; }
-    const d = r.data as { sec: number; hits: number; zone: number; big: boolean }; this.fishMsg = null;
+    const d = r.data as { sec: number; hits: number; zone: number; big: boolean; tired?: boolean }; this.fishMsg = d.tired ? { cls: 'bad', text: t('fish.tired') } : null;
     const zw = d.zone; this.fg = { endAt: performance.now() + d.sec * 1000, hits: 0, zone: Math.random() * (1 - zw), zw, pos: 0, dir: 1, speed: 0.9, big: d.big, raf: 0, key: null };
     this.g.audio.sfx('ui'); this.render(true); this.fishLoop();
   }

@@ -18,9 +18,9 @@ describe('Göl Avı', () => {
   });
   test('zamanlama oyunu: çok hızlı veya eksik vuruş başarısız; sonuç atışta sunucuca belirlenir; başarıda balık envantere girer ve pazar malı olur', () => {
     const { rig, w, p } = shore(); call(w, p, 'fish.buy', { what: 'rod' }); call(w, p, 'fish.buy', { what: 'hamur', n: 20 });
-    call(w, p, 'fish.cast', { bait: 'hamur' }); expect(call(w, p, 'fish.reel', { hits: 3 }).data.ok).toBe(false);   // 2,5 sn dolmadan
-    rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(4); expect(call(w, p, 'fish.reel', { hits: 2 }).data.ok).toBe(false);
-    let got = 0; for (let i = 0; i < 12; i++) { rig.seconds(2); const c = call(w, p, 'fish.cast', { bait: 'hamur' }); if (!c.ok) break; rig.seconds(4); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.ok) got++; else expect(r.data.escaped).toBe(true); }
+    call(w, p, 'fish.cast', { bait: 'hamur' }); expect(call(w, p, 'fish.reel', { hits: 3 }).data.ok).toBe(false);   // minReelSec dolmadan
+    rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(5); expect(call(w, p, 'fish.reel', { hits: 2 }).data.ok).toBe(false);
+    let got = 0; for (let i = 0; i < 12; i++) { rig.seconds(2); const c = call(w, p, 'fish.cast', { bait: 'hamur' }); if (!c.ok) break; rig.seconds(5); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.ok) got++; else expect(r.data.escaped).toBe(true); }
     expect(got).toBeGreaterThan(2); expect(got).toBeLessThan(12); const total = Object.values(p.d.fish!.stock).reduce((a, b) => a + (b ?? 0), 0) + (p.d.fish!.ancestor ? 1 : 0); expect(total).toBe(got);
     expect(call(w, p, 'fish.reel', { hits: 3 }).err).toBe('fish_nocast');   // tek kullanımlık
     goodAdd(p.d, 'fish_sazan', 2); expect(goodGet(p.d, 'fish_sazan')).toBeGreaterThanOrEqual(2); expect(GOOD_KEYS).toContain('fish_sazan');
@@ -29,7 +29,7 @@ describe('Göl Avı', () => {
     expect(catchChance('sazan', 1, 'hamur', false)).toBeLessThan(catchChance('sazan', 10, 'hamur', false)); expect(catchChance('sazan', 1, 'solucan', false)).toBeGreaterThan(catchChance('sazan', 1, 'hamur', false));
     expect(catchChance('altinsudak', 1, 'hamur', false)).toBeLessThan(catchChance('sazan', 1, 'hamur', false)); expect(catchChance('sazan', 10, 'solucan', true)).toBeLessThanOrEqual(FISH.catch.max);
     const { rig, w, p } = shore(); call(w, p, 'fish.buy', { what: 'rod' }); call(w, p, 'fish.buy', { what: 'hamur', n: 5 }); let esc = 0, ok = 0;
-    for (let i = 0; i < 60; i++) { p.d.fish!.hamur = 3; rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(4); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.escaped) esc++; else if (r.data.ok) ok++; }
+    for (let i = 0; i < 60; i++) { p.d.fish!.hamur = 3; rig.seconds(2); call(w, p, 'fish.cast', { bait: 'hamur' }); rig.seconds(5); const r = call(w, p, 'fish.reel', { hits: 3 }); if (r.data.escaped) esc++; else if (r.data.ok) ok++; }
     expect(esc).toBeGreaterThan(3); expect(ok).toBeGreaterThan(20); expect(Object.values(p.d.fish!.stock).reduce((a, b) => a + (b ?? 0), 0) + (p.d.fish!.ancestor ? 1 : 0)).toBe(ok);
     p.d.fish!.stock = { sazan: 60 }; p.d.fish!.solucan = 0; const res: Record<string, number> = {}; for (let i = 0; i < 60; i++) { const r = call(w, p, 'fish.clean', { id: 'sazan' }); res[r.data.res] = (res[r.data.res] ?? 0) + 1; }
     expect(res.solucan).toBeGreaterThan(0); expect(res.kilcik).toBeGreaterThan(0); expect(res.kacti).toBeGreaterThan(0); expect(p.d.fish!.stock.sazan).toBe(0); expect(call(w, p, 'fish.clean', { id: 'sazan' }).err).toBe('no_item');
@@ -77,5 +77,12 @@ describe('Obanın Günlüğü', () => {
   });
   test('gerçek olaylar ilerletir: yaratık öldürme günlük "kill" sayacını artırır', () => {
     const { w, p } = shore(15); p.x = 0; p.z = 130; const k = w.dailyOf(p).tasks.find((t) => t.k === 'kill')!; const m = w.makeMob('cakal', 15, p.x + 2, p.z, -1); m.contrib.set(p.id, 1); w.killMob(m); expect(k.done).toBe(1);
+  });
+  test('yorgunluk: günde fatigueAfter yakalamadan sonra tutma şansı çarpanla düşer, ertesi gün yenilenir; bot makrosunun üst sınırı', () => {
+    const { rig, w, p } = shore(); call(w, p, 'fish.buy', { what: 'rod' }); call(w, p, 'fish.buy', { what: 'solucan', n: 50 });
+    const run = (n: number) => { let ok = 0; for (let i = 0; i < n; i++) { p.d.fish!.hamur = 5; rig.seconds(2); const c = call(w, p, 'fish.cast', { bait: 'hamur' }); if (!c.ok) continue; rig.seconds(5); if (call(w, p, 'fish.reel', { hits: 3 }).data.ok) ok++; } return ok; };
+    p.d.fish!.day = undefined; p.d.fish!.today = 0; const fresh = run(120) / 120;
+    rig.seconds(1); p.d.fish!.today = FISH.fatigueAfter; const tired = run(120) / 120; expect(tired).toBeLessThan(fresh * 0.7); expect(call(w, p, 'fish.cast', { bait: 'hamur' }).data.tired).toBe(true);
+    rig.clock.advance(26 * 3600000); p.d.fish!.hamur = 5; rig.seconds(2); expect(call(w, p, 'fish.cast', { bait: 'hamur' }).data.tired).toBe(false);   // gün değişti
   });
 });

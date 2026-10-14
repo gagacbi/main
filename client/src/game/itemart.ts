@@ -16,6 +16,9 @@ const PALS: Pal[] = [
   { m: '#b8c3d3', d: '#697689', l: '#eef3fa', w: '#5a4330', k: '#3c2a1c' }, { m: '#9cc3f7', d: '#4f6aaf', l: '#e2f0ff', w: '#3f3550', k: '#2c2440' },
   { m: '#f5c648', d: '#ad6d1a', l: '#fff0a6', w: '#4a2a1a', k: '#7a1f1f' },
 ];
+/** bant paleti (karakter modeli de aynı malzeme renklerini kullanır) */
+export const bandPal = (b: number): Pal => PALS[Math.max(0, Math.min(4, b))];
+export const pieceGem = (tier: number, b: number): string => (tier <= 0 ? bandPal(b).l : TIER_COLORS[tier]);
 const B = (w: number, h: number, dp: number, p: V3, c: string, c2?: string, gloss = 0.35, r?: V3): PartSpec => ({ k: 'box', w, h, dp, p, c, c2, gloss, r });
 const C = (d: number, h: number, p: V3, c: string, c2?: string, gloss = 0.3, r?: V3, seg = 14): PartSpec => ({ k: 'cyl', d, h, p, c, c2, gloss, r, seg });
 const CN = (db: number, h: number, p: V3, c: string, c2?: string, gloss = 0.3, r?: V3, dt = 0, sc?: V3): PartSpec => ({ k: 'cone', db, dt, h, p, c, c2, gloss, r, s: sc, seg: 12 });
@@ -214,10 +217,12 @@ function ensure(): Studio | null {
 const cache = new Map<string, string>(); const frameCache = new Map<string, string[]>();
 const keyOf = (it: ItemKey) => `${it.slot}|${it.slot === 'weapon' ? it.wk ?? 'kilic' : ''}|${it.band}|${it.tier}|${it.el?.k ?? ''}`;
 /** Eşyayı verilen y dönüşleriyle çizer. uniform=true: tüm kareler aynı kadraj (döner önizleme), değilse tek kare sıkı kadraj. */
-function shoot(it: ItemKey, yaws: number[], uniform: boolean): string[] | null {
+function shoot(it: ItemKey, yaws: number[], uniform: boolean): string[] | null { return shootSpecs(() => itemSpecs(it), POSE[it.slot === 'weapon' ? it.wk ?? 'kilic' : it.slot], yaws, uniform); }
+/** Herhangi bir parça listesini (eşya, taş, anahtar, sandık) aynı stüdyoda çizer */
+function shootSpecs(specs: () => PartSpec[], pose: V3, yaws: number[], uniform: boolean, fixed?: { cx: number; cy: number; h: number }): string[] | null {
   const st = ensure(); if (!st) return null;
-  const { scene, cam, canvas, engine } = st; const pose = POSE[it.slot === 'weapon' ? it.wk ?? 'kilic' : it.slot];
-  const mesh: Mesh = build(scene, 'item', itemSpecs(it)); mesh.material = st.mat; addOutline(mesh, scene);
+  const { scene, cam, canvas, engine } = st;
+  const mesh: Mesh = build(scene, 'item', specs()); mesh.material = st.mat; addOutline(mesh, scene);
   const pivot = new TransformNode('pv', scene); mesh.parent = pivot;
   const box = (yaw: number) => { pivot.rotation.set(pose[0], pose[1] + yaw, pose[2]); pivot.computeWorldMatrix(true); mesh.computeWorldMatrix(true); mesh.refreshBoundingInfo(); const bb = mesh.getBoundingInfo().boundingBox; return { mn: bb.minimumWorld.clone(), mx: bb.maximumWorld.clone() }; };
   const fitOf = (b: { mn: Vector3; mx: Vector3 }) => ({ cx: (b.mn.x + b.mx.x) / 2, cy: (b.mn.y + b.mx.y) / 2, h: Math.max(b.mx.x - b.mn.x, b.mx.y - b.mn.y) / 2 * 1.03 + 0.04 });
@@ -225,7 +230,7 @@ function shoot(it: ItemKey, yaws: number[], uniform: boolean): string[] | null {
   if (uniform) { const bs = yaws.map(box); const mn = new Vector3(Math.min(...bs.map((b) => b.mn.x)), Math.min(...bs.map((b) => b.mn.y)), 0), mx = new Vector3(Math.max(...bs.map((b) => b.mx.x)), Math.max(...bs.map((b) => b.mx.y)), 0); shared = fitOf({ mn, mx }); }
   const urls: string[] = [];
   for (const yaw of yaws) {
-    const f = shared ?? fitOf(box(yaw)); box(yaw);
+    const f = fixed ?? shared ?? fitOf(box(yaw)); box(yaw);
     cam.orthoLeft = f.cx - f.h; cam.orthoRight = f.cx + f.h; cam.orthoTop = f.cy + f.h; cam.orthoBottom = f.cy - f.h; cam.position.set(f.cx, f.cy, -10); cam.setTarget(new Vector3(f.cx, f.cy, 0));
     engine.setSize(SIZE, SIZE); scene.render(); urls.push(canvas.toDataURL('image/png'));
   }
@@ -243,3 +248,64 @@ export function itemArtFrames(it: ItemKey, n = 12): string[] | null {
   const r = shoot(it, Array.from({ length: n }, (_, i) => (i / n) * Math.PI * 2), true); if (!r) return null; frameCache.set(key, r); return r;
 }
 export const itemArtReady = () => ensure() !== null;
+
+// ───────────── Kut Taşları, boss anahtarları ve sandıklar ─────────────
+const GEMS: Record<string, string> = { alp: '#e0503a', kalkan: '#3f86e6', can: '#3fc062', kesin: '#f2c230', cevik: '#a56ae6', emen: '#e46aa6' };
+const mix = (a: string, b: string, t: number) => { const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16)); return '#' + pa.map((x, i) => Math.round(x + (pb[i] - x) * t).toString(16).padStart(2, '0')).join(''); };
+const GOLD = '#f0c14a', GOLD_D = '#a8741c';
+/** sınıfa göre taşın ana rengi: Ham mat/gri, sonrası canlı */
+const gemColor = (type: string, grade: number) => (grade === 0 ? mix(GEMS[type], '#8d8678', 0.55) : grade === 1 ? GEMS[type] : mix(GEMS[type], '#ffffff', 0.12 * (grade - 1)));
+function gemBody(type: string, c: string, c2: string, grade: number): PartSpec[] {
+  const gl = grade === 0 ? 0.1 : 0.7; const f = (o: Partial<PartSpec>): PartSpec => ({ ...(o as PartSpec) });
+  switch (type) {
+    case 'alp': return [f({ k: 'cyl', d: 0.95, h: 0.8, p: [0, 0, 0], c, c2, gloss: gl, seg: 6 }), f({ k: 'cone', db: 0.95, dt: 0.0, h: 0.95, p: [0, 0.85, 0], c: c2, c2: c, gloss: gl, seg: 6 }), f({ k: 'cone', db: 0.95, dt: 0.35, h: 0.4, p: [0, -0.6, 0], c, c2, gloss: gl, seg: 6, r: [Math.PI, 0, 0] })];
+    case 'kalkan': return [f({ k: 'cyl', d: 1.25, h: 0.55, p: [0, 0, 0], c, c2, gloss: gl, seg: 6 }), f({ k: 'cone', db: 1.25, dt: 0.55, h: 0.4, p: [0, 0.47, 0], c: c2, c2: c, gloss: gl, seg: 6 }), f({ k: 'cone', db: 1.25, dt: 0.4, h: 0.4, p: [0, -0.47, 0], c, c2, gloss: gl, seg: 6, r: [Math.PI, 0, 0] })];
+    case 'can': return [f({ k: 'sphere', d: 1.05, s: [1, 1.12, 1], p: [0, -0.05, 0], c, gloss: gl }), f({ k: 'cone', db: 0.62, dt: 0.0, h: 0.62, p: [0, 0.68, 0], c: c2, c2: c, gloss: gl, seg: 10 })];
+    case 'kesin': return [f({ k: 'cone', db: 1.0, dt: 0.0, h: 0.95, p: [0, 0.5, 0], c: c2, c2: c, gloss: gl, seg: 4, r: [0, Math.PI / 4, 0] }), f({ k: 'cone', db: 1.0, dt: 0.0, h: 1.2, p: [0, -0.62, 0], c, c2, gloss: gl, seg: 4, r: [Math.PI, Math.PI / 4, 0] })];
+    case 'cevik': return [f({ k: 'cone', db: 0.7, dt: 0.0, h: 1.7, p: [0, 0.25, 0], c, c2, gloss: gl, seg: 5, r: [0, 0, 0.12] }), f({ k: 'cone', db: 0.36, dt: 0.0, h: 1.2, p: [-0.5, -0.12, 0.1], c: c2, c2: c, gloss: gl, seg: 5, r: [0, 0, 0.55] }), f({ k: 'cone', db: 0.36, dt: 0.0, h: 1.1, p: [0.5, -0.2, -0.05], c: c2, c2: c, gloss: gl, seg: 5, r: [0, 0, -0.5] })];
+    default: return [f({ k: 'torus', d: 1.15, th: 0.42, p: [0, 0, 0], c, gloss: gl, seg: 20, r: [Math.PI / 2, 0, 0] }), f({ k: 'sphere', d: 0.5, p: [0, 0.62, 0], c: c2, gloss: gl }), f({ k: 'icos', d: 0.34, p: [0, -0.62, 0], c: c2, sub: 1, flat: true, gloss: gl })];
+  }
+}
+export function gemSpecs(type: string, grade: number): PartSpec[] {
+  const c = gemColor(type, grade); const c2 = mix(c, '#ffffff', 0.38); const s: PartSpec[] = gemBody(type, c, c2, grade);
+  const spark = (x: number, y: number, d: number): PartSpec => ({ k: 'sphere', d, p: [x, y, -0.5], c: '#ffffff', gloss: 0.2 });
+  if (grade === 0) s.push({ k: 'icos', d: 0.42, p: [-0.62, -0.62, 0.1], c: '#7c766a', sub: 0, flat: true, gloss: 0.05 }, { k: 'icos', d: 0.3, p: [0.64, -0.7, 0.05], c: '#8d8678', sub: 0, flat: true, gloss: 0.05 }, { k: 'icos', d: 0.24, p: [0.1, -0.86, -0.1], c: '#6c665a', sub: 0, flat: true, gloss: 0.05 });
+  if (grade >= 2) s.push(spark(-0.35, 0.55, 0.16), spark(0.4, 0.1, 0.11));
+  if (grade >= 3) { s.push({ k: 'torus', d: 1.0, th: 0.14, p: [0, -0.98, 0], c: GOLD, c2: GOLD_D, gloss: 0.7, seg: 24, r: [Math.PI / 2, 0, 0] }); for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + 0.4; s.push({ k: 'cone', db: 0.18, dt: 0.0, h: 0.6, p: [Math.cos(a) * 0.5, -0.65, Math.sin(a) * 0.5], c: GOLD, c2: GOLD_D, gloss: 0.7, seg: 6, r: [Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45] }); } }
+  if (grade >= 4) { s.push({ k: 'torus', d: 1.75, th: 0.07, p: [0, 0.05, 0], c: '#fff3b0', gloss: 0.9, seg: 36, r: [1.15, 0, 0.3] }); for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + 0.8; s.push({ k: 'sphere', d: 0.13, p: [Math.cos(a) * 0.95, Math.sin(a) * 0.95 + 0.1, -0.4], c: '#fff7c4', gloss: 0.3 }); } }
+  return s;
+}
+const GEM_POSE: V3 = [0.28, 0.6, 0.08];
+const gemCache = new Map<string, string>();
+/** Kut Taşı görseli (tür × sınıf). WebGL yoksa null. */
+export function gemArtUrl(type: string, grade: number): string | null {
+  const key = `${type}|${grade}`; const hit = gemCache.get(key); if (hit) return hit;
+  const r = shootSpecs(() => gemSpecs(type, grade), GEM_POSE, [0], false, { cx: 0, cy: 0.0, h: 1.22 }); if (!r) return null; gemCache.set(key, r[0]); return r[0];
+}
+const KEY_COL = ['#c9803a', '#cfd6e0', '#ffd24a'];
+export function keySpecs(grade: number): PartSpec[] {
+  const m = KEY_COL[grade] ?? KEY_COL[0]; const d = mix(m, '#3a2410', 0.45); const l = mix(m, '#ffffff', 0.4);
+  const s: PartSpec[] = [
+    { k: 'torus', d: 1.0, th: 0.3, p: [0, 0.9, 0], c: m, c2: l, gloss: 0.7, seg: 20, r: [Math.PI / 2, 0, 0] }, { k: 'cyl', d: 0.24, h: 1.7, p: [0, -0.2, 0], c: m, c2: d, gloss: 0.6, seg: 10 },
+    { k: 'box', w: 0.5, h: 0.2, dp: 0.2, p: [0.3, -0.75, 0], c: m, c2: d, gloss: 0.6 }, { k: 'box', w: 0.38, h: 0.2, dp: 0.2, p: [0.25, -0.45, 0], c: m, c2: d, gloss: 0.6 }, { k: 'torus', d: 0.42, th: 0.1, p: [0, 0.05, 0], c: l, gloss: 0.8, seg: 14, r: [Math.PI / 2, 0, 0] },
+  ];
+  if (grade >= 1) s.push({ k: 'icos', d: 0.3, p: [0, 0.9, -0.15], c: grade === 2 ? '#ff6a4a' : '#6ab4ff', sub: 1, flat: true, gloss: 0.8 });
+  if (grade >= 2) for (const sd of [-1, 1]) s.push({ k: 'cone', db: 0.2, dt: 0.0, h: 0.5, p: [sd * 0.62, 1.05, 0], c: l, c2: m, gloss: 0.8, seg: 6, r: [0, 0, -sd * 0.8] });
+  return s;
+}
+const keyCache = new Map<number, string>();
+export function keyArtUrl(grade: number): string | null {
+  const hit = keyCache.get(grade); if (hit) return hit; const r = shootSpecs(() => keySpecs(grade), [0.2, 0.0, 0.7], [0], false); if (!r) return null; keyCache.set(grade, r[0]); return r[0];
+}
+export function chestSpecs(grade: number): PartSpec[] {
+  const m = KEY_COL[grade] ?? KEY_COL[0]; const wood = '#6b4524', wood2 = '#8a5c30';
+  return [
+    { k: 'box', w: 1.7, h: 0.85, dp: 1.1, p: [0, 0.43, 0], c: wood, c2: wood2, gloss: 0.3 }, { k: 'cyl', db: 0.55, dt: 0.55, h: 1.7, p: [0, 1.05, 0], c: wood, c2: wood2, gloss: 0.3, seg: 12, r: [0, 0, Math.PI / 2] },
+    { k: 'box', w: 1.78, h: 0.14, dp: 1.18, p: [0, 0.86, 0], c: m, gloss: 0.7 }, { k: 'box', w: 0.16, h: 1.15, dp: 1.2, p: [-0.55, 0.62, 0], c: m, gloss: 0.7 }, { k: 'box', w: 0.16, h: 1.15, dp: 1.2, p: [0.55, 0.62, 0], c: m, gloss: 0.7 },
+    { k: 'box', w: 0.28, h: 0.34, dp: 0.1, p: [0, 0.78, 0.58], c: '#ffe08a', gloss: 0.8 },
+  ];
+}
+const chestCache = new Map<number, string>();
+export function chestArtUrl(grade: number): string | null {
+  const hit = chestCache.get(grade); if (hit) return hit; const r = shootSpecs(() => chestSpecs(grade), [0.35, -0.55, 0], [0], false); if (!r) return null; chestCache.set(grade, r[0]); return r[0];
+}

@@ -326,8 +326,8 @@ export const pvpGapMult = (attLevel: number, tgtLevel: number) => { const gap = 
  * Çakal sürüleri geniş çağırır; Sürü Başı (kampın en az 4 yaratıklık olanlarında bir tane) tüm kampı çağırır, ama ödülü de büyüktür.
  */
 export const PACK = {
-  call: { tepegoz: 7, albasti: 9, erlik: 9, cakal: 16, bekci: 0 } as Record<MobType, number>, delayMs: [500, 1100] as [number, number], minCamp: 4,
-  alphaCall: 1.8, alphaHp: 1.8, alphaAtk: 1.15, alphaScale: 1.35, alphaXp: 2.5, alphaGold: 2, alphaItemTier: 1 as Tier, alphaStone: 0.25, alphaItemChance: 0.6,
+  call: { tepegoz: 5, albasti: 7, erlik: 7, cakal: 12, bekci: 0 } as Record<MobType, number>, delayMs: [800, 1500] as [number, number], minCamp: 4,
+  alphaCall: 1.25, alphaHp: 1.4, alphaAtk: 1.1, alphaScale: 1.35, alphaXp: 1.8, alphaGold: 1.5, alphaItemTier: 1 as Tier, alphaStone: 0.04, alphaItemChance: 0.12,
 };
 export const campRespawnMult = (playersNear: number) => Math.max(0.4, 1 / (1 + 0.12 * Math.max(0, playersNear - 1)));
 export const PVP_COEF = 0.35;
@@ -401,6 +401,11 @@ export const FIELD_BOSS = {
 export const PVP_FLAG = { bonus: 0.15, offAfterSec: 30 };
 /** NPC'ye satış çarpanı: nüfus simülasyonunda akçe kaynağının %28'i NPC satışı; sink/kaynak %50 → daha sağlıklı oran için kaynak kısıldı */
 /** Ekonomi ayar noktaları (simülasyonla açılıp kapatılabilir): NPC'ye satış çarpanı ve yaratık akçesi çarpanı */
+/**
+ * Özellik bayrakları: ekonomi A/B simülasyonunda "kontrol kolu" için yeni sistemleri kapatır (canlı oyunda hepsi açık).
+ * Sunucu kuralları bu bayraklara bakar; yalnızca tests/sim bayrakları değiştirir.
+ */
+export const FEATURES = { daily: true, extraDrops: true, kt: true, packs: true, chest: true, evo: true, fish: true, element: true };
 export const ECON = { npcSell: 0.7, mobGold: 1.0, expedition: 1.0 };
 export const NPC_SELL_MULT = 0.7;
 /**
@@ -440,7 +445,7 @@ export const COMP_EVO = {
   max: 3, minLevel: [6, 12, 18], goldUnits: [4, 12, 30], frag: [3, 8, 15], goldBonus: 0.12, itemBonus: 0.08, speed: 0.03, traitAt: [1, 3],
   gold: (stage: number, ownerLevel: number) => Math.round(Math.max(60, Math.round(40 * Math.pow(Math.max(1, ownerLevel), 1.6) / 10) * 10) * COMP_EVO.goldUnits[stage]),
 };
-export const compEvo = (c: Pick<Companion, 'evo'>) => Math.min(COMP_EVO.max, Math.max(0, Math.floor(c.evo ?? 0)));
+export const compEvo = (c: Pick<Companion, 'evo'>) => (FEATURES.evo ? Math.min(COMP_EVO.max, Math.max(0, Math.floor(c.evo ?? 0))) : 0);
 export interface Expedition { id: string; compId: string; hours: number; startAt: number; endAt: number; seed: number }
 export interface ExpeditionResult { gold: number; mats: Partial<Record<MatKey, number>>; items: Item[]; frag: number; compXp: number; compLevelUp: boolean }
 
