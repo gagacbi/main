@@ -122,13 +122,13 @@ export class World {
     const lvl = Math.max(1, c.level + irange(this.ctx.rng, -1, 1));
     const m = this.makeMob(type, lvl, c.x + Math.cos(a) * d, c.z + Math.sin(a) * d, c.id);
     const list = this.campMobs.get(c.id) ?? []; this.campMobs.set(c.id, list);
-    if (FEATURES.packs && list.length === 0 && c.count >= PACK.minCamp) { m.alpha = true; m.maxHp = m.hp = Math.round(m.hp * PACK.alphaHp); m.atk *= PACK.alphaAtk; }   // her kampın ilk yaratığı Sürü Başı
+    if (FEATURES.packs && list.length === 0 && c.count >= PACK.minCamp && !PACK.gentleMaps.includes(c.map)) { m.alpha = true; m.maxHp = m.hp = Math.round(m.hp * PACK.alphaHp); m.atk *= PACK.alphaAtk; }   // her kampın ilk yaratığı Sürü Başı
     list.push(m); return m;
   }
   /** Sürü çağrısı: yaratık yeni hedef bulunca aynı kamptaki, yakındaki hedefsiz yaratıkları aynı oyuncuya yöneltir (zincirleme yok) */
   alertPack(m: Mob, tgt: Player) {
     if (!FEATURES.packs) return;
-    if (m.campId < 0 || m.riftId >= 0 || m.dun || m.bossId || m.dummy) return; const rad = PACK.call[m.type] * (m.alpha ? PACK.alphaCall : 1); if (rad <= 0) return;
+    if (m.campId < 0 || m.riftId >= 0 || m.dun || m.bossId || m.dummy || PACK.gentleMaps.includes(this.camps[m.campId]?.map)) return; const rad = PACK.call[m.type] * (m.alpha ? PACK.alphaCall : 1); if (rad <= 0) return;
     let n = 0; for (const q of this.campMobs.get(m.campId) ?? []) {
       if (q === m || q.dead || q.target || this.hasStatus(q, 'stun') || dist2(q, m) > rad * rad) continue;
       q.target = tgt.id; q.nextAtk = Math.max(q.nextAtk, this.now + PACK.delayMs[0] + this.ctx.rng() * (PACK.delayMs[1] - PACK.delayMs[0])); n++;

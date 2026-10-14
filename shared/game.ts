@@ -327,6 +327,7 @@ export const pvpGapMult = (attLevel: number, tgtLevel: number) => { const gap = 
  */
 export const PACK = {
   call: { tepegoz: 5, albasti: 7, erlik: 7, cakal: 12, bekci: 0 } as Record<MobType, number>, delayMs: [800, 1500] as [number, number], minCamp: 4,
+  /** acemi bölgesi: sürü çağrısı ve Sürü Başı yok (yeni oyuncu öğrenirken cezalandırılmasın) */ gentleMaps: ['otlak'] as string[],
   alphaCall: 1.25, alphaHp: 1.4, alphaAtk: 1.1, alphaScale: 1.35, alphaXp: 1.8, alphaGold: 1.5, alphaItemTier: 1 as Tier, alphaStone: 0.04, alphaItemChance: 0.12,
 };
 export const campRespawnMult = (playersNear: number) => Math.max(0.4, 1 / (1 + 0.12 * Math.max(0, playersNear - 1)));

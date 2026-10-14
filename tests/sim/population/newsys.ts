@@ -22,6 +22,11 @@ const lot = (id: FishId) => (FISH_DEFS.find((f) => f.id === id)!.rare ? 1 : 4);
 const stockOf = (a: Agent, id: FishId) => a.d.fish?.stock[id] ?? 0;
 const totalFish = (a: Agent) => Object.values(a.d.fish?.stock ?? {}).reduce((s, n) => s + (n ?? 0), 0);
 
+/** isteğe bağlı güç harcaması bütçesi: günlük, akçenin upBudget (%5–30) payı × 1,5; Kut Taşı + element + evrim ortak kullanır (v1.1 deneyindeki harcama modeliyle aynı mantık) */
+function discretionary(a: Agent): { left: () => number; spend: (n: number) => void } {
+  const day = a.eng.day; if (a.ext.budDay !== day) { a.ext.budDay = day; a.ext.bud = (a.par.upBudget ?? 0.1) * a.d.gold * 1.5; }
+  return { left: () => a.ext.bud ?? 0, spend: (n) => { a.ext.bud = (a.ext.bud ?? 0) - n; a.ext.budSpent = (a.ext.budSpent ?? 0) + n; } };
+}
 /** kasadan ayrılan zorunlu rezerv (kımız + güvenlik payı) — kostüm rutiniyle aynı mantık */
 export function reserve(a: Agent): number {
   const L = a.d.level; return 4 * costUnit(L) + kimizPrice(L) * Math.ceil(a.kzRate * 60 * 3);
@@ -103,13 +108,13 @@ export function extraFish(a: Agent, minutes: number) {
 /** Kut Taşı: en iyi taşı tak, 3 aynı taşı akçe yettikçe saflaştır. */
 export function ktRoutine(a: Agent) {
   if (!FEATURES.kt || !a.par.ktOn || a.d.level < KT.minLevel) return; const d = a.d; const kt = d.kt; if (!kt) return; ktNorm(kt);
-  let refines = 0;
+  let refines = 0; const bud = discretionary(a);
   for (let i = 0; i < KT_TYPES.length; i++) {
     const type = KT_TYPES[i];
     for (let g = 0; g < KT_GRADES - 1 && refines < 4; g++) {
       while (kt.s[i][g] >= KT.refineNeed && refines < 4) {
-        const cost = KT.refineCost(g, d.level); if (d.gold < reserve(a) + cost * 2 || g >= (a.par.ktMaxGrade ?? 3)) break;
-        const res = a.rpc('kt.refine', { type, grade: g }); if (!res.ok) break; refines++; a.ext.ktRefine = (a.ext.ktRefine ?? 0) + 1; if (res.data.ok) a.ext.ktRefineOk = (a.ext.ktRefineOk ?? 0) + 1;
+        const cost = KT.refineCost(g, d.level); if (d.gold < reserve(a) + cost * 2 || cost > bud.left() || g >= (a.par.ktMaxGrade ?? 3)) break;
+        const res = a.rpc('kt.refine', { type, grade: g }); if (!res.ok) break; bud.spend(cost); refines++; a.ext.ktRefine = (a.ext.ktRefine ?? 0) + 1; if (res.data.ok) a.ext.ktRefineOk = (a.ext.ktRefineOk ?? 0) + 1;
       }
     }
     let best = -1; for (let g = KT_GRADES - 1; g >= 0; g--) if (kt.s[i][g] > 0) { best = g; break; }
@@ -120,22 +125,22 @@ export function ktRoutine(a: Agent) {
 /** Element yazısı: +7 silaha, kampın zayıf elementi; bütçe = oran × akçe. */
 export function elementRoutine(a: Agent) {
   if (!FEATURES.element || !a.par.eleOn) return; const d = a.d; const wp = d.equip.weapon; if (!wp || wp.up < EL.minUp) return;
-  const budget = (a.par.upBudget ?? 0.1) * d.gold + 0; let spent = 0;
+  const bud = discretionary(a); let spent = 0; const budget = Infinity;
   const want = (): ElKey => { const cnt: Record<string, number> = {}; for (const t of a.camp?.types ?? []) for (const k of EL.weak[t] ?? []) cnt[k] = (cnt[k] ?? 0) + 1; return (EL_KEYS.slice().sort((x, y) => (cnt[y] ?? 0) - (cnt[x] ?? 0))[0]); };
-  if (!wp.el) { const cost = EL.addCost(wp.ilvl); if (d.gold > reserve(a) + cost * 2 && cost <= budget + cost) { const r = a.rpc('element', { id: wp.id, op: 'add', el: want() }); if (r.ok) { a.ext.eleAdd = (a.ext.eleAdd ?? 0) + 1; spent += cost; } } }
+  if (!wp.el) { const cost = EL.addCost(wp.ilvl); if (d.gold > reserve(a) + cost * 2 && cost <= bud.left()) { const r = a.rpc('element', { id: wp.id, op: 'add', el: want() }); if (r.ok) { a.ext.eleAdd = (a.ext.eleAdd ?? 0) + 1; spent += cost; bud.spend(cost); } } }
   for (let g = 0; g < 3 && wp.el && wp.el.p < EL.maxPower; g++) {
-    const cost = EL.raiseCost(wp.ilvl, wp.el.p); if (d.gold < reserve(a) + cost * 3 || spent + cost > budget) break;
-    const r = a.rpc('element', { id: wp.id, op: 'raise' }); if (!r.ok) break; spent += cost; a.ext.eleRaise = (a.ext.eleRaise ?? 0) + 1; if (r.data.ok) a.ext.eleRaiseOk = (a.ext.eleRaiseOk ?? 0) + 1;
+    const cost = EL.raiseCost(wp.ilvl, wp.el.p); if (d.gold < reserve(a) + cost * 3 || spent + cost > budget || cost > bud.left()) break;
+    const r = a.rpc('element', { id: wp.id, op: 'raise' }); if (!r.ok) break; spent += cost; bud.spend(cost); a.ext.eleRaise = (a.ext.eleRaise ?? 0) + 1; if (r.data.ok) a.ext.eleRaiseOk = (a.ext.eleRaiseOk ?? 0) + 1;
   }
 }
 
 /** Yoldaş evrimi (Otağ'da). */
 export function evolveRoutine(a: Agent) {
-  if (!FEATURES.evo || !a.par.evoOn) return; const d = a.d;
+  if (!FEATURES.evo || !a.par.evoOn) return; const d = a.d; const bud = discretionary(a);
   for (const c of d.companions) {
     const st = compEvo(c); if (st >= COMP_EVO.max || c.level < COMP_EVO.minLevel[st]) continue;
-    const gold = COMP_EVO.gold(st, d.level); if (d.gold < reserve(a) + gold * 2 || d.bag.frag < COMP_EVO.frag[st]) continue;
-    if (a.rpc('oba.evolve', { compId: c.id }).ok) a.ext.evolved = (a.ext.evolved ?? 0) + 1;
+    const gold = COMP_EVO.gold(st, d.level); if (d.gold < reserve(a) + gold * 2 || d.bag.frag < COMP_EVO.frag[st] || gold > bud.left()) continue;
+    if (a.rpc('oba.evolve', { compId: c.id }).ok) { a.ext.evolved = (a.ext.evolved ?? 0) + 1; bud.spend(gold); }
   }
 }
 

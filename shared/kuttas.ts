@@ -18,7 +18,7 @@ export const KT = {
   } as Record<KtType, number[]>,
   colors: { alp: '#e05a3a', kalkan: '#4a8ae0', can: '#5ac86a', kesin: '#f0c14a', cevik: '#b07ae0', emen: '#e07aa8' } as Record<KtType, string>,
   /** saflaştırma akçesi: seviye ekonomisine bağlı birim × sınıf çarpanı */
-  refineCost: (grade: number, level: number) => Math.round(costUnit(Math.max(KT.minLevel, level)) * [2, 6, 16, 40][grade]),
+  refineCost: (grade: number, level: number) => Math.round(costUnit(Math.max(KT.minLevel, level)) * [0.25, 0.75, 2, 5][grade]),
   set: [{ min: 0, bonus: [{ k: 'atkPct', v: 2 }, { k: 'defPct', v: 2 }] }, { min: 3, bonus: [{ k: 'xpPct', v: 3 }, { k: 'hpPct', v: 4 }] }] as { min: number; bonus: Ench[] }[],
 };
 export interface KtState { s: number[][]; eq: number[] }   // s[tür][sınıf] = adet; eq[tür] = takılı sınıf (-1 yok)

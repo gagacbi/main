@@ -50,6 +50,7 @@ export const ARTICLES: Article[] = [
 - Düşük seviye yaratık az XP ve az ganimet verir
 ## Sürüler ve çekme
 - Bir yaratık seni fark edince ya da ilk darbeyi alınca, aynı kamptaki YAKINDAKİ yaratıklar da gelir (Çakal ${PACK.call.cakal}, Albastı/Erlik ${PACK.call.albasti}, Tepegöz ${PACK.call.tepegoz} birim). Çağrı zincirleme değildir; yaratığın kendisinden ölçülür
+- Kutlu Otlak (acemi bölgesi) güvenlidir: orada sürü çağrısı ve Sürü Başı yoktur
 - Çekme: kampın kenarındaki bir yaratığı uzaktan vurup geri çekilirsen sürüyü bölersin; yaratıklar yuvalarından çok uzaklaşınca bırakıp döner ve iyileşir
 - Sürü Başı (kampta ${PACK.minCamp}+ yaratık varsa bir tane): iri ve ${PACK.alphaHp}× canlıdır, tüm kampı çağırır. Ödülü: ×${PACK.alphaXp} XP, ek akçe, bir üst katman eşya şansı ve Kut Taşı şansı
 ## Skill zinciri (combo)
@@ -63,6 +64,7 @@ export const ARTICLES: Article[] = [
 - Low-level mobs give little XP and loot
 ## Packs and pulling
 - When a creature notices you or takes the first hit, NEARBY creatures of the same camp join (Jackal ${PACK.call.cakal}, Albastı/Erlik ${PACK.call.albasti}, Tepegöz ${PACK.call.tepegoz} units). The call does not chain; it is measured from the struck creature
+- The Blessed Meadow (starter area) is gentle: no pack calls and no Pack Leaders there
 - Pulling: hit a creature on the camp's edge from range and back away to split the pack; creatures far from home give up and return to heal
 - Pack Leader (one per camp with ${PACK.minCamp}+ creatures): bigger, ${PACK.alphaHp}× HP, calls the whole camp. Reward: ×${PACK.alphaXp} XP, extra gold, a tier-up item chance and a Kut Stone chance
 ## Skill chains (combo)

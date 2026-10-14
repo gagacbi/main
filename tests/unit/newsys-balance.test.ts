@@ -21,6 +21,12 @@ describe('yeni sistemler — ekonomi korkulukları', () => {
     const perKill = KT.dropChance + alphaShare * PACK.alphaStone; const perHour = perKill * 1000; const hoursKutluSet = (6 * rawFor[3]) / perHour;
     expect(hoursKutluSet).toBeGreaterThan(20); expect(hoursKutluSet).toBeLessThan(120);
   });
+  test('Kut Taşı akçe maliyeti: bir Kutlu taşın zinciri ≈ 8–40 birim (≈ 1–6 saatlik gelir); eski sürüm 222 birimdi ve toplam sinkin %35\'ini yuttu', () => {
+    let s = 1; let units = 0; for (let g = KT_GRADES - 2; g >= 0; g--) { const p = KT.refineRate[g]; const attempts = s / p; units += attempts * [0.25, 0.75, 2, 5][g]; s = attempts * (2 + p); }
+    // g=2: Kutlu(3) üretimi; g=3 (Ulu) hariç — Kutlu için yalnızca g=0..2 denenir
+    let sk = 1, uk = 0; for (let g = 2; g >= 0; g--) { const p = KT.refineRate[g]; const a = sk / p; uk += a * (KT.refineCost(g, 40) / costUnit(40)); sk = a * (2 + p); }
+    expect(uk).toBeGreaterThan(8); expect(uk).toBeLessThan(40); void units;
+  });
   test('Sürü Başı: efor başına ödül sıradan öldürmenin 1,35 katını aşmaz (HP çarpanı dikkate alınarak)', () => {
     const effort = PACK.alphaHp;            // öldürme süresi ≈ can çarpanı
     const xpPerEffort = PACK.alphaXp / effort; const goldPerEffort = PACK.alphaGold / effort;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { PACK, MOBS } from '../../shared/game';
-import { genCamps } from '../../shared/world';
+import { genAllCamps, genCamps } from '../../shared/world';
 import { makeRig } from '../sim/rig';
 
 function setup(seed = 5) {
@@ -35,5 +35,11 @@ describe('Agresif sürüler ve çekme', () => {
   test('uzun koşuda sürü, oyuncu kaçınca yuvasına döner ve iyileşir', () => {
     const { rig, w, mates, p } = setup(); const a = mates.find((m) => !m.alpha)!; p.x = a.x + 3; p.z = a.z; w.damage(p, a, 5); rig.seconds(2); p.x = a.hx + 300; p.z = a.hz; p.god = true; rig.seconds(40);
     expect(a.target).toBe(0); expect(Math.hypot(a.x - a.hx, a.z - a.hz)).toBeLessThan(40);
+  });
+  test('acemi bölgesinde (Kutlu Otlak) Sürü Başı ve sürü çağrısı yoktur', () => {
+    const rig = makeRig(7, { spawnCamps: true }); const w = rig.world; const p = rig.add('gok'); p.god = true;
+    const otlak = genAllCamps().filter((c) => c.map === 'otlak'); expect(otlak.length).toBeGreaterThan(0);
+    for (const c of otlak) { const ms = w.campMobs.get(c.id) ?? []; expect(ms.some((m) => m.alpha)).toBe(false); }
+    const c = otlak[0]; const ms = w.campMobs.get(c.id)!; const a = ms[0]; const b = ms[1]; b.x = a.x; b.z = a.z; p.x = a.x + 2; p.z = a.z; w.damage(p, a, 1); expect(b.target).toBe(0);
   });
 });

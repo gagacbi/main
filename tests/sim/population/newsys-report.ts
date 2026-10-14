@@ -49,6 +49,11 @@ out.push(`\n## 2. İlerleme ve güç\n\n| Metrik | Kontrol | Yeni sistemler | Fa
 out.push(row('Ortalama seviye (gün 7)', (r) => lvlAt(r, 7), f1)); out.push(row('Ortalama seviye (son gün)', (r) => lvlAt(r, r.days), f1));
 out.push(row('Ölüm / oyuncu-saat', (r) => sum(r.A.map((a) => a.tot.deaths + a.tot.extraDeaths)) / Math.max(1, sum(r.A.map(hrs))), f2));
 out.push(row('Yaratık öldürme / oyuncu-saat', (r) => sum(r.A.map((a) => a.tot.kills + a.tot.extraKills)) / Math.max(1, sum(r.A.map(hrs))), f1));
+const realKills = (r: Run) => sum(r.A.map((a) => a.tot.kills)); const realDeaths = (r: Run) => sum(r.A.map((a) => a.tot.deaths));
+out.push(row('Gerçek (dilim içi) ölüm / 1000 öldürme — sürü etkisi', (r) => (1000 * realDeaths(r)) / Math.max(1, realKills(r)), f2));
+out.push(row('Yaratık akçesi / öldürme (son 7 gün)', (r) => { const L = lastN(r); const g = sum(L.map((e: any) => e.sources['yaratık'] ?? 0)); const k = sum(r.A.map((a) => sum(a.days.slice(-L.length).map((d: any) => d.kills)))); return g / Math.max(1, k); }, f1));
+out.push(row('NPC satışı / öldürme (eşya akışı, son 7 gün)', (r) => { const L = lastN(r); const g = sum(L.map((e: any) => e.sources['NPC satış'] ?? 0)); const k = sum(r.A.map((a) => sum(a.days.slice(-L.length).map((d: any) => d.kills)))); return g / Math.max(1, k); }, f1));
+out.push(row('Seviye ilerlemesi / gün (ortalama)', (r) => mean(r.A.map((a) => (a.days[a.days.length - 1].prog - a.days[0].prog) / Math.max(1, a.days.length - 1))), f2));
 out.push(row('Ort. net değer (son gün)', (r) => mean(r.A.map((a) => a.days[a.days.length - 1].worth)), M));
 out.push(row('Yok olan eşya (toplam)', (r) => sum(r.A.map((a) => a.tot.destroyed)), (x) => x.toFixed(0)));
 out.push(row('Kımız sink / gün', (r) => perDay(r, 'sinks', 'kımız'), M));
@@ -90,6 +95,6 @@ out.push(`\n## 6. Arketip bazında seviye kazancı ve ölüm (yeni sistemler kol
 const archs = [...new Set(arms.yeni.flatMap((r) => r.A.map((a) => a.arch)))];
 for (const k of archs) { const g = (rs: Run[], m: (a: any) => number) => mean(rs.map((r) => { const xs = r.A.filter((a) => a.arch === k).map(m); return xs.length ? mean(xs) : 0; }));
   const gain = (a: any) => (a.days[a.days.length - 1].prog - a.days[0].prog) / Math.max(1, a.days.length - 1); const dph = (a: any) => (a.tot.deaths + a.tot.extraDeaths) / Math.max(0.1, hrs(a)); const gold = (a: any) => a.days[a.days.length - 1].gold;
-  const nm = arms.yeni[0].A.find((a) => a.arch === k).archName; out.push(`| ${nm} | ${f2(g(arms.control, gain))} → ${f2(g(arms.yeni, gain))} | ${f2(g(arms.control, dph))} → ${f2(g(arms.yeni, dph))} | ${M(g(arms.control, gold))} → ${M(g(arms.yeni, gold))} |`); }
+  const nm = arms.yeni.flatMap((r) => r.A).find((a) => a.arch === k)?.archName ?? k; out.push(`| ${nm} | ${f2(g(arms.control, gain))} → ${f2(g(arms.yeni, gain))} | ${f2(g(arms.control, dph))} → ${f2(g(arms.yeni, dph))} | ${M(g(arms.control, gold))} → ${M(g(arms.yeni, gold))} |`); }
 
 writeFileSync(process.argv[2] ?? '/tmp/newsys-report.md', out.join('\n') + '\n'); console.log(out.join('\n'));

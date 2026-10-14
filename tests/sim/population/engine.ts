@@ -35,7 +35,8 @@ export class Engine {
     this.rng = mulberry32(seed ^ 0x51ed); this.rig = makeRig(seed, { headless: true, spawnCamps: true, riftEvery: [150, 300] }); this.market = new MarketModel(this); this.seedAgents(); this.instrument(); this.supply0 = this.totalSupply();
   }
   // ───────────── kuruluş ─────────────
-  private pickArch(): Arch { let t = this.rng() * ARCHS.reduce((s, a) => s + a.weight, 0); for (const a of ARCHS) if ((t -= a.weight) < 0) return a; return ARCHS[0]; }
+  /** POP_NOBOT=1: balık botu arketipi çıkarılır (ana A/B'de iki kolda aynı nüfus); POP_ONLY=anahtar: yalnızca o arketip (bot stres deneyi) */
+  private pickArch(): Arch { const pool = process.env.POP_ONLY ? ARCHS.filter((a) => a.key === process.env.POP_ONLY) : ARCHS.filter((a) => !(process.env.POP_NOBOT && a.key === 'balikci')); let t = this.rng() * pool.reduce((s, a) => s + a.weight, 0); for (const a of pool) if ((t -= a.weight) < 0) return a; return pool[0]; }
   private range([a, b]: [number, number]) { return a + this.rng() * (b - a); }
   private seedAgents() {
     const w = this.rig.world; const r = this.rng;
@@ -185,7 +186,7 @@ export class Engine {
   }
   private killEquivalent(a: Agent, c: Camp, lvl: number) {
     const w = this.rig.world; const p = a.p; const type = c.types[Math.floor(this.rng() * c.types.length)]; const ml = Math.max(1, lvl + Math.floor(this.rng() * 3) - 1);
-    const m = w.makeMob(type, ml, p.x, p.z, -1); w.mobs.delete(m.id); const alpha = FEATURES.packs && c.count >= PACK.minCamp && this.rng() < 1 / c.count; if (alpha) m.alpha = true;
+    const m = w.makeMob(type, ml, p.x, p.z, -1); w.mobs.delete(m.id); const alpha = FEATURES.packs && c.count >= PACK.minCamp && !PACK.gentleMaps.includes(c.map) && this.rng() < 1 / c.count; if (alpha) m.alpha = true;
     const diff = p.d.level - ml; const f = diff > 3 ? Math.max(0.1, 1 - 0.12 * (diff - 3)) : Math.min(1.25, 1 + 0.05 * -diff);
     if (p.d.level < MAX_LEVEL || true) w.addXp(p, mobXp(ml) * f * (alpha ? PACK.alphaXp : 1), true);
     p.d.counters.kills++; w.huntKill(p, m); if (ml >= p.d.level - 10) w.daily(p, 'kill'); w.rollDrops(p, m, 1);
