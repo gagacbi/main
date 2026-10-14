@@ -84,7 +84,9 @@ export class Agent {
   at(x: number, z: number) { this.p.x = x; this.p.z = z; }
   town() {
     const p = this.p; const d = this.d; const r = this.eng.rng; const w = this.w;
-    p.deadUntil = 0; this.at(HUB.demirci.x - 2, HUB.demirci.z);
+    p.deadUntil = 0; if (d.tut.step === 0) d.tut.step = 1;   // 'hareket' adımı: ajan zaten yürür
+    if (d.tut.step === 1) { this.at(HUB.akSakal.x + 2, HUB.akSakal.z); this.rpc('elder'); }
+    this.at(HUB.demirci.x - 2, HUB.demirci.z);
     this.rpc('market.claim');
     // uzmanlık
     if (d.level >= 10 && d.spec === 'none') this.rpc('spec', { choice: this.par.spec });

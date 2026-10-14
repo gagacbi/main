@@ -30,11 +30,13 @@ describe('E1 acemi oymak ve ak sakal', () => {
   });
   test('öğretici adımları sırayla ilerler ve ödül verir', async () => {
     const b = await member('yer', 'Tut'); const p = playerOf(s, b);
-    expect(b.me.tut).toEqual({ step: 0, prog: 0 });
-    for (let i = 0; i < 5; i++) { (await import('./helpers')).worldOf(s, b).tutorial(p, 'kill'); }
-    expect(p.d.tut.step).toBe(1); expect(p.d.gold).toBeGreaterThan(150);
-    p.d.bag.wood = 10; expect((await b.rpc('oba.donate', { wood: 5 })).ok).toBe(true); expect(p.d.tut.step).toBe(2);
-    expect(TUTORIAL_STEPS.length).toBe(5); await b.leave();
+    expect(b.me.tut.step).toBe(0); expect(TUTORIAL_STEPS[0]).toBe('move'); const w = (await import('./helpers')).worldOf(s, b);
+    w.tutorial(p, 'kill'); expect(p.d.tut.step).toBe(0);   // sıra dışı olay sayılmaz
+    w.tutorial(p, 'move', 30); expect(p.d.tut.step).toBe(1); tp(s, b, HUB.akSakal.x + 2, HUB.akSakal.z); await waitSnap(b); await b.rpc('elder'); expect(p.d.tut.step).toBe(2); atOtag(b); await waitSnap(b);
+    for (let i = 0; i < 5; i++) w.tutorial(p, 'kill');
+    expect(p.d.tut.step).toBe(3); expect(p.d.gold).toBeGreaterThan(150);
+    p.d.bag.wood = 10; expect((await b.rpc('oba.donate', { wood: 5 })).ok).toBe(true); expect(p.d.tut.step).toBe(4);
+    expect(TUTORIAL_STEPS.length).toBe(7); await b.leave();
   });
 });
 

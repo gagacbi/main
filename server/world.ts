@@ -4,7 +4,7 @@ import { KT, KT_TYPES, KT_GRADES, ktLines, ktNorm, type KtType } from '../shared
 import { dungeonDay } from '../shared/dungeon';
 import { COMBO, comboFollows, HUB_R, GUARD_RANGE,
   AOI_R, BAG_SIZE, BOOK_BONUS, COMBAT_FLAG_SEC, DEATH_XP_LOSS, RESPAWN_PROTECT_MS, deathXpLoss, HUB, KUT_PER_POINT, MAX_LEVEL, MOBS, MOB_RESPAWN, RANK_RECOVER_KILLS,
-  RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
+  RESPAWN_SEC, RESTED_XP_MULT, RIFT, SKILLS, SKILL_MAX_RANK, SPEC_LEVEL, SPEC_MODS, TICK_HZ, TIER_MULT, TUTORIAL_LEGACY_SHIFT, TUTORIAL_REWARD, TUTORIAL_STEPS, TUTORIAL_TARGET,
   ENH, UPGRADE_DESTROYS_FROM, UPGRADE_RATE, upMax, INSCRIPTIONS, BOY_ID, BAD_WORDS, RATE,
   CRAFT, POISON_DOT, randomExtraSlot, inHubTown, lvlDiffIn, lvlDiffOut, applyDefense, rerollCost, BASE_ENCH_POOL, ENCH_KEYS, campRespawnMult, pvpGapMult, vendorPrice, SHIELD_ABSORB, RANGED_MIN_RANGE, FIELD_BOSS, MILESTONE_LEVELS, milestoneGift, DEF_ENCH, ENCH_TABLE, campTypes, dropLevelMult, computeStats, hitDamage, makeItem, mobAtk, mobDef, mobGold, mobHp, mobXp, randomSlot, restedCap, restedGain, rollTier,
   skillRankGold, skillRankMult, upgradeCost, xpToNext, zoneAt,
@@ -148,7 +148,9 @@ export class World {
     const d: PlayerData = JSON.parse(row.data);
     d.pvp ??= false; d.clues ??= []; d.dreams ??= 0; d.shards ??= 0; d.pendingDream ??= 0; // eski kayıtlar için
     const p = new Player(this.nid(), row.id, row.name, row.boy, d, row.oymak_id, row.points, send, kick);
-    p.role = row.role ?? 'player'; if (d.tut.step >= TUTORIAL_STEPS.length && !d.guide) this.guideSync(p);
+    p.role = row.role ?? 'player';
+    if (d.tut.v !== 2) { const started = d.tut.step > 0 || d.tut.prog > 0 || d.level > 1 || d.counters.kills > 0; if (started) d.tut.step += TUTORIAL_LEGACY_SHIFT; d.tut.v = 2; }   // 5 adımlı eski öğretici → 7 adımlı (hareket ve Ak Sakal adımları eski oyuncuda geçilmiş sayılır)
+    if (d.tut.step >= TUTORIAL_STEPS.length && !d.guide) this.guideSync(p);
     const now = this.now;
     // Çevrimdışı dinlenmiş deneyim
     if (d.loggedOutAt > 0) {
@@ -1000,7 +1002,7 @@ export class World {
       }
       case 'elder': {
         this.alive(p); this.near(p, HUB.akSakal, HUB.interactAkSakal + 3);
-        const got: string[] = []; ELDER_LEVELS.forEach((lv, i) => { if (d.level >= lv && this.discoverClue(p, `elder.${i + 1}`)) got.push(`elder.${i + 1}`); });
+        this.tutorial(p, 'elder'); const got: string[] = []; ELDER_LEVELS.forEach((lv, i) => { if (d.level >= lv && this.discoverClue(p, `elder.${i + 1}`)) got.push(`elder.${i + 1}`); });
         return { got };
       }
       case 'dreamSeen': {
@@ -1144,7 +1146,8 @@ export class World {
       if (now - p.lastInput > 450) { p.dirx = 0; p.dirz = 0; }
       if (!stunned && (p.dirx !== 0 || p.dirz !== 0)) {
         const sp = p.stats.moveSpeed * (this.hasStatus(p, 'slow') ? 0.5 : 1);
-        stepMove(p, p.dirx, p.dirz, sp, dt);
+        const ox = p.x, oz = p.z; stepMove(p, p.dirx, p.dirz, sp, dt);
+        if (p.d.tut.step === 0 && (p.dirx || p.dirz)) { const mv = Math.hypot(p.x - ox, p.z - oz); if (mv > 0) this.tutorial(p, 'move', mv); }
         p.rot = Math.atan2(p.dirx, p.dirz);
       }
       // otomatik saldırı

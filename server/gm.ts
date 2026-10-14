@@ -1,3 +1,4 @@
+import { TUTORIAL_STEPS } from '../shared/game';
 import {
   BAG_SIZE, HUB, MAX_LEVEL, SKILLS, SLOTS, defReduction, makeItem, mobDef, mobHp, mobXp, xpToNext, restedCap, INSCRIPTIONS,
   type MobType, type Slot, type Spec,
@@ -58,7 +59,7 @@ export function runGm(w: World, p: Player, line: string): { ok: boolean; msg: st
     case 'spec': { const s = (a[1] ?? 'none') as Spec; if (!['none', 'kalkan', 'kilic'].includes(s)) return bad('spec <none|kalkan|kilic>'); d.spec = s; w.recalc(p); return ok(`Uzmanlık=${s}`); }
     case 'rank': d.rank = Math.floor(n(1)); d.rankKills = 0; return ok(`Derece=${d.rank}`);
     case 'rested': d.rested = restedCap(d.level); return ok(`Dinlenmiş deneyim=${d.rested}`);
-    case 'tut': d.tut = { step: 5, prog: 0 }; return ok('Öğretici tamamlandı');
+    case 'tut': d.tut = { step: TUTORIAL_STEPS.length, prog: 0, v: 2 }; return ok('Öğretici tamamlandı');
     case 'kill': p.god = false; w.damage(null, p, 1e9); return ok('Öldürüldün');
     case 'cos': {
       const s = cosOf(p); const sub = (a[1] ?? '').toLowerCase();

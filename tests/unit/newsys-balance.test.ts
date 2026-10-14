@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { KT, KT_GRADES } from '../../shared/kuttas';
-import { PACK, COMP_EVO, mobGold, mobXp, ECON } from '../../shared/game';
+import { FEATURES, PACK, COMP_EVO, mobGold, mobXp, ECON } from '../../shared/game';
 import { CHEST } from '../../shared/chest';
 import { FISH, FISH_DEFS, catchChance } from '../../shared/fishing';
 import { DAILY } from '../../shared/daily';
@@ -52,4 +52,5 @@ describe('yeni sistemler — ekonomi korkulukları', () => {
     const gold = GUIDE.reduce((s, t) => s + (t.reward.gold ?? 0), 0); expect(gold).toBeLessThanOrEqual(1000);
     const books = GUIDE.reduce((s, t) => s + (t.reward.book ?? 0), 0); expect(books).toBeLessThanOrEqual(12); expect(GUIDE.reduce((s, t) => s + (t.reward.charm ?? 0), 0)).toBeLessThanOrEqual(2);
   });
+  test('canlı oyunda tüm özellik bayrakları AÇIK (kontrol kolu yapılandırması sızmamalı)', () => { expect(Object.entries(FEATURES).filter(([, v]) => !v).map(([k]) => k)).toEqual([]); });
 });

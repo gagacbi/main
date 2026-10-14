@@ -14,7 +14,7 @@ export interface PlayerData {
   v: 1; level: number; xp: number; kut: number; kutXp: number; gold: number; hp: number; spec: Spec;
   skillRanks: number[]; skillPts: number; bag: Bag; items: Item[]; equip: Partial<Record<Slot, Item>>;
   claimAt: number; companions: Companion[]; expeditions: Expedition[]; rested: number; loggedOutAt: number; outInHub: boolean;
-  rank: number; rankKills: number; tut: { step: number; prog: number };
+  rank: number; rankKills: number; tut: { step: number; prog: number; /** öğretici sürümü (2 = 7 adımlı) */ v?: number };
   /** v1.2 deney: günlük yüksek artı denemesi sayacı (yalnızca ENH.v11 açıkken yazılır) */ enh?: { day: number; n: number };
   /** telemetri (ekonomi kalibrasyonu): çevrimiçi/savaş saniyesi ve Kımız kullanımı; oyun mantığını etkilemez */ tel?: { onlineSec: number; combatSec: number; kimizUsed: number };
   counters: { kills: number; deaths: number; upgrades: number; pvpKills: number; destroyed: number };

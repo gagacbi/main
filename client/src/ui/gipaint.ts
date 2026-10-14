@@ -30,6 +30,9 @@ const UI: Record<string, [string, P3]> = {
   sound: ['sound-on', ['#fff3b0', '#f2bb3b', '#a8691a']], mute: ['sound-off', ['#e8e2d4', '#a8a090', '#5a5446']], close: ['cross-mark', ['#ffd0c8', '#e0604a', '#8a2a1c']],
   loom: ['spinning-wheel', ['#fff0d0', '#e8a85a', '#8a4f22']], nazar: ['evil-eyes', ['#d8ecff', '#4a8ae0', '#1e3a8a']], dugum: ['knot', ['#ffe0b0', '#d08a4a', '#7a4a22']],
   boncuk: ['prayer-beads', ['#ffd0e8', '#e45aa0', '#8a1f5a']], kagit: ['papyrus', ['#fff3d0', '#e8d8a0', '#9a8a50']], rift: ['portal', ['#e8d0ff', '#a05ae0', '#4a1f8a']], chat: ['chat-bubble', ['#e8f4ff', '#8fb8f2', '#3a5aa8']],
+  guide: ['treasure-map', ['#fff3d0', '#e8c070', '#9a6a28']],
   weapon: ['anvil', ['#e4e8ee', '#8d98a8', '#4a5262']],
 };
+/** denetim (test): eşlemedeki her silüet üretilmiş simge kümesinde var mı */
+export const uiIconAudit = () => Object.entries(UI).map(([k, [name]]) => ({ k, name, ok: name in GI }));
 export function uiIcon(k: string): string | null { const m = UI[k]; return m ? paint(m[0], m[1][0], m[1][1], m[1][2], 'gi') : null; }

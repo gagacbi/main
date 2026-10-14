@@ -359,8 +359,8 @@ export class Panels {
   // ─── Ak Sakal ───
   elder() {
     const m = this.me; const step = m.tut.step;
-    const steps = TUTORIAL_STEPS.map((k, i) => `<div class="tutstep ${i < step ? 'done' : i === step ? 'cur' : ''}"><div class="cb">${i < step ? '✓' : ''}</div><span>${t('tut.' + i)}${i === step ? ` <b>(${m.tut.prog}/${TUTORIAL_TARGET[k]})</b>` : ''}</span></div>`).join('');
-    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face">${ELDER_SVG}</div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= 5 ? `<div class="good" style="margin-top:6px">${t('tut.end')}</div>` : ''}
+    const steps = TUTORIAL_STEPS.map((k, i) => `<div class="tutstep ${i < step ? 'done' : i === step ? 'cur' : ''}"><div class="cb">${i < step ? '✓' : ''}</div><span>${t('tut.' + k)}${i === step ? ` <b>(${Math.floor(m.tut.prog)}/${TUTORIAL_TARGET[k]})</b>` : ''}</span></div>`).join('');
+    return this.shell(t('npc.aksakal'), 'stele', `<div class="elder"><div class="face">${ELDER_SVG}</div><div><div class="bubble">${t('elder.hello')}<br><br>${t('elder.tip1')}<br>${t('elder.tip2')}<br>${t('elder.tip3')}<br>${t('elder.tip4')}</div><div class="sub">${t('ui.tut')}</div>${steps}${step >= TUTORIAL_STEPS.length ? `<div class="good" style="margin-top:6px">${t('tut.end')} <a data-act="openpanel" data-v="guide" style="cursor:pointer;text-decoration:underline">${t('guide.title')} →</a></div>` : ''}
       ${m.clues.some((c) => c.startsWith('elder.')) ? `<div class="sub">${t('thread.elder')}</div>${m.clues.filter((c) => c.startsWith('elder.')).sort().map((c) => `<div class="card" style="margin-bottom:6px;font-style:italic">${t(c)}</div>`).join('')}` : ''}</div></div>`);
   }
 
@@ -634,6 +634,7 @@ export class Panels {
       case 'fishrod': { const r = await this.act('fish.rod'); if (r.ok) { const x = r.data as { ok: boolean; rod: number }; this.fishMsg = x.ok ? { cls: 'good', text: t('fish.rodok', { n: x.rod }) } : { cls: 'bad', text: t('fish.rodfail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } break; }
       case 'fisheat': { const r = await this.act('fish.eat', { id: d.id }); if (r.ok) this.g.audio.sfx('rare'); break; }
       case 'fishclean': { const r = await this.act('fish.clean', { id: d.id }); if (r.ok) { const x = r.data as { res: string }; this.fishMsg = { cls: x.res === 'solucan' ? 'good' : 'bad', text: t('fish.clean.' + x.res) }; } break; }
+      case 'openpanel': void this.show(d.v as PanelName); return;
       case 'ktset': case 'ktref': case 'ktunset': {
         const r = await this.act(d.act === 'ktset' ? 'kt.set' : d.act === 'ktref' ? 'kt.refine' : 'kt.unset', { type: (d as { ty?: string }).ty, grade: Number((d as { g?: string }).g) });
         if (r.ok) { const x = r.data as { ok?: boolean; kept?: boolean | null }; if (d.act === 'ktref') { this.lastResult = x.ok ? { cls: 'good', text: t('kt.refine.ok') } : { cls: 'bad', text: t('kt.refine.fail') }; this.g.audio.sfx(x.ok ? 'upok' : 'err'); } else { this.lastResult = x.kept === false ? { cls: 'bad', text: t('kt.broke') } : null; this.g.audio.sfx(x.kept === false ? 'err' : 'ui'); } this.render(true); }

@@ -455,9 +455,12 @@ export const COMPANION_NAMES = ['Börte', 'Kürşad', 'Umay', 'Tonyukuk', 'Alpag
 export const INSCRIPTIONS = [40, 120, 300, 700, 1500]; // toplam parça eşikleri (prototip)
 
 // Öğretici (ak sakal)
-export const TUTORIAL_STEPS = ['kill', 'donate', 'build', 'expedition', 'upgrade'] as const;
-export const TUTORIAL_TARGET = { kill: 5, donate: 5, build: 1, expedition: 1, upgrade: 1 };
-export const TUTORIAL_REWARD = { kill: { gold: 80 }, donate: { gold: 120 }, build: { gold: 200 }, expedition: { gold: 150 }, upgrade: { gold: 300, charm: 1 } } as const;
+/** Çekirdek öğretici: önce hareket ve etkileşim, sonra savaş, Oba ve Demirci. (Eski kayıtlarda adım numaraları 2 kayar: bkz. World.join.) */
+export const TUTORIAL_STEPS = ['move', 'elder', 'kill', 'donate', 'build', 'expedition', 'upgrade'] as const;
+export const TUTORIAL_TARGET = { move: 25, elder: 1, kill: 5, donate: 5, build: 1, expedition: 1, upgrade: 1 };
+export const TUTORIAL_REWARD = { move: { gold: 30 }, elder: { gold: 50 }, kill: { gold: 80 }, donate: { gold: 120 }, build: { gold: 200 }, expedition: { gold: 150 }, upgrade: { gold: 300, charm: 1 } } as const;
+/** eski (5 adımlı) öğreticiden geçiş: eski adım numarasına eklenecek kayma */
+export const TUTORIAL_LEGACY_SHIFT = 2;
 
 // Sohbet / sınırlar
 export const RATE = { msgPerSec: 60, rpcPerSec: 12, chatPerSec: 1.5 };

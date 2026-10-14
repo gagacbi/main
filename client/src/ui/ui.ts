@@ -19,6 +19,8 @@ import { Panels, type PanelName } from './panels';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 type ChatTab = 'all' | 'near' | 'boy' | 'oymak';
 
+/** sağ üst panel düğmeleri: [simge, panel, kısayol, başlık anahtarı] */
+const BTNS: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['book', 'wiki', 'U', 'ui.wiki'], ['daily', 'daily', 'J', 'ui.daily'], ['guide', 'guide', 'G', 'guide.title'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
 export class UI {
   touch: TouchControls | null = null; root: HTMLElement; panels: Panels; e: Record<string, HTMLElement> = {}; chatTab: ChatTab = 'all'; chatLog: (ChatMsg & { at: number })[] = []; hudAcc = 0; mapAcc = 0; minimap!: HTMLCanvasElement; campList = genAllCamps(); bossList = genBosses();
   slots: HTMLElement[] = []; lastCd: boolean[] = [false, false, false, false, false, false]; mapStatic: HTMLCanvasElement | null = null; pendingDuel = ''; fpsAcc = 0;
@@ -53,7 +55,7 @@ export class UI {
     this.e.skillbar.insertAdjacentHTML('beforeend', '<div class="combobadge" style="display:none"></div>'); this.slots = [...this.e.skillbar.querySelectorAll('.slot[data-i]')] as HTMLElement[];
     this.e.skillbar.addEventListener('click', (ev) => { const s = (ev.target as HTMLElement).closest('.slot[data-i]') as HTMLElement | null; if (s) this.g.useSkill(Number(s.dataset.i)); });
     // sağ üst düğmeler
-    const btns: [string, PanelName, string, string][] = [['bag', 'inv', 'I', 'ui.inventory'], ['char', 'char', 'C', 'ui.character'], ['skills', 'skills', 'K', 'ui.skills'], ['oba', 'oba', 'O', 'ui.obaPanel'], ['stele', 'inscr', 'Y', 'ui.codex'], ['book', 'wiki', 'U', 'ui.wiki'], ['daily', 'daily', 'J', 'ui.daily'], ['akce', 'market', 'P', 'mk.title'], ['globe', 'settings', '', 'ui.settings']];
+    const btns = BTNS;
     this.e.btns.innerHTML = btns.map(([ic, p, k, tt]) => `<button class="btn icon" data-p="${p}" title="${t(tt)}">${icon(ic)}${k ? `<span class="k">${k}</span>` : ''}<i class="dot"></i></button>`).join('');
     this.e.quest.addEventListener('click', (ev) => { { const dp = (ev.target as HTMLElement).closest('[data-p]') as HTMLElement | null; if (dp) this.open(dp.dataset.p as PanelName); } if ((ev.target as HTMLElement).dataset.hunt === 'skip') void this.g.net.rpc('hunt.skip').then((r) => { if (!r.ok) this.toast(t('err.' + (r.err ?? 'internal')), 'warn'); else this.toast(t('hunt.skipped'), 'good'); }); });
     this.e.btns.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest('button[data-p]') as HTMLElement | null; if (b) this.open(b.dataset.p as PanelName); });
@@ -76,7 +78,7 @@ export class UI {
   relocalize() {
     this.e.respawn.textContent = t('ui.respawn'); (this.e.duelyes as HTMLElement).textContent = t('ui.accept'); this.e.cin.setAttribute('placeholder', t('ui.chat.ph'));
     const h = this.root.querySelector('.death h2'); if (h) h.textContent = t('ui.dead'); const ch = this.root.querySelector('.chat .hint'); if (ch) ch.textContent = t('ui.chat.hint');
-    this.renderTabs(); this.e.btns.querySelectorAll('button[data-p]').forEach((b, i) => { const ks = ['ui.inventory', 'ui.character', 'ui.skills', 'ui.obaPanel', 'ui.codex', 'ui.settings']; (b as HTMLElement).title = t(ks[i]); });
+    this.renderTabs(); this.e.btns.querySelectorAll('button[data-p]').forEach((b, i) => { const ks = ['ui.inventory', 'ui.character', 'ui.skills', 'ui.obaPanel', 'ui.codex', 'ui.settings']; (b as HTMLElement).title = t(BTNS[i]?.[3] ?? 'ui.settings'); });
     this.panels?.refresh(); this.hudAcc = 1; if (this.g.me) this.hud(0);
   }
   renderTabs() { const tabs: [ChatTab, string][] = [['all', getLang() === 'tr' ? 'Hepsi' : 'All'], ['near', t('ui.chat.near')], ['boy', t('ui.chat.boy')], ['oymak', t('ui.chat.oymak')]]; this.e.ctabs.innerHTML = tabs.map(([k, l]) => `<div class="tab ${this.chatTab === k ? 'on' : ''}" data-t="${k}">${l}</div>`).join(''); }
@@ -87,7 +89,7 @@ export class UI {
     if (k === 'enter') { e.preventDefault(); this.startTyping(); return; }
     if (k === 'f2' && this.g.me?.role === 'admin') { e.preventDefault(); this.panels.toggle('gm'); return; }
     if (k === 'escape') { if (this.panels.isOpen()) this.panels.close(); return; }
-    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', u: 'wiki', j: 'daily', p: 'market', h: 'help', b: 'inv' };
+    const map: Record<string, PanelName> = { i: 'inv', c: 'char', k: 'skills', o: 'oba', y: 'inscr', u: 'wiki', j: 'daily', p: 'market', h: 'help', b: 'inv', g: 'guide' };
     if (map[k]) { e.preventDefault(); this.open(map[k], true); }
     if (k === 'q') { void this.useKimiz(); }
     if (k === 'm') { this.g.audio.setMuted(!this.g.audio.muted); this.g.audio.start(); }
@@ -236,7 +238,7 @@ export class UI {
     } else cp.style.display = 'none';
     // görev takibi
     const st = m.tut.step; const q = this.e.quest; q.style.display = 'block';
-    q.innerHTML = (st >= TUTORIAL_STEPS.length ? '' : `<div class="h">${icon('stele')}${t('ui.tut')}</div>`) + (st >= TUTORIAL_STEPS.length ? [] : TUTORIAL_STEPS).map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + i)} ${i === st ? `<span class="prog">${m.tut.prog}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + this.guideHtml(m) + this.huntHtml(m) + this.dailyHtml(m);
+    q.innerHTML = (st >= TUTORIAL_STEPS.length ? '' : `<div class="h">${icon('stele')}${t('ui.tut')}</div>`) + (st >= TUTORIAL_STEPS.length ? [] : TUTORIAL_STEPS).map((k, i) => `<div class="row ${i < st ? 'done' : i === st ? 'cur' : ''}"><div class="cb">${i < st ? '✓' : ''}</div><div>${t('tut.' + k)} ${i === st ? `<span class="prog">${Math.floor(m.tut.prog)}/${TUTORIAL_TARGET[k]}</span>` : ''}</div></div>`).join('') + this.guideHtml(m) + this.huntHtml(m) + this.dailyHtml(m);
     // etkileşim ipucu
     const nb = g.nearby; if (nb && !this.panels.isOpen()) { this.e.prompt.style.display = 'block'; this.e.prompt.innerHTML = `<b>E</b>${t('npc.' + (nb.key.startsWith('stone:') ? 'stone' : nb.key.startsWith('ruin:') ? 'ruin' : nb.key.startsWith('chest:') ? 'chest' : nb.key))}`; } else this.e.prompt.style.display = 'none';
     // ölüm
@@ -253,7 +255,7 @@ export class UI {
   }
   /** çekirdek öğretici adımının hedefi (pusula) */
   coreTarget(): { x: number; z: number } | null {
-    const st = this.g.me.tut.step; const to = [HUB.gate, HUB.otag, HUB.otag, HUB.otag, HUB.demirci][st]; return to ? { x: to.x, z: to.z } : null;
+    const k = TUTORIAL_STEPS[this.g.me.tut.step]; const to = ({ elder: HUB.akSakal, kill: HUB.gate, donate: HUB.otag, build: HUB.otag, expedition: HUB.otag, upgrade: HUB.demirci } as Record<string, { x: number; z: number }>)[k ?? '']; return to ? { x: to.x, z: to.z } : null;
   }
   /** Rehber hedefinin dünya konumu (pusula oku için) */
   guideTarget(): { x: number; z: number; key: string } | null {

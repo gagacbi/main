@@ -44,4 +44,10 @@ describe('Alp Rehberi', () => {
     w.onSkill(p, 0); expect(p.d.guide!.prog.skill).toBe(1); call(w, p, 'kimiz.use'); expect(p.d.guide!.done).toContain('kimiz'); expect(p.d.kimiz).toBe(2 + 2);   // içilen 1 + ödül 2
     p.d.companions = [{ id: 'c1', name: 'x', cls: 'alp', level: 20, xp: 0, traits: ['tuccar', 'cevik'] }]; p.d.bag.frag = 50; p.x = HUB.otag.x + 3; p.z = HUB.otag.z; call(w, p, 'oba.evolve', { compId: 'c1' }); expect(p.d.guide!.done).toContain('evolve');
   });
+  test('öğretici: hareket adımı yürüdükçe ilerler; eski 5 adımlı kayıtlar 2 adım kayar, yeni karakter başa döner', () => {
+    const rig = makeRig(62, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); expect(p.d.tut.step).toBe(0); expect(p.d.tut.v).toBe(2);
+    for (let i = 0; i < 60; i++) { w.onInput(p, { x: 1, z: 0 }); rig.seconds(0.2); } w.onInput(p, { x: 0, z: 0 }); expect(p.d.tut.step).toBeGreaterThanOrEqual(1);   // 25 m yürüdü
+    const old = rig.add('yer', 'player', (d: any) => { d.tut = { step: 2, prog: 0 }; d.level = 5; }); expect(old.d.tut.step).toBe(4); expect(old.d.tut.v).toBe(2);   // eski 'build' adımı → yeni 'build' (4)
+    const fin = rig.add('ay', 'player', (d: any) => { d.tut = { step: 5, prog: 0 }; d.level = 9; }); expect(fin.d.tut.step).toBe(TUTORIAL_STEPS.length);   // eski "bitti" → yeni "bitti"
+  });
 });
