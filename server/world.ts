@@ -601,7 +601,7 @@ export class World {
       const it = makeItem(r, randomSlot(r), m.lvl, rollTier(r));
       this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot });
     }
-    { const roll = r(); if (FEATURES.extraDrops && roll < 0.010 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); } }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
+    { const roll = r(); if (FEATURES.extraDrops && roll < 0.008 * dm) { const it = makeItem(r, randomExtraSlot(r), m.lvl, rollTier(r)); this.spawnDrop(p, 'item', m.x, m.z, { item: it, t: it.tier, m: it.slot }); } }   // ek yuva eşyaları (kalkan, çizme, bilezik, küpe)
     if (m.lvl >= KT.minLevel && p.d.level >= KT.minLevel && r() < KT.dropChance * dm) this.giveStone(p, 0);
     if (m.alpha) {   // Sürü Başı ödülü: ek akçe, bir üst katman eşya şansı, Kut Taşı şansı
       this.spawnDrop(p, 'gold', m.x, m.z, { amount: Math.round(gold * (PACK.alphaGold - 1)) });

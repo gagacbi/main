@@ -21,8 +21,8 @@ describe('ek kuşanma yuvaları', () => {
   });
   test('ek yuva eşyaları yaratık düşüşünde çıkar (bağımsız ek şans)', () => {
     const rig = makeRig(52, { spawnCamps: false }); const w = rig.world; const p = rig.add('gok'); p.d.level = 20; w.recalc(p); p.x = 0; p.z = 130; let extra = 0;
-    for (let i = 0; i < 1500; i++) { const m = w.makeMob('cakal', 20, p.x + 2, p.z, -1); m.contrib.set(p.id, 1); w.killMob(m); }
+    for (let i = 0; i < 4000; i++) { const m = w.makeMob('cakal', 20, p.x + 2, p.z, -1); m.contrib.set(p.id, 1); w.killMob(m); }
     for (const dr of w.drops.values()) if (dr.k === 'item' && (EXTRA_SLOTS as string[]).includes((dr as any).item?.slot)) extra++;
-    expect(extra).toBeGreaterThan(5); void computeStats;
+    expect(extra).toBeGreaterThan(8); expect(extra).toBeLessThan(80); void computeStats;
   });
 });

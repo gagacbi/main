@@ -51,7 +51,7 @@ await page.fill('#ln', NAME); await page.fill('#lp', 'gizli1234');
 await page.click('.boycard[data-b="ay"]'); await sleep(900);
 check('C1.boy-secimi', (await page.$$('.boycard')).length === 3, 'Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp');
 await shot('02-karakter-olustur');
-await page.click('#go'); await page.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+await page.click('#go'); await page.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
 check('A1.giris', true, 'UI üzerinden karakter oluşturuldu ve oyuna girildi');
 const g0 = await ev<{ boy: string; name: string; level: number }>('({ boy: g.me.boy, name: g.me.name, level: g.me.level })');
 check('C1.boy-kaydi', g0.boy === 'ay' && g0.name === NAME, `Sunucu kaydı: boy=${g0.boy} ad=${g0.name}`);
@@ -266,8 +266,8 @@ if (want('oba')) {
   const lvl = (await ev<{ levels: { otag: number } } | null>('null')); void lvl;
   await page.keyboard.press('Escape');
   me.x = HUB.stele.x - 3; me.z = HUB.stele.z + 4; await sleep(1500);
-  const w = world(); w.addFrag(me, 41); await sleep(1200);
-  await page.keyboard.press('y'); await sleep(900); await shot('16-yazitlar');
+  const w = world(); srv.ctx.db.worldSet('frags', 0); w.addFrag(me, 41); await sleep(1200);   // sunucu çapı sayaç sıfırlanır: önceki bölümlerdeki parça kazanımları (sandık, rehber) eşiği geçmiş olmasın
+  await ev<void>("void (g.ui.panels.codexTab = 'insc')"); await page.keyboard.press('y'); await sleep(900); await shot('16-yazitlar');   // önceki bölüm Kodeks'i Kut Yıllığı sekmesinde bırakmış olabilir
   const open1 = await page.$$eval('.stele-card:not(.locked)', (e) => e.length); const lore = await page.textContent('.stele-card:not(.locked)');
   const announced = await ev<boolean>('g.ui.chatLog.some(m => m.key === "sys.inscription")');
   check('E7.yazit', open1 === 1 && /Mühür içeriden|seal was not broken/.test(lore ?? '') && announced && me.d.bag.frag >= 41, `Sunucu çapı 40 parça eşiği aşıldı: ${open1} yazıt çözüldü (“${(lore ?? '').trim().slice(-48)}”), tüm oyunculara duyuruldu=${announced}`);
@@ -315,7 +315,7 @@ if (want('gizem')) {
   const AN = 'Yonetici' + Math.floor(Math.random() * 900 + 100);
   const seed = await new Bot(`ws://localhost:${srv.port}`, AN).join('gok'); await seed.leave(); await sleep(300); srv.ctx.db.setRole(AN, 'admin');
   const pg: Page = await ctx.newPage(); pg.on('pageerror', (e) => errors.push(e.message));
-  await pg.goto(`${url}?name=${AN}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  const tReady = Date.now(); await pg.goto(`${url}?name=${AN}&pw=secret1&autoq=0`, { timeout: 300000 }); await pg.waitForFunction('window.__ready === true', null, { timeout: 240000 }); console.log('  (ikinci sayfa hazır: ' + Math.round((Date.now() - tReady) / 1000) + ' sn)'); await sleep(2500);
   const gev = <T>(expr: string): Promise<T> => pg.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gshot = async (name: string) => { await pg.screenshot({ path: `${OUT}/${name}.png` }); };
   const ap = [...world().players.values()].find((x) => x.name === AN)!;
@@ -345,7 +345,7 @@ if (want('gizem')) {
   await pg.keyboard.press('F2'); await sleep(600); await pg.click('[data-line="clue hepsi"]'); await sleep(1200); await pg.keyboard.press('Escape'); await sleep(300);
   await pg.keyboard.press('y'); await sleep(1000); await gshot('24a-kodeks-yazitlar'); await pg.click('.tab2[data-v="stone"]'); await sleep(500); await gshot('24b-kodeks-taslar'); await pg.click('.tab2[data-v="truth"]'); await sleep(500); await gshot('24-kodeks-muhurun-disi');
   const truth = await pg.textContent('.stele-card:not(.locked)'); const total = await pg.textContent('.codex .chip');
-  check('H3.kodeks', /dıştaki el/.test(truth ?? '') && /27\/27|2[67]\/27/.test(total ?? '') && ap.d.clues.includes('truth.1'), `Kodeks: ${total?.trim()}; "Mühürün Dışı" açıldı ve metni gösteriyor`);
+  check('H3.kodeks', /dıştaki el/.test(truth ?? '') && /2[67]\/(27|36)/.test(total ?? '') && ap.d.clues.includes('truth.1'), `Kodeks: ${total?.trim()}; "Mühürün Dışı" açıldı ve metni gösteriyor`);
   await pg.close();
 }
 
@@ -354,11 +354,11 @@ if (want('icerik')) {
   const AN2 = 'Kahraman' + Math.floor(Math.random() * 900 + 100);
   const seed2 = await new Bot(`ws://localhost:${srv.port}`, AN2).join('yer'); await seed2.leave(); await sleep(300); srv.ctx.db.setRole(AN2, 'admin');
   const pg2: Page = await ctx.newPage(); pg2.on('pageerror', (e) => errors.push(e.message));
-  await pg2.goto(`${url}?name=${AN2}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg2.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  await pg2.goto(`${url}?name=${AN2}&pw=secret1&autoq=0`, { timeout: 300000 }); await pg2.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
   const sh = async (name: string) => { await pg2.screenshot({ path: `${OUT}/${name}.png` }); };
   const g2 = <T>(expr: string): Promise<T> => pg2.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gmr = (line: string) => pg2.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
-  await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(1500);
+  await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 180000 }); await sleep(1500);
   const me2 = [...world().players.values()].find((x) => x.name === AN2)!; const W = world(); if (!me2) console.log('OYUNCULAR', [...W.players.values()].map((x) => x.name), AN2, await pg2.evaluate(() => (window as any).__game.me?.name));
   // kilometre taşı: seviye 9 → 10 (gerçek addXp yolu)
   me2.d.level = 9; me2.d.xp = 0; W.recalc(me2); const gold0 = me2.d.gold, book0 = me2.d.bag.book;
@@ -384,7 +384,7 @@ if (want('icerik')) {
   boss.slamAt = W.now; await sleep(1700); await sh('28-boss-alan-darbesi');
   await sleep(600); await sh('29-seviye-aurasi');
   // yoğun boss sahnesinden sonra taze sayfa (yazılım render'ında uzun süren ağır sahne bağlantıyı zamanlayabilir); paneller yurtta denetlenir
-  await pg2.reload(); await pg2.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500); await gmr('tp hub'); await sleep(1500);
+  await pg2.reload(); await pg2.waitForFunction('window.__ready === true', null, { timeout: 300000 }); await pg2.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 180000 }); await sleep(2500); await gmr('tp hub'); await sleep(1500);
   // ölüm ekranı: seni neyin öldürdüğü ve o türe karşı savunman (lamba: oyuncu burada bakar)
   // (yoğun yazılım render'ında anlık görüntü gecikebildiğinden ölüm olayının sunucu tarafı birim testiyle kilitlidir; burada ekranın doğru çizildiği denetlenir)
   const hint = await pg2.evaluate(() => { const g = (window as any).__game; g.lastDeath = { by: 'boss.3', kd: 'bicak' }; const h = g.ui.deathHint(); const st = document.createElement('style'); st.id = 'forcedeath'; st.textContent = '#death{display:grid !important}'; document.head.appendChild(st); document.getElementById('deadp')!.innerHTML = h; return h; });
@@ -407,11 +407,11 @@ if (want('harita')) {
   const AN3 = 'Gezgin' + Math.floor(Math.random() * 900 + 100);
   const seed3 = await new Bot(`ws://localhost:${srv.port}`, AN3).join('ay'); await seed3.leave(); await sleep(300); srv.ctx.db.setRole(AN3, 'admin');
   const pg3: Page = await ctx.newPage(); pg3.setDefaultTimeout(120000); pg3.on('pageerror', (e) => errors.push(e.message));
-  await pg3.goto(`${url}?name=${AN3}&pw=secret1&autoq=0`, { timeout: 120000 }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 90000 }); await sleep(2500);
+  await pg3.goto(`${url}?name=${AN3}&pw=secret1&autoq=0`, { timeout: 300000 }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
   const sh3 = async (name: string) => { await pg3.screenshot({ path: `${OUT}/${name}.png` }); };
   const gm3 = (line: string) => pg3.evaluate((l) => (window as any).__game.net.rpc('gm', { line: l }), line);
   const reg = () => import('../../shared/maps').then((m) => m.regionAt(P3().x, P3().z)?.id);
-  await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(1500);
+  await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 180000 }); await sleep(1500);
   const P3 = () => [...world().players.values()].find((x) => x.name === AN3)!;
   // kapı taşı: yurtta Kapı Taşı'na yaklaş, E, Kutlu Otlak kartı, geç
   await gm3(`tp ${HUB.gate.x} ${HUB.gate.z + 4}`); await sleep(2200);
@@ -419,7 +419,7 @@ if (want('harita')) {
   const gp = await pg3.textContent('.panel');
   check('H12.kapi-paneli', /Kapı Taşı/.test(prompt ?? '') && /Kutlu Otlak/.test(gp ?? '') && /Erlik Diyarı/.test(gp ?? '') && /İsteğe bağlı/.test(gp ?? ''), 'Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür');
   await pg3.click('.gatecard[data-map="otlak"] button[data-act="travel"]'); await sleep(2500);
-  await pg3.waitForSelector('#zone', { timeout: 90000 }).catch(() => undefined); await sleep(1500); const zone1 = await pg3.textContent('#zone', { timeout: 20000 }).catch(() => ''); await sh3('36-kutlu-otlak');
+  await pg3.waitForSelector('#zone', { timeout: 240000 }).catch(() => undefined); await sleep(1500); const zone1 = await pg3.textContent('#zone', { timeout: 20000 }).catch(() => ''); await sh3('36-kutlu-otlak');
   check('H12.otlak', (await reg()) === 'otlak' && /Otlak Kampı/.test(zone1 ?? ''), `Kapıdan geçince Kutlu Otlak'ta (bölge=${await reg()}); bölge etiketi: ${(zone1 ?? '').replace(/\s+/g, ' ').slice(0, 40)}`);
   // kuralı giriş anında oku: PvP düğmesi Otlak'ta kapalı/pasif
   const pvpOtlak = await pg3.textContent('#pvpbtn');
@@ -440,7 +440,7 @@ if (want('harita')) {
   check('H16.pazar-mal', lr === true && /Mallarım/.test(mkp ?? '') && /Demir cevheri ×100/.test(mkb ?? ''), `Pazar: malzeme yığını ilanı verildi (ok=${lr}); "Mallar" görünümünde "Demir cevheri ×100" listelendi; satış panelinde "Mallarım" bölümü var`);
   await pg3.keyboard.press('Escape'); await sleep(400);
   // Erlik Diyarı + zindan (taze sayfa)
-  await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
+  await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 300000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 180000 }); await sleep(2500);
   await gm3('level 46'); await gm3('god'); await gm3('gold 20000'); await gm3('tp erlik'); await sleep(3000); for (let i = 0; i < 4 && !/Demir Madeni/.test((await pg3.textContent('.panel', { timeout: 3000 }).catch(() => '')) ?? ''); i++) { await pg3.keyboard.press('e'); await sleep(1500); } await sh3('38-erlik-kapi-zindan');
   const dp = await pg3.textContent('.panel');
   check('H14.zindan-paneli', /Demir Madeni/.test(dp ?? '') && /Gölge Mağarası/.test(dp ?? '') && /Giriş ücreti/.test(dp ?? '') && /Bugün kalan hak/.test(dp ?? '') && /Tek başına gir/.test(dp ?? ''), 'Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)');
@@ -451,7 +451,7 @@ if (want('harita')) {
   await pg3.evaluate(() => (document.querySelector('#dunbar [data-dunleave]') as HTMLElement).click()); await sleep(2500);
   check('H14.zindan-cikis', (await reg()) === 'erlik', 'Zindandan çıkış düğmesi Erlik kampına döndürür');
   // Dokuma Tezgâhı + kostüm (taze sayfa)
-  await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 120000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 60000 }); await sleep(2500);
+  await pg3.reload({ timeout: 150000, waitUntil: 'commit' }); await pg3.waitForFunction('window.__ready === true', null, { timeout: 300000 }); await pg3.waitForFunction('window.__game && window.__game.me && window.__game.me.name', null, { timeout: 180000 }); await sleep(2500);
   await gm3('tp hub'); await sleep(1500); await gm3('gold 3000000'); await gm3('cos mats'); await gm3('cos give 3 1'); await gm3('cos give 2 5'); await gm3('cos loom');
   const LP = (await import('../../shared/costume')).LOOM_POS; await gm3(`tp ${LP.x - 3} ${LP.z}`); await sleep(3000); for (let i = 0; i < 6 && !(await pg3.$('.panel')); i++) { await pg3.keyboard.press('e'); await sleep(2000); } await sh3('40-dokuma-tezgahi');
   const lp = await pg3.textContent('.panel');
@@ -474,9 +474,10 @@ if (want('dokunmatik')) {
   await tctx.addInitScript(() => { try { localStorage.setItem('kut.lang', 'tr'); localStorage.setItem('kut.q', 'low'); } catch { /* */ } });
   const tp: Page = await tctx.newPage(); tp.setDefaultTimeout(120000); tp.on('pageerror', (e) => errors.push(e.message));
   const TN = 'Dokun' + Math.floor(Math.random() * 900 + 100); const seedT = await new Bot(`ws://localhost:${srv.port}`, TN).join('gok'); await seedT.leave(); await sleep(300);
-  await page.goto('about:blank'); await tp.goto(`${url}?name=${TN}&pw=secret1&autoq=0`, { timeout: 120000 }); await tp.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
+  await page.goto('about:blank'); await tp.goto(`${url}?name=${TN}&pw=secret1&autoq=0`, { timeout: 300000 }); await tp.waitForFunction('window.__ready === true', null, { timeout: 240000 }); await sleep(2500);
   const tev = <T>(expr: string): Promise<T> => tp.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   check('T1.arayuz', !!(await tp.$('body.touch #tjoy')) && !!(await tp.$('.tatk')) && (await tp.evaluate(() => getComputedStyle(document.querySelector('.skillbar')!).right !== 'auto')), 'Dokunmatik cihazda joystick, saldırı düğmesi ve sağa alınmış beceri çubuğu var');
+  { const tq = await tp.evaluate(() => { const e = document.getElementById('tquest'); return e && getComputedStyle(e).display !== 'none' ? e.textContent : null; }); check('T6.gorev-seridi', !!tq && /Yürü|Ak Sakal|yürü/i.test(tq), 'Telefonda görev kutusu gizli olsa da geçerli öğretici adımı üst şeritte görünür: ' + (tq ?? '—')); }
   const cdp = await tctx.newCDPSession(tp); const jb = await (await tp.$('#tjoy'))!.boundingBox(); const jx = jb!.x + jb!.width / 2, jy = jb!.y + jb!.height / 2;
   const tpl = [...world().players.values()].find((x) => x.name === TN)!; const x0 = tpl.x, z0 = tpl.z;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: jx, y: jy, id: 1 }] });

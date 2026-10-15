@@ -10,17 +10,19 @@ Yöntem: ölçülebilir kanıt. (1) tam e2e turu, (2) 250 birim/entegrasyon test
 | 3 | Zindan bossları (`boss.10`, `boss.11`) için ad ve duyuru çevirisi yoktu | Arayüzde ham anahtar (`boss.10`) görünüyordu | TR/EN eklendi; `tests/unit/i18n-kapsam.test.ts` |
 | 4 | Günlük "yaratık kes" görevi her seviyeden yaratığı sayıyordu | Sv 50 oyuncu başlangıç çakallarıyla görevi bitirebilirdi (kasma) | Yalnızca seviye−10 ve üstü yaratık sayılır; test eklendi |
 
-## Açık bulgular (düzeltilmedi; karar/ölçüm gerekiyor)
-| # | Bulgu | Risk | Öneri |
-|---|---|---|---|
-| A | **Balıkçılıkta vuruşlar istemci beyanı**: sunucu yalnızca süreyi doğrular (≥2,5 sn) | Bot, 1,5 sn bekleme ile dakikada ~15 balık yakalayabilir (balık pazar malı; arz enflasyonu). Akçe faucet'i yok | Vuruş zamanlarını sunucuda tohumlu desenle doğrula (bot yine hesaplayabilir, ama hız ve bellek tavanı koyar); balık başına günlük tavan |
-| B | **Ekonomi yeniden ölçülmedi**: ek yuvalar, Göl Avı, Günlük, Element eklendi; simülasyon botları ek yuvaları kullanmıyor | Yeni faucet (Kımız, kitap, XP) ve sink'ler (olta, yem, element) net etkisi bilinmiyor; "toplam ekonomi kısmen doğrulandı" durumu sürüyor | Nüfus simülasyonu + botlara ek yuva/balık/günlük davranışı; canlı telemetri (`scripts/economy-report.ts`) |
-| C | **Dokunmatik/mobil kontrol yok** | Telefonda oynanamaz | Sanal joystick + skill düğmeleri (ayrı iş) |
-| D | Gerçek GPU performansı ölçülmedi | İlk çanta açılışında ≤160 eşya görseli çizilebilir; kuşanma değişiminde model yeniden kurulur; kalabalık sahne | Tarayıcı konsolu ölçüm betiği (kuyrukta iş emri) |
-| E | Ek yuva görünümü kısmi | Yalnızca kalkan karakterde görünür; çizme/bilezik/küpe yok | Çizme ve bilezik için model parçası |
-| F | Öğretici yeni sistemleri anlatmıyor | Ak Sakal görevleri 5 adım; Wiki (U), Günlük (J), Göl, Element keşfe bağlı | Öğretici adımı veya Ak Sakal diyaloğu |
-| G | Metin2 geri bildirim listesinden yapılmayanlar | Agresif sürü + çekme, metin taşı dalgaları, boss anahtarı/sandık, biyolog tarzı teslim görevi, Kut Taşları, Yoldaş evrimi | `docs/ozellikler/METIN2_WIKI_UYARLAMA.md` |
-| H | Barındırma yalnızca kendi bilgisayar + tünel | 7/24 sunucu yok; Cloudflare tünel adımı uçtan uca denenmedi | `docs/BARINDIRMA.md` |
+## Durum tablosu (2026-10-15 güncellemesi)
+| # | Bulgu | Durum |
+|---|---|---|
+| A | Balıkçılıkta vuruşlar istemci beyanı (bot riski) | **Azaltıldı**: tutma şansı (kaçma), `minReelSec` 4 sn, günlük 200 yakalamadan sonra şans ×0,4. Bot sınaması: balık talep olmadan akçeye dönmez (bot 0 satış, yem parası bitince durdu). Kalan risk: balık NPC'ye satılabilir yapılırsa yeniden simüle edilmeli. |
+| B | Ekonomi yeniden ölçülmedi | **Ölçüldü** (A/B, 3 tohum × 2 kol × 14 gün): `docs/balans/YENI_SISTEMLER_EKONOMI.md`. Sink/kaynak %85,3 → %88,3 (bant içinde); simülasyon 3 ayar sorunu buldu ve düzeltildi (Sürü Başı ödülü, ek yuva düşüşü, Kut Taşı maliyeti). Sınırlar belgede. |
+| C | Dokunmatik/mobil kontrol | **Yapıldı** (joystick, saldırı/E düğmeleri, kamera, panel düzeni, görev şeridi); Chromium dokunmatik emülasyonunda test edildi, **gerçek cihazda denenmedi**. |
+| D | Gerçek GPU performansı ölçülmedi | **Açık**. Yeni: Kut Taşı sekmesi ilk açılışta ≤ 30 taş görseli çizer (SwiftShader'da sorun yok, gerçek GPU ölçülmedi). |
+| E | Ek yuva görünümü kısmi | **Kapandı**: çizme, bilezik, küpe karakter modelinde (bant malzemesi + kademe taşı); kodlama 45 bit. Not: varsayılan kamera uzaklığında küpe miğferin altında az görünür. |
+| F | Öğretici yeni sistemleri anlatmıyor | **Kapandı**: 7 adımlı çekirdek öğretici (hareket, Ak Sakal, savaş, Oba, Demirci) + 18 görevlik **Alp Rehberi**; sunucu doğrulamalı, pusula oklu, mobilde görev şeridi. `docs/ozellikler/ALP_REHBERI.md`. Gerçek yeni oyuncuyla denenmedi. |
+| G | Metin2 listesinden yapılmayanlar | Yapıldı: Kut Taşları, Yoldaş evrimi, agresif sürüler + çekme, boss anahtarı + sandık. **Kalan**: metin taşı dalgaları, biyolog tarzı teslim görevi, Yoldaş ömrü. |
+| H | Barındırma | **Açık** (7/24 sunucu yok, tünel uçtan uca denenmedi). |
+| I | Yeni: Kut Taşı/anahtar pazarda takas edilmiyor | Bilinçli (ilk sürüm). Pazar fiyat dinamiği simüle edilmedi. |
+| J | Yeni: oyun içi eğitimde gerçek oyuncu geri bildirimi yok | Açık; görev sayısı/sırası geri bildirimle ayarlanmalı. |
 
 ## Sağlam bulunanlar (kanıtla)
 - Kalıcılık: 10 sn otomatik kayıt ve SIGINT/SIGTERM'de kapanış kaydı (`server/world.ts`, `server/index.ts`).

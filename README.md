@@ -79,6 +79,9 @@ yaratık çağırma, kukla ve DPS ölçümü, çatlak aç/kapat, zaman ileri sar
 * **Zindanlar** (Erlik kampındaki Kapı Taşı): **Demir Madeni** (Sv 41+) ve **Gölge Mağarası** (Sv 46+). 4 kişilik parti (30 sn toplanma) ya da tek başına; giriş ücreti akçe, günde 3 hak; dalgalar + boss; süre sınırlı; boss garanti destansı+ ganimet, kostüm malzemesi ve şans eşyası düşürür.
 * **Kostüm** (yurttaki **Dokuma Tezgâhı**, `E`): süreli, minimal özellikli giysi. Tezgâh günlük/haftalık ücretle malzeme dokur → şansa bağlı kostüm üretimi (Şans Boncuğu / Koruyucu Düğüm / Nazar Taşı şansı artırır) → efsunlama, değiştirme, görünüm değiştirme → **efsunlar yalnızca kostüm yaşadığı sürece kalır; akçeyle +1 hafta uzatılır**. Maliyetler seviyeyle ölçeklenir (`shared/costume.ts`).
 * Tasarım gerekçeleri ve lamba testi cevapları: [`docs/ozellikler/HARITA_KOSTUM.md`](docs/ozellikler/HARITA_KOSTUM.md). GM: `/gm tp otlak|erlik`, `/gm cos mats|give|expire|loom`.
+* Yeni sistemler (Göl Avı, Günlük, Element, Kut Taşları, sürüler, boss anahtarı + sandık, Yoldaş evrimi): tasarım [`docs/ozellikler/KUT_TASLARI.md`](docs/ozellikler/KUT_TASLARI.md); **ekonomi A/B doğrulaması** [`docs/balans/YENI_SISTEMLER_EKONOMI.md`](docs/balans/YENI_SISTEMLER_EKONOMI.md) (kontrol ↔ yeni, 3 tohum × 14 gün, korunum denetimi, sömürü sınaması).
+* Yeni oyuncu eğitimi: [`docs/ozellikler/ALP_REHBERI.md`](docs/ozellikler/ALP_REHBERI.md) (7 adımlı çekirdek öğretici + 18 görevlik Alp Rehberi, oyun içinde `G`). Hata/eksik durumu: [`docs/ANALIZ_HATA_EKSIK.md`](docs/ANALIZ_HATA_EKSIK.md).
+* Simge/model önizleme: `/?icons=1` (Kut Taşı, anahtar, sandık, ek yuva eşyaları); `npx tsx tests/perf/icon-sheet.ts`.
 
 ## Gizem
 

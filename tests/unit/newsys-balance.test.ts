@@ -32,7 +32,7 @@ describe('yeni sistemler — ekonomi korkulukları', () => {
     const xpPerEffort = PACK.alphaXp / effort; const goldPerEffort = PACK.alphaGold / effort;
     expect(xpPerEffort).toBeLessThan(1.35); expect(goldPerEffort).toBeLessThan(1.35); expect(xpPerEffort).toBeGreaterThan(1.0);
     const c = genAllCamps(); const share = c.filter((x) => x.count >= PACK.minCamp).length / c.reduce((s, x) => s + x.count, 0);
-    const extraItems = PACK.alphaItemChance * share; expect(extraItems).toBeLessThan(0.11 * 0.25);   // normal eşya düşüşünün %25'inden az ek eşya/öldürme
+    const extraItems = PACK.alphaItemChance * share; expect(extraItems).toBeLessThan(0.11 * 0.1);   // normal eşya düşüşünün %10'undan az ek eşya/öldürme
     expect(share).toBeLessThan(0.2);
     void mobXp; void mobGold; void ECON;
   });

@@ -349,3 +349,5 @@ body.touch.panel-open .tjoy, body.touch.panel-open .tbtns, body.touch.panel-open
 .plate.alpha .hpbar { width: 96px; height: 9px; } .plate.alpha .nm { color: #ffb36a; text-shadow: 0 0 6px rgba(255,120,40,.7); }
 .compass.guide { filter: hue-rotate(160deg) saturate(1.4); }
 .gemimg { vertical-align: middle; filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); } .chip .gemimg { margin: -4px 2px -4px -4px; }
+.tquest { display: none; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); max-width: min(46vw, 420px); padding: 5px 12px; border-radius: 14px; background: rgba(60, 36, 14, .82); border: 2px solid var(--gold, #f0c96e); color: #fff3cf; font: 600 12.5px/1.25 var(--f-head, sans-serif); text-align: center; z-index: 19; cursor: pointer; }
+body.touch.panel-open .tquest { display: none !important; }

@@ -5,8 +5,8 @@
 | Konu | Karar |
 |---|---|
 | Türler / sınıflar | 6 tür (Alp, Kalkan, Can, Kesin, Çevik, Emen) × 5 sınıf (Ham → Ulu); her tür tek yuva |
-| Kaynak | Sv 15+ yaratıkta ~%0,9 (drop seviye eğrisiyle çarpılır), saha boss'unda 1–2 taş (%30 Saf) |
-| Saflaştırma | 3 aynı taş + akçe → 1 üst sınıf; şans %70/50/35/22; başarısızlıkta 2 taş yanar |
+| Kaynak | Sv 15+ yaratıkta ~%0,9 (drop seviye eğrisiyle çarpılır) + Sürü Başı %4, saha boss'unda 1–2 taş (%30 Saf) |
+| Saflaştırma | 3 aynı taş + akçe → 1 üst sınıf; şans %70/50/35/22; başarısızlıkta 2 taş yanar. Akçe = costUnit(seviye) × [0,25 · 0,75 · 2 · 5]; bir Kutlu taşın tüm zinciri ≈ 28 birim (**A/B simülasyonu sonrası ÷8 düşürüldü**, bkz. `docs/balans/YENI_SISTEMLER_EKONOMI.md`) |
 | Risk | Çıkarma/değiştirmede %70 geri döner, %30 kırılır |
 | Set bonusu | 6 yuva dolu: +%2 saldırı/savunma; hepsi Kutlu+: +%3 XP, +%4 can |
 | Gücü | Tek parça en çok +%8 saldırı / +%14 can; tam Ulu set ≈ +%8 saldırı +%11 savunma +%14 can +%3 XP (+ setler) |
@@ -20,7 +20,7 @@
 
 ---
 # Agresif sürüler ve çekme (aynı turda)
-`PACK` (shared/game.ts), `World.alertPack` / `campMobs` (server/world.ts), `F.ALPHA` + `howl` olayı (istemci: halka + "!" + ses). Yaratık hedef bulunca ya da ilk darbeyi alınca yakındaki (çağrı yarıçapı türe göre: Çakal 16, Albastı/Erlik 9, Tepegöz 7) hedefsiz kamp arkadaşları gelir; zincirleme YOK → kenardaki yaratığı uzaktan çekip sürüyü bölmek mümkün. Kampın ilk yaratığı (≥4'lük kamplarda) Sürü Başı: 1,8× can, 1,15× saldırı, tüm kampı çağırır; ödül ×2,5 XP, ek akçe, üst katman eşya şansı %60, Kut Taşı %25.
+`PACK` (shared/game.ts), `World.alertPack` / `campMobs` (server/world.ts), `F.ALPHA` + `howl` olayı (istemci: halka + "!" + ses). Yaratık hedef bulunca ya da ilk darbeyi alınca yakındaki (çağrı yarıçapı türe göre: Çakal 16, Albastı/Erlik 9, Tepegöz 7) hedefsiz kamp arkadaşları gelir; zincirleme YOK → kenardaki yaratığı uzaktan çekip sürüyü bölmek mümkün. Kampın ilk yaratığı (≥4'lük kamplarda, Kutlu Otlak hariç) Sürü Başı: 1,4× can, 1,1× saldırı, tüm kampı 1,25× yarıçapla çağırır; ödül ×1,8 XP, ×1,5 akçe, üst katman eşya şansı %5, Kut Taşı %4 (A/B simülasyonuyla kısıldı).
 **Açık:** zorluk/ekonomi etkisi simüle edilmedi (alfa XP/ödül faucet; sürü çağrısı solo av hızını düşürür). Mevcut bot simülasyonu testleri geçti ama çağrı davranışını ölçmüyor.
 
 ---
