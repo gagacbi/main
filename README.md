@@ -29,6 +29,7 @@ Erlik çatlakları, boylar/PvP/derece, veritabanı kaydı ve çok oyunculu sunuc
 - Adres her çalıştırmada değişir. Aynı Wi-Fi'deki arkadaşlar için yerel adres de yazılır (`http://192.168.x.x:2567`).
 - Ekonomi ölçümü sonra: `npx tsx scripts/economy-report.ts .data/kut.db 7`
 - Diğer barındırma seçenekleri ve ödünleşimleri: `docs/BARINDIRMA.md`
+- Telefondan yönetici olarak uzaktan test: `docs/TELEFON_TEST.md`
 
 ## Hızlı başlangıç
 

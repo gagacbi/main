@@ -319,7 +319,7 @@ if (want('gizem')) {
   const gev = <T>(expr: string): Promise<T> => pg.evaluate(`(() => { const g = window.__game; return ${expr}; })()`) as Promise<T>;
   const gshot = async (name: string) => { await pg.screenshot({ path: `${OUT}/${name}.png` }); };
   const ap = [...world().players.values()].find((x) => x.name === AN)!;
-  check('H1.rol', (await gev<string>('g.me.role')) === 'admin' && !!(await pg.$('[data-p="gm"]')), `Yönetici hesabı "${AN}": rol=admin, GM düğmesi görünür, HUD etiketi var`);
+  check('H1.rol', (await gev<string>('g.me.role')) === 'admin' && !!(await pg.$('[data-p="gm"]')) && !!(await pg.$('#gmfab')), `Yönetici hesabı "${AN}": rol=admin, GM düğmesi görünür, HUD etiketi var`);
   await pg.keyboard.press('F2'); await sleep(900);
   check('H1.panel', !!(await pg.$('.panel .gmgrid')) && (await pg.$$('.gmgrid button')).length >= 30, 'F2 ile yönetici paneli açıldı (30+ hızlı komut)');
   await pg.click('[data-line="level 25"]'); await sleep(900); await pg.click('[data-line="kit +9"]'); await sleep(900); await pg.click('[data-line="maxskills"]'); await sleep(700); await pg.click('[data-line="stats"]'); await sleep(700);

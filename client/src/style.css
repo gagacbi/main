@@ -351,3 +351,9 @@ body.touch.panel-open .tjoy, body.touch.panel-open .tbtns, body.touch.panel-open
 .gemimg { vertical-align: middle; filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); } .chip .gemimg { margin: -4px 2px -4px -4px; }
 .tquest { display: none; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); max-width: min(46vw, 420px); padding: 5px 12px; border-radius: 14px; background: rgba(60, 36, 14, .82); border: 2px solid var(--gold, #f0c96e); color: #fff3cf; font: 600 12.5px/1.25 var(--f-head, sans-serif); text-align: center; z-index: 19; cursor: pointer; }
 body.touch.panel-open .tquest { display: none !important; }
+/* yönetici düğmesi: yalnızca admin hesapta; telefonda başparmakla erişilir */
+#gmfab { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); z-index: 60; min-height: 40px; padding: 4px 16px; font-weight: 800; letter-spacing: .06em; background: linear-gradient(#c0392b, #7e1d12); color: #fff3cf; border: 3px solid #f0c96e; }
+body.touch #gmfab { top: auto; bottom: max(8px, env(safe-area-inset-bottom)); left: 50%; min-height: 44px; opacity: .92; }
+body.touch.panel-open #gmfab { display: none; }
+body.touch .gmgrid { grid-template-columns: repeat(2, 1fr); } body.touch .gmgrid .btn { min-height: 44px; font-size: 13px; }
+body.touch .gmgrid .btn:first-child { grid-column: 1 / -1; background: linear-gradient(#2e8b3d, #1a5a24); color: #fff; }

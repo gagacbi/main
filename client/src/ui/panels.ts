@@ -93,9 +93,13 @@ export class Panels {
     this.el.addEventListener('keydown', (e) => { e.stopPropagation(); const el = e.target as HTMLInputElement; if (el.id === 'gmline' && e.key === 'Enter') void this.runGm(this.gmLine); if (e.key === 'Escape') this.close(); });
   }
   async runGm(line: string) {
-    if (!line.trim()) return; this.gmLine = ''; this.gmOut.push('> ' + line);
-    const r = await this.g.net.rpc('gm', { line });
-    if (!r.ok) this.gmOut.push('✖ ' + t('err.' + (r.err ?? 'internal'))); else { const d = r.data as { ok: boolean; msg: string }; this.gmOut.push((d.ok ? '' : '✖ ') + d.msg); }
+    if (!line.trim()) return; this.gmLine = '';
+    for (const part of line.split(';').map((s) => s.trim()).filter(Boolean)) {   // "a; b; c" → sırayla, her biri sunucuda ayrı doğrulanır
+      this.gmOut.push('> ' + part);
+      const r = await this.g.net.rpc('gm', { line: part });
+      if (!r.ok) { this.gmOut.push('✖ ' + t('err.' + (r.err ?? 'internal'))); break; }
+      const d = r.data as { ok: boolean; msg: string }; this.gmOut.push((d.ok ? '' : '✖ ') + d.msg); if (!d.ok) break;
+    }
     this.render(true);
   }
   get me() { return this.g.me; }
@@ -564,7 +568,7 @@ export class Panels {
 
   /** Yönetici paneli: yalnızca rolü admin olan hesapta açılır; her komut sunucuda yeniden doğrulanır. */
   gm() {
-    const B: [string, string][] = [['Sv 10', 'level 10'], ['Sv 25', 'level 25'], ['Sv 50', 'level 50'], ['Kit +9', 'kit +9'], ['İyileş', 'heal'], ['Ölümsüz', 'god'], ['Bekleme sıfırla', 'cdreset'], ['Tüm yetenek P', 'maxskills'],
+    const B: [string, string][] = [['★ Test paketi (Sv25+kit+akçe)', 'tut; level 25; kit +9; gold 20000; give book 20; give charm 20; frag 100; heal'], ['Öğreticiyi atla', 'tut'], ['Sv 10', 'level 10'], ['Sv 25', 'level 25'], ['Sv 50', 'level 50'], ['Kit +9', 'kit +9'], ['İyileş', 'heal'], ['Ölümsüz', 'god'], ['Bekleme sıfırla', 'cdreset'], ['Tüm yetenek P', 'maxskills'],
       ['+10.000 akçe', 'gold 10000'], ['+100 cevher', 'give ore 100'], ['+20 kitap', 'give book 20'], ['+20 tılsım', 'give charm 20'], ['+100 yazıt', 'frag 100'], ['Oba: hepsini bitir', 'oba'],
       ['Zaman +1 sa', 'time 1'], ['Zaman +12 sa', 'time 12'], ['Çatlak aç', 'rift'], ['Çatlağa git', 'tp rift'], ['Yurda git', 'tp hub'], ['Taş 1’e git', 'tp stone 1'], ['Boss 1’e git', 'tp boss 1'], ['Boss 3’e git', 'tp boss 3'], ['Boss 5’e git', 'tp boss 5'],
       ['Çakal ×10', 'spawn cakal 10 10'], ['Albastı ×6', 'spawn albasti 14 6'], ['Bekçi', 'spawn bekci 20 1'], ['Hepsini öldür', 'killall'], ['Kukla', 'dummy'], ['DPS', 'dps'],

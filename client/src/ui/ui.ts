@@ -192,6 +192,7 @@ export class UI {
     if (sig !== this.meSig) { this.meSig = sig; this.panels.refresh(); }
     this.hudAcc = 1;
     if (m.pendingDream && !this.dreaming) setTimeout(() => this.dream(m.pendingDream), 600);
+    if (m.role === 'admin' && !document.getElementById('gmfab')) { const f = document.createElement('button'); f.id = 'gmfab'; f.className = 'btn'; f.textContent = t('gm.fab'); f.addEventListener('click', () => this.panels.toggle('gm')); document.body.appendChild(f); }
     if (m.role === 'admin' && !this.e.btns.querySelector('[data-p="gm"]')) this.e.btns.insertAdjacentHTML('beforeend', `<button class="btn icon" data-p="gm" title="${t('gm.title')} (F2)" style="font-size:13px;font-weight:700">GM</button>`);
     if (prev && m.tut.step > prev.tut.step) this.sfx('upok');
     const alert = m.skillPts > 0 || (m.level >= 10 && m.spec === 'none'); this.e.btns.querySelector('[data-p="skills"]')?.classList.toggle('alert', alert);
