@@ -1,0 +1,2733 @@
+{
+ "quick": false,
+ "at": "2026-10-04T23:40:42.897Z",
+ "duel": [
+  {
+   "L": 1,
+   "atk": 22,
+   "def": 16,
+   "hp": 234,
+   "ttk": 2.8,
+   "takenPct": 4.8,
+   "pack4DieSec": 14.5,
+   "plus5Ttk": 12.9,
+   "plus5TakenPct": 85.3,
+   "minus5TakenPct": 4.8,
+   "killsToLevel": 2,
+   "xpNext": 28
+  },
+  {
+   "L": 5,
+   "atk": 57,
+   "def": 36,
+   "hp": 476,
+   "ttk": 3.1,
+   "takenPct": 5.7,
+   "pack4DieSec": 13.6,
+   "plus5Ttk": 8.3,
+   "plus5TakenPct": 36.1,
+   "minus5TakenPct": 0.6,
+   "killsToLevel": 65,
+   "xpNext": 3229
+  },
+  {
+   "L": 10,
+   "atk": 109,
+   "def": 66,
+   "hp": 810,
+   "ttk": 3.3,
+   "takenPct": 5.7,
+   "pack4DieSec": 14.4,
+   "plus5Ttk": 7,
+   "plus5TakenPct": 23.2,
+   "minus5TakenPct": 1.1,
+   "killsToLevel": 278,
+   "xpNext": 24955
+  },
+  {
+   "L": 15,
+   "atk": 157,
+   "def": 94,
+   "hp": 1126,
+   "ttk": 3.6,
+   "takenPct": 5.9,
+   "pack4DieSec": 15.5,
+   "plus5Ttk": 7.2,
+   "plus5TakenPct": 20.2,
+   "minus5TakenPct": 1.7,
+   "killsToLevel": 635,
+   "xpNext": 82533
+  },
+  {
+   "L": 20,
+   "atk": 218,
+   "def": 129,
+   "hp": 1499,
+   "ttk": 3.9,
+   "takenPct": 5.5,
+   "pack4DieSec": 17.5,
+   "plus5Ttk": 7.2,
+   "plus5TakenPct": 17.1,
+   "minus5TakenPct": 1.9,
+   "killsToLevel": 1135,
+   "xpNext": 192840
+  },
+  {
+   "L": 25,
+   "atk": 284,
+   "def": 169,
+   "hp": 1900,
+   "ttk": 4.1,
+   "takenPct": 5.2,
+   "pack4DieSec": 19.7,
+   "plus5Ttk": 7.3,
+   "plus5TakenPct": 14.7,
+   "minus5TakenPct": 2.1,
+   "killsToLevel": 1774,
+   "xpNext": 372461
+  },
+  {
+   "L": 30,
+   "atk": 342,
+   "def": 198,
+   "hp": 2241,
+   "ttk": 4.5,
+   "takenPct": 5.5,
+   "pack4DieSec": 20.4,
+   "plus5Ttk": 7.8,
+   "plus5TakenPct": 14.7,
+   "minus5TakenPct": 2.4,
+   "killsToLevel": 2552,
+   "xpNext": 637772
+  },
+  {
+   "L": 35,
+   "atk": 424,
+   "def": 242,
+   "hp": 2681,
+   "ttk": 4.7,
+   "takenPct": 5.1,
+   "pack4DieSec": 22.7,
+   "plus5Ttk": 7.9,
+   "plus5TakenPct": 13,
+   "minus5TakenPct": 2.4,
+   "killsToLevel": 3466,
+   "xpNext": 1004983
+  },
+  {
+   "L": 40,
+   "atk": 537,
+   "def": 300,
+   "hp": 3259,
+   "ttk": 4.6,
+   "takenPct": 4.2,
+   "pack4DieSec": 27,
+   "plus5Ttk": 7.6,
+   "plus5TakenPct": 10.4,
+   "minus5TakenPct": 2,
+   "killsToLevel": 4516,
+   "xpNext": 1490167
+  },
+  {
+   "L": 45,
+   "atk": 613,
+   "def": 337,
+   "hp": 3639,
+   "ttk": 4.9,
+   "takenPct": 4.5,
+   "pack4DieSec": 27.7,
+   "plus5Ttk": 8,
+   "plus5TakenPct": 10.5,
+   "minus5TakenPct": 2.2,
+   "killsToLevel": 5701,
+   "xpNext": 2109283
+  },
+  {
+   "L": 50,
+   "atk": 688,
+   "def": 373,
+   "hp": 4021,
+   "ttk": 5.3,
+   "takenPct": 4.7,
+   "pack4DieSec": 28.3,
+   "plus5Ttk": 8.5,
+   "plus5TakenPct": 10.8,
+   "minus5TakenPct": 2.4,
+   "killsToLevel": 7020,
+   "xpNext": 2878191
+  }
+ ],
+ "power": [
+  {
+   "L": 1,
+   "nakedDps": 24,
+   "refDps": 44,
+   "topDps": 110,
+   "nakedHp": 150,
+   "refHp": 234,
+   "topHp": 477,
+   "topOverRef": 2.5,
+   "refOverNaked": 1.9
+  },
+  {
+   "L": 5,
+   "nakedDps": 55,
+   "refDps": 106,
+   "topDps": 290,
+   "nakedHp": 286,
+   "refHp": 476,
+   "topHp": 1024,
+   "topOverRef": 2.7,
+   "refOverNaked": 1.9
+  },
+  {
+   "L": 10,
+   "nakedDps": 92,
+   "refDps": 194,
+   "topDps": 508,
+   "nakedHp": 456,
+   "refHp": 810,
+   "topHp": 1710,
+   "topOverRef": 2.6,
+   "refOverNaked": 2.1
+  },
+  {
+   "L": 15,
+   "nakedDps": 124,
+   "refDps": 268,
+   "topDps": 738,
+   "nakedHp": 626,
+   "refHp": 1126,
+   "topHp": 2394,
+   "topOverRef": 2.8,
+   "refOverNaked": 2.2
+  },
+  {
+   "L": 20,
+   "nakedDps": 153,
+   "refDps": 356,
+   "topDps": 965,
+   "nakedHp": 796,
+   "refHp": 1499,
+   "topHp": 3079,
+   "topOverRef": 2.7,
+   "refOverNaked": 2.3
+  },
+  {
+   "L": 25,
+   "nakedDps": 179,
+   "refDps": 447,
+   "topDps": 1199,
+   "nakedHp": 966,
+   "refHp": 1900,
+   "topHp": 3763,
+   "topOverRef": 2.7,
+   "refOverNaked": 2.5
+  },
+  {
+   "L": 30,
+   "nakedDps": 205,
+   "refDps": 518,
+   "topDps": 1440,
+   "nakedHp": 1136,
+   "refHp": 2241,
+   "topHp": 4448,
+   "topOverRef": 2.8,
+   "refOverNaked": 2.5
+  },
+  {
+   "L": 35,
+   "nakedDps": 226,
+   "refDps": 621,
+   "topDps": 1678,
+   "nakedHp": 1306,
+   "refHp": 2681,
+   "topHp": 5134,
+   "topOverRef": 2.7,
+   "refOverNaked": 2.7
+  },
+  {
+   "L": 40,
+   "nakedDps": 246,
+   "refDps": 767,
+   "topDps": 1923,
+   "nakedHp": 1476,
+   "refHp": 3259,
+   "topHp": 5818,
+   "topOverRef": 2.5,
+   "refOverNaked": 3.1
+  },
+  {
+   "L": 45,
+   "nakedDps": 265,
+   "refDps": 848,
+   "topDps": 2174,
+   "nakedHp": 1646,
+   "refHp": 3639,
+   "topHp": 6503,
+   "topOverRef": 2.6,
+   "refOverNaked": 3.2
+  },
+  {
+   "L": 50,
+   "nakedDps": 283,
+   "refDps": 922,
+   "topDps": 2434,
+   "nakedHp": 1816,
+   "refHp": 4021,
+   "topHp": 7187,
+   "topOverRef": 2.6,
+   "refOverNaked": 3.3
+  }
+ ],
+ "boySpec": [
+  {
+   "boy": "gok",
+   "spec": "none",
+   "dps": 518,
+   "hp": 2241,
+   "def": 198,
+   "ehp": 6686,
+   "moveSpeed": 7.4,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1,
+   "shield": 1
+  },
+  {
+   "boy": "gok",
+   "spec": "kalkan",
+   "dps": 489,
+   "hp": 2420,
+   "def": 214,
+   "ehp": 8075,
+   "moveSpeed": 7.4,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1,
+   "shield": 1.2
+  },
+  {
+   "boy": "gok",
+   "spec": "kilic",
+   "dps": 638,
+   "hp": 2151,
+   "def": 198,
+   "ehp": 6418,
+   "moveSpeed": 7.4,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1.2,
+   "shield": 1
+  },
+  {
+   "boy": "yer",
+   "spec": "none",
+   "dps": 494,
+   "hp": 2353,
+   "def": 206,
+   "ehp": 7196,
+   "moveSpeed": 7,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1,
+   "shield": 1
+  },
+  {
+   "boy": "yer",
+   "spec": "kalkan",
+   "dps": 466,
+   "hp": 2532,
+   "def": 222,
+   "ehp": 8671,
+   "moveSpeed": 7,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1,
+   "shield": 1.2
+  },
+  {
+   "boy": "yer",
+   "spec": "kilic",
+   "dps": 611,
+   "hp": 2263,
+   "def": 206,
+   "ehp": 6921,
+   "moveSpeed": 7,
+   "heal": 1,
+   "spell": 1,
+   "aoe": 1.2,
+   "shield": 1
+  },
+  {
+   "boy": "ay",
+   "spec": "none",
+   "dps": 494,
+   "hp": 2241,
+   "def": 198,
+   "ehp": 6686,
+   "moveSpeed": 7,
+   "heal": 1.4,
+   "spell": 1.12,
+   "aoe": 1,
+   "shield": 1
+  },
+  {
+   "boy": "ay",
+   "spec": "kalkan",
+   "dps": 466,
+   "hp": 2420,
+   "def": 214,
+   "ehp": 8075,
+   "moveSpeed": 7,
+   "heal": 1.4,
+   "spell": 1.12,
+   "aoe": 1,
+   "shield": 1.2
+  },
+  {
+   "boy": "ay",
+   "spec": "kilic",
+   "dps": 611,
+   "hp": 2151,
+   "def": 198,
+   "ehp": 6418,
+   "moveSpeed": 7,
+   "heal": 1.4,
+   "spell": 1.12,
+   "aoe": 1.2,
+   "shield": 1
+  }
+ ],
+ "skills": [
+  {
+   "L": 10,
+   "basicDps": 241,
+   "rows": [
+    {
+     "id": "savurma",
+     "cd": 4,
+     "mult": 1.6,
+     "aoeDmgPer30s": 7853,
+     "vsBasic": 1.1
+    },
+    {
+     "id": "sarsinti",
+     "cd": 10,
+     "mult": 1.2,
+     "aoeDmgPer30s": 2364,
+     "vsBasic": 0.3
+    },
+    {
+     "id": "nara",
+     "cd": 12,
+     "mult": 0.35,
+     "aoeDmgPer30s": 568,
+     "vsBasic": 0.1
+    },
+    {
+     "id": "kalkan",
+     "cd": 20,
+     "mult": 0,
+     "aoeDmgPer30s": 0,
+     "vsBasic": 0
+    },
+    {
+     "id": "zehir",
+     "cd": 8,
+     "mult": 0.7,
+     "aoeDmgPer30s": 4880,
+     "vsBasic": 0.7
+    }
+   ],
+   "rotation5": 763
+  },
+  {
+   "L": 20,
+   "basicDps": 442,
+   "rows": [
+    {
+     "id": "savurma",
+     "cd": 4,
+     "mult": 1.6,
+     "aoeDmgPer30s": 16219,
+     "vsBasic": 1.2
+    },
+    {
+     "id": "sarsinti",
+     "cd": 10,
+     "mult": 1.2,
+     "aoeDmgPer30s": 4878,
+     "vsBasic": 0.4
+    },
+    {
+     "id": "nara",
+     "cd": 12,
+     "mult": 0.35,
+     "aoeDmgPer30s": 1181,
+     "vsBasic": 0.1
+    },
+    {
+     "id": "kalkan",
+     "cd": 20,
+     "mult": 0,
+     "aoeDmgPer30s": 0,
+     "vsBasic": 0
+    },
+    {
+     "id": "zehir",
+     "cd": 8,
+     "mult": 0.7,
+     "aoeDmgPer30s": 10675,
+     "vsBasic": 0.8
+    },
+    {
+     "id": "hiddet",
+     "cd": 30,
+     "mult": 7,
+     "aoeDmgPer30s": 9471,
+     "vsBasic": 0.7
+    }
+   ],
+   "rotation5": 1856
+  },
+  {
+   "L": 30,
+   "basicDps": 638,
+   "rows": [
+    {
+     "id": "savurma",
+     "cd": 4,
+     "mult": 1.6,
+     "aoeDmgPer30s": 26011,
+     "vsBasic": 1.4
+    },
+    {
+     "id": "sarsinti",
+     "cd": 10,
+     "mult": 1.2,
+     "aoeDmgPer30s": 7803,
+     "vsBasic": 0.4
+    },
+    {
+     "id": "nara",
+     "cd": 12,
+     "mult": 0.35,
+     "aoeDmgPer30s": 1895,
+     "vsBasic": 0.1
+    },
+    {
+     "id": "kalkan",
+     "cd": 20,
+     "mult": 0,
+     "aoeDmgPer30s": 0,
+     "vsBasic": 0
+    },
+    {
+     "id": "zehir",
+     "cd": 8,
+     "mult": 0.7,
+     "aoeDmgPer30s": 17986,
+     "vsBasic": 0.9
+    },
+    {
+     "id": "hiddet",
+     "cd": 30,
+     "mult": 7,
+     "aoeDmgPer30s": 15165,
+     "vsBasic": 0.8
+    }
+   ],
+   "rotation5": 2934
+  },
+  {
+   "L": 40,
+   "basicDps": 941,
+   "rows": [
+    {
+     "id": "savurma",
+     "cd": 4,
+     "mult": 1.6,
+     "aoeDmgPer30s": 45920,
+     "vsBasic": 1.6
+    },
+    {
+     "id": "sarsinti",
+     "cd": 10,
+     "mult": 1.2,
+     "aoeDmgPer30s": 13772,
+     "vsBasic": 0.5
+    },
+    {
+     "id": "nara",
+     "cd": 12,
+     "mult": 0.35,
+     "aoeDmgPer30s": 3353,
+     "vsBasic": 0.1
+    },
+    {
+     "id": "kalkan",
+     "cd": 20,
+     "mult": 0,
+     "aoeDmgPer30s": 0,
+     "vsBasic": 0
+    },
+    {
+     "id": "zehir",
+     "cd": 8,
+     "mult": 0.7,
+     "aoeDmgPer30s": 33027,
+     "vsBasic": 1.2
+    },
+    {
+     "id": "hiddet",
+     "cd": 30,
+     "mult": 7,
+     "aoeDmgPer30s": 26780,
+     "vsBasic": 0.9
+    }
+   ],
+   "rotation5": 5036
+  }
+ ],
+ "pvpMatrix": {
+  "builds": [
+   "Dengeli Kılıç",
+   "Ağır Çift El",
+   "Hızlı Bıçak",
+   "Yay (Ay)",
+   "Büyü Çanı (Ay)",
+   "Kalkan Alp (Yer)",
+   "Blok Kalesi (Yer)",
+   "Kılıç Savunmalı Kalkan",
+   "Delici Kılıç (Gök)",
+   "Büyü Savunmalı (Ay)",
+   "Cam Top: Saf Saldırı",
+   "Emici: Can Çalma"
+  ],
+  "runs": [
+   {
+    "L": 20,
+    "up": 3,
+    "rows": [
+     {
+      "name": "Dengeli Kılıç",
+      "winRate": 74
+     },
+     {
+      "name": "Ağır Çift El",
+      "winRate": 65
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "winRate": 59
+     },
+     {
+      "name": "Yay (Ay)",
+      "winRate": 56
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "winRate": 50
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "winRate": 47
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "winRate": 30
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "winRate": 39
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "winRate": 58
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "winRate": 5
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "winRate": 62
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "winRate": 55
+     }
+    ],
+    "rate": [
+     [
+      null,
+      83,
+      50,
+      50,
+      83,
+      100,
+      100,
+      33,
+      83,
+      100,
+      83,
+      50
+     ],
+     [
+      17,
+      null,
+      33,
+      67,
+      50,
+      67,
+      100,
+      100,
+      50,
+      100,
+      67,
+      67
+     ],
+     [
+      50,
+      67,
+      null,
+      17,
+      50,
+      50,
+      50,
+      100,
+      67,
+      100,
+      50,
+      50
+     ],
+     [
+      50,
+      33,
+      83,
+      null,
+      50,
+      67,
+      67,
+      67,
+      33,
+      100,
+      17,
+      50
+     ],
+     [
+      17,
+      50,
+      50,
+      50,
+      null,
+      33,
+      67,
+      100,
+      67,
+      67,
+      33,
+      17
+     ],
+     [
+      0,
+      33,
+      50,
+      33,
+      67,
+      null,
+      83,
+      17,
+      0,
+      100,
+      67,
+      67
+     ],
+     [
+      0,
+      0,
+      50,
+      33,
+      33,
+      17,
+      null,
+      17,
+      17,
+      100,
+      17,
+      50
+     ],
+     [
+      67,
+      0,
+      0,
+      33,
+      0,
+      83,
+      83,
+      null,
+      17,
+      100,
+      0,
+      50
+     ],
+     [
+      17,
+      50,
+      33,
+      67,
+      33,
+      100,
+      83,
+      83,
+      null,
+      100,
+      33,
+      33
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0,
+      0,
+      null,
+      17,
+      0
+     ],
+     [
+      17,
+      33,
+      50,
+      83,
+      67,
+      33,
+      83,
+      100,
+      67,
+      83,
+      null,
+      67
+     ],
+     [
+      50,
+      33,
+      50,
+      50,
+      83,
+      33,
+      50,
+      50,
+      67,
+      100,
+      33,
+      null
+     ]
+    ],
+    "avgSec": 16.2,
+    "hardCounter": [
+     {
+      "name": "Dengeli Kılıç",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Ağır Çift El",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Yay (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "worstMatchup": 33
+     }
+    ]
+   },
+   {
+    "L": 30,
+    "up": 4,
+    "rows": [
+     {
+      "name": "Dengeli Kılıç",
+      "winRate": 71
+     },
+     {
+      "name": "Ağır Çift El",
+      "winRate": 68
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "winRate": 52
+     },
+     {
+      "name": "Yay (Ay)",
+      "winRate": 56
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "winRate": 55
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "winRate": 56
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "winRate": 35
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "winRate": 41
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "winRate": 58
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "winRate": 5
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "winRate": 55
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "winRate": 50
+     }
+    ],
+    "rate": [
+     [
+      null,
+      83,
+      83,
+      67,
+      50,
+      83,
+      50,
+      17,
+      67,
+      100,
+      100,
+      83
+     ],
+     [
+      17,
+      null,
+      67,
+      83,
+      50,
+      33,
+      100,
+      100,
+      50,
+      100,
+      83,
+      67
+     ],
+     [
+      17,
+      33,
+      null,
+      17,
+      33,
+      33,
+      67,
+      100,
+      67,
+      100,
+      50,
+      50
+     ],
+     [
+      33,
+      17,
+      83,
+      null,
+      67,
+      33,
+      50,
+      100,
+      67,
+      100,
+      17,
+      50
+     ],
+     [
+      50,
+      50,
+      67,
+      33,
+      null,
+      50,
+      67,
+      100,
+      33,
+      83,
+      50,
+      17
+     ],
+     [
+      17,
+      67,
+      67,
+      67,
+      50,
+      null,
+      67,
+      17,
+      17,
+      100,
+      67,
+      83
+     ],
+     [
+      50,
+      0,
+      33,
+      50,
+      33,
+      33,
+      null,
+      17,
+      0,
+      100,
+      17,
+      50
+     ],
+     [
+      83,
+      0,
+      0,
+      0,
+      0,
+      83,
+      83,
+      null,
+      33,
+      100,
+      0,
+      67
+     ],
+     [
+      33,
+      50,
+      33,
+      33,
+      67,
+      83,
+      100,
+      67,
+      null,
+      100,
+      33,
+      33
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      17,
+      0,
+      0,
+      0,
+      0,
+      null,
+      33,
+      0
+     ],
+     [
+      0,
+      17,
+      50,
+      83,
+      50,
+      33,
+      83,
+      100,
+      67,
+      67,
+      null,
+      50
+     ],
+     [
+      17,
+      33,
+      50,
+      50,
+      83,
+      17,
+      50,
+      33,
+      67,
+      100,
+      50,
+      null
+     ]
+    ],
+    "avgSec": 19.5,
+    "hardCounter": [
+     {
+      "name": "Dengeli Kılıç",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Ağır Çift El",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Yay (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "worstMatchup": 17
+     }
+    ]
+   },
+   {
+    "L": 40,
+    "up": 5,
+    "rows": [
+     {
+      "name": "Dengeli Kılıç",
+      "winRate": 68
+     },
+     {
+      "name": "Ağır Çift El",
+      "winRate": 73
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "winRate": 45
+     },
+     {
+      "name": "Yay (Ay)",
+      "winRate": 67
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "winRate": 53
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "winRate": 59
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "winRate": 48
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "winRate": 36
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "winRate": 65
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "winRate": 5
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "winRate": 45
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "winRate": 35
+     }
+    ],
+    "rate": [
+     [
+      null,
+      67,
+      67,
+      67,
+      67,
+      67,
+      50,
+      50,
+      50,
+      100,
+      83,
+      83
+     ],
+     [
+      33,
+      null,
+      67,
+      67,
+      50,
+      83,
+      83,
+      100,
+      50,
+      100,
+      83,
+      83
+     ],
+     [
+      33,
+      33,
+      null,
+      17,
+      17,
+      33,
+      33,
+      100,
+      33,
+      100,
+      50,
+      50
+     ],
+     [
+      33,
+      33,
+      83,
+      null,
+      67,
+      50,
+      67,
+      100,
+      83,
+      100,
+      50,
+      67
+     ],
+     [
+      33,
+      50,
+      83,
+      33,
+      null,
+      17,
+      33,
+      100,
+      33,
+      67,
+      67,
+      67
+     ],
+     [
+      33,
+      17,
+      67,
+      50,
+      83,
+      null,
+      67,
+      17,
+      50,
+      100,
+      67,
+      100
+     ],
+     [
+      50,
+      17,
+      67,
+      33,
+      67,
+      33,
+      null,
+      50,
+      17,
+      83,
+      67,
+      50
+     ],
+     [
+      50,
+      0,
+      0,
+      0,
+      0,
+      83,
+      50,
+      null,
+      17,
+      100,
+      17,
+      83
+     ],
+     [
+      50,
+      50,
+      67,
+      17,
+      67,
+      50,
+      83,
+      83,
+      null,
+      100,
+      67,
+      83
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      17,
+      0,
+      0,
+      null,
+      0,
+      0
+     ],
+     [
+      17,
+      17,
+      50,
+      50,
+      33,
+      33,
+      33,
+      83,
+      33,
+      100,
+      null,
+      50
+     ],
+     [
+      17,
+      17,
+      50,
+      33,
+      33,
+      0,
+      50,
+      17,
+      17,
+      100,
+      50,
+      null
+     ]
+    ],
+    "avgSec": 22.4,
+    "hardCounter": [
+     {
+      "name": "Dengeli Kılıç",
+      "worstMatchup": 50
+     },
+     {
+      "name": "Ağır Çift El",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Yay (Ay)",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "worstMatchup": 0
+     }
+    ]
+   },
+   {
+    "L": 50,
+    "up": 6,
+    "rows": [
+     {
+      "name": "Dengeli Kılıç",
+      "winRate": 56
+     },
+     {
+      "name": "Ağır Çift El",
+      "winRate": 48
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "winRate": 47
+     },
+     {
+      "name": "Yay (Ay)",
+      "winRate": 67
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "winRate": 58
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "winRate": 77
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "winRate": 45
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "winRate": 38
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "winRate": 62
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "winRate": 14
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "winRate": 50
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "winRate": 38
+     }
+    ],
+    "rate": [
+     [
+      null,
+      67,
+      67,
+      50,
+      50,
+      33,
+      33,
+      17,
+      67,
+      83,
+      67,
+      83
+     ],
+     [
+      33,
+      null,
+      33,
+      33,
+      33,
+      0,
+      67,
+      100,
+      33,
+      100,
+      50,
+      50
+     ],
+     [
+      33,
+      67,
+      null,
+      17,
+      17,
+      0,
+      50,
+      100,
+      33,
+      100,
+      50,
+      50
+     ],
+     [
+      50,
+      67,
+      83,
+      null,
+      83,
+      33,
+      67,
+      83,
+      67,
+      100,
+      33,
+      67
+     ],
+     [
+      50,
+      67,
+      83,
+      17,
+      null,
+      50,
+      50,
+      100,
+      50,
+      33,
+      83,
+      50
+     ],
+     [
+      67,
+      100,
+      100,
+      67,
+      50,
+      null,
+      83,
+      50,
+      50,
+      100,
+      83,
+      100
+     ],
+     [
+      67,
+      33,
+      50,
+      33,
+      50,
+      17,
+      null,
+      33,
+      17,
+      83,
+      50,
+      67
+     ],
+     [
+      83,
+      0,
+      0,
+      17,
+      0,
+      50,
+      67,
+      null,
+      33,
+      83,
+      0,
+      83
+     ],
+     [
+      33,
+      67,
+      67,
+      33,
+      50,
+      50,
+      83,
+      67,
+      null,
+      100,
+      67,
+      67
+     ],
+     [
+      17,
+      0,
+      0,
+      0,
+      67,
+      0,
+      17,
+      17,
+      0,
+      null,
+      17,
+      17
+     ],
+     [
+      33,
+      50,
+      50,
+      67,
+      17,
+      17,
+      50,
+      100,
+      33,
+      83,
+      null,
+      50
+     ],
+     [
+      17,
+      50,
+      50,
+      33,
+      50,
+      0,
+      33,
+      17,
+      33,
+      83,
+      50,
+      null
+     ]
+    ],
+    "avgSec": 25.5,
+    "hardCounter": [
+     {
+      "name": "Dengeli Kılıç",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Ağır Çift El",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Hızlı Bıçak",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Yay (Ay)",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Büyü Çanı (Ay)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kalkan Alp (Yer)",
+      "worstMatchup": 50
+     },
+     {
+      "name": "Blok Kalesi (Yer)",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Kılıç Savunmalı Kalkan",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Delici Kılıç (Gök)",
+      "worstMatchup": 33
+     },
+     {
+      "name": "Büyü Savunmalı (Ay)",
+      "worstMatchup": 0
+     },
+     {
+      "name": "Cam Top: Saf Saldırı",
+      "worstMatchup": 17
+     },
+     {
+      "name": "Emici: Can Çalma",
+      "worstMatchup": 0
+     }
+    ]
+   }
+  ]
+ },
+ "upgradeEV": [
+  {
+   "ilvl": 20,
+   "policy": "düz",
+   "stopAt": 4,
+   "tries": 4.5,
+   "gold": 9368,
+   "ore": 33,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "düz",
+   "stopAt": 7,
+   "tries": 57.3,
+   "gold": 229389,
+   "ore": 518,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 7.8
+  },
+  {
+   "ilvl": 20,
+   "policy": "düz",
+   "stopAt": 9,
+   "tries": 2914.9,
+   "gold": 12478561,
+   "ore": 26908,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 437.4
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap",
+   "stopAt": 4,
+   "tries": 4.2,
+   "gold": 8385,
+   "ore": 30,
+   "books": 4.2,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap",
+   "stopAt": 7,
+   "tries": 31.4,
+   "gold": 136486,
+   "ore": 293,
+   "books": 31.4,
+   "charms": 0,
+   "lostItems": 3.9
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap",
+   "stopAt": 9,
+   "tries": 545.4,
+   "gold": 2657397,
+   "ore": 5275,
+   "books": 545.4,
+   "charms": 0,
+   "lostItems": 81.3
+  },
+  {
+   "ilvl": 20,
+   "policy": "tılsım",
+   "stopAt": 4,
+   "tries": 4.5,
+   "gold": 9368,
+   "ore": 33,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "tılsım",
+   "stopAt": 7,
+   "tries": 10.9,
+   "gold": 74488,
+   "ore": 125,
+   "books": 0,
+   "charms": 6.4,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "tılsım",
+   "stopAt": 9,
+   "tries": 25.9,
+   "gold": 368288,
+   "ore": 415,
+   "books": 0,
+   "charms": 21.4,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap+tılsım",
+   "stopAt": 4,
+   "tries": 4.2,
+   "gold": 8385,
+   "ore": 30,
+   "books": 4.2,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap+tılsım",
+   "stopAt": 7,
+   "tries": 9.4,
+   "gold": 60963,
+   "ore": 104,
+   "books": 9.4,
+   "charms": 5.2,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 20,
+   "policy": "kitap+tılsım",
+   "stopAt": 9,
+   "tries": 17.7,
+   "gold": 221730,
+   "ore": 264,
+   "books": 17.7,
+   "charms": 13.6,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "düz",
+   "stopAt": 4,
+   "tries": 4.5,
+   "gold": 16575,
+   "ore": 33,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "düz",
+   "stopAt": 7,
+   "tries": 57.3,
+   "gold": 405842,
+   "ore": 518,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 7.8
+  },
+  {
+   "ilvl": 40,
+   "policy": "düz",
+   "stopAt": 9,
+   "tries": 2914.9,
+   "gold": 22077455,
+   "ore": 26908,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 437.4
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap",
+   "stopAt": 4,
+   "tries": 4.2,
+   "gold": 14836,
+   "ore": 30,
+   "books": 4.2,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap",
+   "stopAt": 7,
+   "tries": 31.4,
+   "gold": 241475,
+   "ore": 293,
+   "books": 31.4,
+   "charms": 0,
+   "lostItems": 3.9
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap",
+   "stopAt": 9,
+   "tries": 545.4,
+   "gold": 4701549,
+   "ore": 5275,
+   "books": 545.4,
+   "charms": 0,
+   "lostItems": 81.3
+  },
+  {
+   "ilvl": 40,
+   "policy": "tılsım",
+   "stopAt": 4,
+   "tries": 4.5,
+   "gold": 16575,
+   "ore": 33,
+   "books": 0,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "tılsım",
+   "stopAt": 7,
+   "tries": 10.9,
+   "gold": 131787,
+   "ore": 125,
+   "books": 0,
+   "charms": 6.4,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "tılsım",
+   "stopAt": 9,
+   "tries": 25.9,
+   "gold": 651587,
+   "ore": 415,
+   "books": 0,
+   "charms": 21.4,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap+tılsım",
+   "stopAt": 4,
+   "tries": 4.2,
+   "gold": 14836,
+   "ore": 30,
+   "books": 4.2,
+   "charms": 0,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap+tılsım",
+   "stopAt": 7,
+   "tries": 9.4,
+   "gold": 107858,
+   "ore": 104,
+   "books": 9.4,
+   "charms": 5.2,
+   "lostItems": 0
+  },
+  {
+   "ilvl": 40,
+   "policy": "kitap+tılsım",
+   "stopAt": 9,
+   "tries": 17.7,
+   "gold": 392291,
+   "ore": 264,
+   "books": 17.7,
+   "charms": 13.6,
+   "lostItems": 0
+  }
+ ],
+ "upgradeRates": [
+  0,
+  100,
+  90,
+  85,
+  80,
+  65,
+  50,
+  35,
+  20,
+  10
+ ],
+ "progression": {
+  "boy": "gok",
+  "spec": "kilic",
+  "offset": 0,
+  "simHours": 96.898,
+  "wallS": 638,
+  "level": 50,
+  "kills": 149179,
+  "deaths": 3,
+  "killsPerH": 1540,
+  "deathsPerH": 0,
+  "gold": 14794462,
+  "levelAt": {
+   "1": 0,
+   "2": 43.351,
+   "3": 117.976,
+   "4": 295.563,
+   "5": 503.191,
+   "6": 865.041,
+   "7": 1280.022,
+   "8": 1813.686,
+   "9": 2572.197,
+   "10": 5095.275,
+   "11": 6389.955,
+   "12": 7047.754,
+   "13": 7873.736,
+   "14": 8871.659,
+   "15": 10111.003,
+   "16": 12256.196,
+   "17": 15004.127,
+   "18": 17038.472,
+   "19": 19586.324,
+   "20": 27211.946,
+   "21": 29882.021,
+   "22": 33032.839,
+   "23": 36283.014,
+   "24": 39675.442,
+   "25": 45291.31,
+   "26": 51079.737,
+   "27": 57910.614,
+   "28": 62533.062,
+   "29": 69805.078,
+   "30": 90075.158,
+   "31": 98672.628,
+   "32": 108662.678,
+   "33": 115175.365,
+   "34": 121351.403,
+   "35": 128356.9,
+   "36": 140507.441,
+   "37": 152096.422,
+   "38": 160920.121,
+   "39": 170819.434,
+   "40": 200482.599,
+   "41": 212663.77,
+   "42": 225588.17,
+   "43": 243276.23,
+   "44": 259069.7,
+   "45": 273350.429,
+   "46": 288554.337,
+   "47": 305757.079,
+   "48": 324034.4,
+   "49": 345328.856
+  },
+  "killsAt": {
+   "1": 0,
+   "2": 1,
+   "3": 8,
+   "4": 30,
+   "5": 83,
+   "6": 137,
+   "7": 229,
+   "8": 381,
+   "9": 619,
+   "10": 1465,
+   "11": 1924,
+   "12": 2134,
+   "13": 2431,
+   "14": 2821,
+   "15": 3332,
+   "16": 3937,
+   "17": 4723,
+   "18": 5525,
+   "19": 6503,
+   "20": 9453,
+   "21": 10576,
+   "22": 11919,
+   "23": 13226,
+   "24": 14587,
+   "25": 16179,
+   "26": 17820,
+   "27": 19751,
+   "28": 21672,
+   "29": 23650,
+   "30": 29344,
+   "31": 31706,
+   "32": 34475,
+   "33": 37247,
+   "34": 40107,
+   "35": 43365,
+   "36": 46815,
+   "37": 50139,
+   "38": 53883,
+   "39": 58115,
+   "40": 70685,
+   "41": 74667,
+   "42": 79729,
+   "43": 84775,
+   "44": 90609,
+   "45": 96095,
+   "46": 102071,
+   "47": 108810,
+   "48": 116031,
+   "49": 124457
+  },
+  "goldAt": {
+   "1": 150,
+   "2": 150,
+   "3": 303,
+   "4": 161,
+   "5": 397,
+   "6": 220,
+   "7": 587,
+   "8": 1234,
+   "9": 721,
+   "10": 8177,
+   "11": 7855,
+   "12": 12124,
+   "13": 2715,
+   "14": 11405,
+   "15": 22410,
+   "16": 36129,
+   "17": 71418,
+   "18": 110195,
+   "19": 156175,
+   "20": 306519,
+   "21": 357356,
+   "22": 432014,
+   "23": 491445,
+   "24": 569024,
+   "25": 664435,
+   "26": 778690,
+   "27": 910733,
+   "28": 1046527,
+   "29": 1190280,
+   "30": 1652950,
+   "31": 1835236,
+   "32": 2063236,
+   "33": 2297704,
+   "34": 2544825,
+   "35": 2843894,
+   "36": 3168335,
+   "37": 3504376,
+   "38": 3873981,
+   "39": 4299632,
+   "40": 5653507,
+   "41": 6100918,
+   "42": 6631128,
+   "43": 7208970,
+   "44": 7854103,
+   "45": 8468167,
+   "46": 9179161,
+   "47": 9976761,
+   "48": 10832715,
+   "49": 11839629
+  },
+  "dmgAt": {
+   "1": 0,
+   "2": 266,
+   "3": 797,
+   "4": 1805,
+   "5": 3015,
+   "6": 6305,
+   "7": 9810,
+   "8": 13166,
+   "9": 17533,
+   "10": 28393,
+   "11": 31884,
+   "12": 47748,
+   "13": 57110,
+   "14": 66097,
+   "15": 75473,
+   "16": 86093,
+   "17": 99105,
+   "18": 109851,
+   "19": 128952,
+   "20": 177470,
+   "21": 200243,
+   "22": 222465,
+   "23": 255927,
+   "24": 295983,
+   "25": 334929,
+   "26": 381058,
+   "27": 433681,
+   "28": 529047,
+   "29": 622330,
+   "30": 816465,
+   "31": 906693,
+   "32": 999519,
+   "33": 1125941,
+   "34": 1192286,
+   "35": 1266965,
+   "36": 1400215,
+   "37": 1500399,
+   "38": 1619783,
+   "39": 1751850,
+   "40": 2200231,
+   "41": 2384121,
+   "42": 2564231,
+   "43": 2872021,
+   "44": 3118329,
+   "45": 3535607,
+   "46": 3958326,
+   "47": 4416230,
+   "48": 4880229,
+   "49": 5395920
+  },
+  "dmgTaken": 6848404,
+  "upgrades": {
+   "ok": 95,
+   "fail": 11,
+   "destroyed": 0
+  },
+  "destroyed": 0,
+  "trips": 1940,
+  "hpPerKillPct": 1
+ },
+ "variants": [
+  {
+   "boy": "gok",
+   "spec": "kalkan",
+   "level": 19,
+   "killsPerH": 1394,
+   "deathsPerH": 1.8,
+   "hpPerKillPct": 1.1,
+   "t10": 5209.537,
+   "t15": 10259.498
+  },
+  {
+   "boy": "gok",
+   "spec": "kilic",
+   "level": 19,
+   "killsPerH": 1471,
+   "deathsPerH": 0.2,
+   "hpPerKillPct": 1.2,
+   "t10": 4537.507,
+   "t15": 9716.256
+  },
+  {
+   "boy": "yer",
+   "spec": "kalkan",
+   "level": 19,
+   "killsPerH": 1376,
+   "deathsPerH": 1.4,
+   "hpPerKillPct": 1.2,
+   "t10": 4963.305,
+   "t15": 10376.875
+  },
+  {
+   "boy": "yer",
+   "spec": "kilic",
+   "level": 19,
+   "killsPerH": 1486,
+   "deathsPerH": 0.4,
+   "hpPerKillPct": 1,
+   "t10": 4413.523,
+   "t15": 9314.248
+  },
+  {
+   "boy": "ay",
+   "spec": "kalkan",
+   "level": 19,
+   "killsPerH": 1393,
+   "deathsPerH": 0.8,
+   "hpPerKillPct": 1.2,
+   "t10": 4526.366,
+   "t15": 10045.393
+  },
+  {
+   "boy": "ay",
+   "spec": "kilic",
+   "level": 19,
+   "killsPerH": 1441,
+   "deathsPerH": 1,
+   "hpPerKillPct": 1.2,
+   "t10": 4427.931,
+   "t15": 9466.672
+  }
+ ],
+ "offsets": [
+  {
+   "offset": -3,
+   "killsPerH": 1587,
+   "deathsPerH": 0,
+   "hpPerKillPct": 1.3,
+   "xpPerH": 194772,
+   "xpPerHPctOfLevel": 101
+  },
+  {
+   "offset": -1,
+   "killsPerH": 1714,
+   "deathsPerH": 0,
+   "hpPerKillPct": 1.2,
+   "xpPerH": 249795,
+   "xpPerHPctOfLevel": 129.5
+  },
+  {
+   "offset": 0,
+   "killsPerH": 1794,
+   "deathsPerH": 0,
+   "hpPerKillPct": 1.4,
+   "xpPerH": 284359,
+   "xpPerHPctOfLevel": 147.5
+  },
+  {
+   "offset": 1,
+   "killsPerH": 1619,
+   "deathsPerH": 0.7,
+   "hpPerKillPct": 2.8,
+   "xpPerH": 283723,
+   "xpPerHPctOfLevel": 147.1
+  },
+  {
+   "offset": 2,
+   "killsPerH": 1347,
+   "deathsPerH": 0.7,
+   "hpPerKillPct": 5.1,
+   "xpPerH": 275421,
+   "xpPerHPctOfLevel": 142.8
+  },
+  {
+   "offset": 4,
+   "killsPerH": 1013,
+   "deathsPerH": 0,
+   "hpPerKillPct": 3.1,
+   "xpPerH": 201296,
+   "xpPerHPctOfLevel": 104.4
+  }
+ ],
+ "rift": [
+  {
+   "players": 1,
+   "L": 20,
+   "state": "kapandı",
+   "clearSec": 122.6,
+   "deaths": 0,
+   "minHpPct": 9,
+   "rewardXpPct": 7.1
+  },
+  {
+   "players": 2,
+   "L": 20,
+   "state": "kapandı",
+   "clearSec": 80.3,
+   "deaths": 0,
+   "minHpPct": 43,
+   "rewardXpPct": 7.1
+  },
+  {
+   "players": 3,
+   "L": 20,
+   "state": "kapandı",
+   "clearSec": 72.1,
+   "deaths": 0,
+   "minHpPct": 35,
+   "rewardXpPct": 7.1
+  },
+  {
+   "players": 4,
+   "L": 20,
+   "state": "kapandı",
+   "clearSec": 67.2,
+   "deaths": 0,
+   "minHpPct": 41,
+   "rewardXpPct": 7.1
+  },
+  {
+   "players": 6,
+   "L": 20,
+   "state": "kapandı",
+   "clearSec": 61.5,
+   "deaths": 0,
+   "minHpPct": 61,
+   "rewardXpPct": 7.1
+  },
+  {
+   "players": 1,
+   "L": 40,
+   "state": "kapandı",
+   "clearSec": 131.8,
+   "deaths": 0,
+   "minHpPct": 21,
+   "rewardXpPct": 1.8
+  },
+  {
+   "players": 2,
+   "L": 40,
+   "state": "kapandı",
+   "clearSec": 90.1,
+   "deaths": 0,
+   "minHpPct": 39,
+   "rewardXpPct": 1.8
+  },
+  {
+   "players": 3,
+   "L": 40,
+   "state": "kapandı",
+   "clearSec": 79.7,
+   "deaths": 0,
+   "minHpPct": 61,
+   "rewardXpPct": 1.8
+  },
+  {
+   "players": 4,
+   "L": 40,
+   "state": "kapandı",
+   "clearSec": 76.2,
+   "deaths": 0,
+   "minHpPct": 47,
+   "rewardXpPct": 1.8
+  },
+  {
+   "players": 6,
+   "L": 40,
+   "state": "kapandı",
+   "clearSec": 65.1,
+   "deaths": 0,
+   "minHpPct": 63,
+   "rewardXpPct": 1.8
+  }
+ ],
+ "bosses": [
+  {
+   "boss": 1,
+   "level": 9,
+   "players": 1,
+   "killed": true,
+   "sec": 130.7,
+   "deaths": 3,
+   "minHpPct": 3
+  },
+  {
+   "boss": 1,
+   "level": 9,
+   "players": 2,
+   "killed": true,
+   "sec": 57.3,
+   "deaths": 2,
+   "minHpPct": 4
+  },
+  {
+   "boss": 1,
+   "level": 9,
+   "players": 4,
+   "killed": true,
+   "sec": 22.3,
+   "deaths": 0,
+   "minHpPct": 28
+  },
+  {
+   "boss": 2,
+   "level": 19,
+   "players": 1,
+   "killed": true,
+   "sec": 75.9,
+   "deaths": 1,
+   "minHpPct": 2
+  },
+  {
+   "boss": 2,
+   "level": 19,
+   "players": 2,
+   "killed": true,
+   "sec": 37.1,
+   "deaths": 0,
+   "minHpPct": 1
+  },
+  {
+   "boss": 2,
+   "level": 19,
+   "players": 4,
+   "killed": true,
+   "sec": 19.9,
+   "deaths": 0,
+   "minHpPct": 48
+  },
+  {
+   "boss": 3,
+   "level": 29,
+   "players": 1,
+   "killed": true,
+   "sec": 97.7,
+   "deaths": 1,
+   "minHpPct": 1
+  },
+  {
+   "boss": 3,
+   "level": 29,
+   "players": 2,
+   "killed": true,
+   "sec": 60,
+   "deaths": 1,
+   "minHpPct": 3
+  },
+  {
+   "boss": 3,
+   "level": 29,
+   "players": 4,
+   "killed": true,
+   "sec": 22.8,
+   "deaths": 0,
+   "minHpPct": 47
+  },
+  {
+   "boss": 4,
+   "level": 39,
+   "players": 1,
+   "killed": true,
+   "sec": 118,
+   "deaths": 1,
+   "minHpPct": 1
+  },
+  {
+   "boss": 4,
+   "level": 39,
+   "players": 2,
+   "killed": true,
+   "sec": 65.7,
+   "deaths": 1,
+   "minHpPct": 2
+  },
+  {
+   "boss": 4,
+   "level": 39,
+   "players": 4,
+   "killed": true,
+   "sec": 27.3,
+   "deaths": 0,
+   "minHpPct": 38
+  },
+  {
+   "boss": 5,
+   "level": 48,
+   "players": 1,
+   "killed": true,
+   "sec": 122.3,
+   "deaths": 1,
+   "minHpPct": 3
+  },
+  {
+   "boss": 5,
+   "level": 48,
+   "players": 2,
+   "killed": true,
+   "sec": 60,
+   "deaths": 0,
+   "minHpPct": 4
+  },
+  {
+   "boss": 5,
+   "level": 48,
+   "players": 4,
+   "killed": true,
+   "sec": 30,
+   "deaths": 0,
+   "minHpPct": 52
+  }
+ ],
+ "admin": [
+  {
+   "L": 50,
+   "kit": false,
+   "hours": 1,
+   "kills": 1570,
+   "killsPerH": 1570,
+   "deaths": 3,
+   "hpPerKillPct": 0.9,
+   "atk": 793,
+   "hp": 3978
+  },
+  {
+   "L": 50,
+   "kit": true,
+   "hours": 1,
+   "kills": 1811,
+   "killsPerH": 1811,
+   "deaths": 0,
+   "hpPerKillPct": 0.1,
+   "atk": 1990,
+   "hp": 7338
+  },
+  {
+   "L": 30,
+   "kit": true,
+   "hours": 1,
+   "kills": 1259,
+   "killsPerH": 1259,
+   "deaths": 0,
+   "hpPerKillPct": 0.3,
+   "atk": 938,
+   "hp": 4541
+  }
+ ],
+ "economy": [
+  {
+   "L": 10,
+   "goldPerH": -895,
+   "killsPerH": 1276,
+   "plus9CharmGold": 226639,
+   "plus9Hours": 226639.1
+  },
+  {
+   "L": 20,
+   "goldPerH": 68542,
+   "killsPerH": 1514,
+   "plus9CharmGold": 368288,
+   "plus9Hours": 5.4
+  },
+  {
+   "L": 30,
+   "goldPerH": 76328,
+   "killsPerH": 989,
+   "plus9CharmGold": 509938,
+   "plus9Hours": 6.7
+  },
+  {
+   "L": 40,
+   "goldPerH": 132227,
+   "killsPerH": 1177,
+   "plus9CharmGold": 651587,
+   "plus9Hours": 4.9
+  },
+  {
+   "L": 48,
+   "goldPerH": 170227,
+   "killsPerH": 1424,
+   "plus9CharmGold": 764907,
+   "plus9Hours": 4.5
+  }
+ ],
+ "constants": {
+  "PVP_COEF": 0.35,
+  "RIFT": {
+   "maxActive": 2,
+   "spawnEverySec": [
+    150,
+    300
+   ],
+   "lifeSec": 600,
+   "activateR": 20,
+   "rewardR": 34,
+   "minDist": 70,
+   "maxDist": 135,
+   "waves": 3,
+   "waveBase": 5,
+   "wavePerPlayer": 1,
+   "hpPerExtra": 0.35,
+   "guardianHpMult": 1,
+   "rewardXpMult": 80,
+   "rewardGoldMult": 30,
+   "waveGapSec": 7,
+   "gapHealPct": 0.25
+  },
+  "SPEC_MODS": {
+   "none": {
+    "hp": 0,
+    "def": 0,
+    "atk": 0,
+    "aspd": 0,
+    "aoe": 0,
+    "shield": 1,
+    "taunt": false,
+    "dmgTaken": 0,
+    "blockHit": 0,
+    "blockSkill": 0,
+    "pierce": 0,
+    "pvpTaken": 0
+   },
+   "kalkan": {
+    "hp": 0.08,
+    "def": 0.08,
+    "atk": -0.06,
+    "aspd": 0,
+    "aoe": 0,
+    "shield": 1.2,
+    "taunt": true,
+    "dmgTaken": -0.06,
+    "blockHit": 0.06,
+    "blockSkill": 0.04,
+    "pierce": 0,
+    "pvpTaken": 0.1
+   },
+   "kilic": {
+    "hp": -0.04,
+    "def": 0,
+    "atk": 0.14,
+    "aspd": 0.1,
+    "aoe": 0.2,
+    "shield": 1,
+    "taunt": false,
+    "dmgTaken": 0,
+    "blockHit": 0,
+    "blockSkill": 0,
+    "pierce": 0.06,
+    "pvpTaken": 0
+   }
+  },
+  "BOY_BONUS": {
+   "gok": {
+    "mspd": 0.06,
+    "aspd": 0.05,
+    "hp": 0,
+    "def": 0,
+    "spell": 0,
+    "heal": 0
+   },
+   "yer": {
+    "mspd": 0,
+    "aspd": 0,
+    "hp": 0.05,
+    "def": 0.04,
+    "spell": 0,
+    "heal": 0
+   },
+   "ay": {
+    "mspd": 0,
+    "aspd": 0,
+    "hp": 0,
+    "def": 0,
+    "spell": 0.12,
+    "heal": 0.4
+   }
+  },
+  "KUT": {
+   "x25": 25
+  },
+  "INSCRIPTIONS": [
+   40,
+   120,
+   300,
+   700,
+   1500
+  ],
+  "restedCap10": 37433
+ }
+}

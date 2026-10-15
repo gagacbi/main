@@ -1,0 +1,11 @@
+{
+  "id": "20261011-003",
+  "takim": "altyapi",
+  "baslik": "Gerçek GPU performans ölçüm rehberi ve betiği",
+  "istek": "Eşya görseli ilk çizim süresi, kuşanma değişiminde model yeniden kurma maliyeti ve kalabalık sahne için tarayıcı konsolundan çalıştırılabilir ölçüm betiği + docs/ rehberi yaz. Ölçülemeyen şeyi 'ölçülmedi' diye raporla.",
+  "oncelik": 3,
+  "durum": "bekliyor",
+  "deneme": 0,
+  "olusturma": "2026-10-11T18:58:35.461Z",
+  "notlar": []
+}

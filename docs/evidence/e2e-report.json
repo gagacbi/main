@@ -1,0 +1,513 @@
+{
+ "at": "2026-10-15T03:00:22.513Z",
+ "results": [
+  {
+   "id": "F6.tr",
+   "ok": true,
+   "detail": "Giriş ekranı Türkçe: KUTTengri'nin bahşettiği kutu ile bozkırı kurtar! Karakter adı Parola Giriş yap İlk kez mi"
+  },
+  {
+   "id": "F6.en",
+   "ok": true,
+   "detail": "Dil düğmesiyle çalışma anında İngilizce: KUTSave the steppe with the Kut Tengri granted you! Character name Pas"
+  },
+  {
+   "id": "C1.boy-secimi",
+   "ok": true,
+   "detail": "Karakter oluştururken 3 boy seçilebilir (Gök/Yer/Ay), sınıf: Alp"
+  },
+  {
+   "id": "A1.giris",
+   "ok": true,
+   "detail": "UI üzerinden karakter oluşturuldu ve oyuna girildi"
+  },
+  {
+   "id": "C1.boy-kaydi",
+   "ok": true,
+   "detail": "Sunucu kaydı: boy=ay ad=Bozkurt951"
+  },
+  {
+   "id": "F1.toon",
+   "ok": true,
+   "detail": "Toon materyal=44, kontur ağı=944, toplam ShaderMaterial=97"
+  },
+  {
+   "id": "F1.palet",
+   "ok": true,
+   "detail": "Sahnede 96 ayrı (3-bit) renk kovası: canlı palet"
+  },
+  {
+   "id": "F6.font",
+   "ok": true,
+   "detail": "Fredoka/Nunito (latin-ext) yazı tipleri yüklendi: 12 yüz"
+  },
+  {
+   "id": "F4.hud",
+   "ok": true,
+   "detail": "HUD: can/xp, 6 yetenek, mini harita, sohbet, görev; 21 SVG ikon"
+  },
+  {
+   "id": "F4.yetenek-ikonlari",
+   "ok": true,
+   "detail": "Yetenek çubuğunda 7 renkli yetenek simgesi (game-icons)"
+  },
+  {
+   "id": "F4.yetenek-cubugu-altta",
+   "ok": true,
+   "detail": "Yetenek çubuğu ekranın altında (üst=612, alt=706, yükseklik=720)"
+  },
+  {
+   "id": "F5.ses",
+   "ok": true,
+   "detail": "AudioContext=running, çıkış tepe enerjisi=6.45 (kopuz/davul/bordo üretimi)"
+  },
+  {
+   "id": "F5.sessiz",
+   "ok": true,
+   "detail": "M tuşu: sessiz=true, kazanç=0.0001579149393364787, sessizlikte enerji=0.000"
+  },
+  {
+   "id": "F2.boy-kimlik",
+   "ok": true,
+   "detail": "Üç boy (Gök mavi-beyaz kartal tüyü, Yer yeşil-kahve kurt kulağı, Ay gümüş-mor geyik boynuzu) aynı sahnede, ayrı siluet"
+  },
+  {
+   "id": "F3.yaratiklar",
+   "ok": true,
+   "detail": "Tepegöz yavrusu, Albastı, Erlik çırağı, çakal ve çatlak bekçisi sahnede: tepegoz, albasti, erlik, cakal, bekci"
+  },
+  {
+   "id": "F3.siluet",
+   "ok": true,
+   "detail": "5 ayrı model imzası (parça sayısı + boy)"
+  },
+  {
+   "id": "F3.suru-basi",
+   "ok": true,
+   "detail": "Sürü Başı sahnede: büyütülmüş model ve \"Sürü Başı\" etiketi"
+  },
+  {
+   "id": "B6.toplama",
+   "ok": true,
+   "detail": "Çağrı Narası: 7/7 yaratık 5 birim içine çekildi"
+  },
+  {
+   "id": "B2.alan",
+   "ok": true,
+   "detail": "Kılıç Savurma tek seferde 7/7 yaratığa vurdu"
+  },
+  {
+   "id": "B2.yetenek-temizleme",
+   "ok": true,
+   "detail": "Çağrı Narası + Savurma + Sarsıntı + Tengri Hiddeti: 7/7 yaratık yetenekle temizlendi"
+  },
+  {
+   "id": "B1.otomatik",
+   "ok": true,
+   "detail": "Yalnızca Space basılı (yetenek yok): 4/4 yaratığa otomatik hedefleme+yaklaşma+seri vuruş, öldü; deneyim +92"
+  },
+  {
+   "id": "B6.ganimet",
+   "ok": true,
+   "detail": "Ganimet yağmuru: aynı anda ekranda en çok 2 ganimet nesnesi (yalnızca vuran oyuncuya görünür)"
+  },
+  {
+   "id": "B6.ganimet-toplandi",
+   "ok": true,
+   "detail": "Ganimet mıknatısı: akçe 5000→5012"
+  },
+  {
+   "id": "D5.envanter",
+   "ok": true,
+   "detail": "Çanta paneli 7 eşya hücresi, kademe renkli (sıradan/nadir/destansı/efsanevi)"
+  },
+  {
+   "id": "D5c.donen-onizleme",
+   "ok": true,
+   "detail": "Çantada seçili eşyanın önizlemesi üzerine gelince dönüyor (kare değişti)"
+  },
+  {
+   "id": "D5d.ek-yuvalar",
+   "ok": true,
+   "detail": "Ek kuşanma yuvaları (kalkan, çizme, bilezik, küpe) kuşanılabiliyor: 5 yuva dolu"
+  },
+  {
+   "id": "D5b.envanter-v2",
+   "ok": true,
+   "detail": "Çanta v2: çift tıkla kuşanıldı (kuşanılan=5), seçili eşya ayrıntı kartı, sürüklenebilir hücreler; karakter modeline yansıdı (görünüm kodu=19546872840192)"
+  },
+  {
+   "id": "B4.uzmanlik-ui",
+   "ok": true,
+   "detail": "Seviye 10+: Kalkan Alp / Kılıç Alp seçimi görünür"
+  },
+  {
+   "id": "B4.uzmanlik",
+   "ok": true,
+   "detail": "Kılıç Alp seçildi, sunucu doğruladı, model/istatistik değişti"
+  },
+  {
+   "id": "B3.kademe",
+   "ok": true,
+   "detail": "Savurma M1→M2 (kademe=2), puan + akçe harcandı"
+  },
+  {
+   "id": "S1.kut-yilligi",
+   "ok": true,
+   "detail": "Kodeks › Kut Yıllığı: çağ adı, ilerleme ve ortak olay günlüğü görünür"
+  },
+  {
+   "id": "S2.wiki",
+   "ok": true,
+   "detail": "Oyun içi Wiki (U): 17 makale, Alp Avı kuralları ve örnek tablo görünür"
+  },
+  {
+   "id": "S3.alp-avi-hud",
+   "ok": true,
+   "detail": "Görev kutusunda Alp Avı satırı (hedef yaratık sayaçları) görünür"
+  },
+  {
+   "id": "S4.gunluk",
+   "ok": true,
+   "detail": "Obanın Günlüğü (J): 4 görev, ilerleme çubukları, ödül türleri ve Günlük Hediye görünür"
+  },
+  {
+   "id": "S5.gol-avi",
+   "ok": true,
+   "detail": "Göl Avı paneli: olta seviyesi, yemler, olta at düğmesi, balık envanteri ve pişirme"
+  },
+  {
+   "id": "S6.zamanlama-oyunu",
+   "ok": true,
+   "detail": "Olta atınca zamanlama oyunu (yeşil bölge ve çizgi) açılıyor"
+  },
+  {
+   "id": "S7.element",
+   "ok": true,
+   "detail": "Demirci › Element sekmesi: element, güç çubuğu, yükseltme ve değiştirme maliyetleri"
+  },
+  {
+   "id": "S8.kut-sekmesi",
+   "ok": true,
+   "detail": "Demirci › Kut Taşları sekmesi: 6 tür, Tak/Saflaştır düğmeleri"
+  },
+  {
+   "id": "S8.kut-tak",
+   "ok": true,
+   "detail": "Taş takıldı (yuva sınıfı=1), istatistik sunucuda işlendi"
+  },
+  {
+   "id": "S9.sandik-paneli",
+   "ok": true,
+   "detail": "Boss sandığına yaklaşıp E: sandık paneli, anahtar sayıları ve Aç düğmesi"
+  },
+  {
+   "id": "S9.sandik-ac",
+   "ok": true,
+   "detail": "Sandık açıldı, 1 anahtar harcandı (kalan 5/6), ganimet gösterildi"
+  },
+  {
+   "id": "S10.rehber-hud",
+   "ok": true,
+   "detail": "Çekirdek öğretici bitince görev kutusunda \"Alp Rehberi\" ve açık görevler görünür: Alp Rehberi 2/18 · +12 dahaRehber'i (U) aç 0/1İlk Alp Avı'nı bitir 0/1Göl iskelesinden olt"
+  },
+  {
+   "id": "S10.pusula",
+   "ok": true,
+   "detail": "Rehber hedefi (Demirci / iskele…) için pusula oku görünür"
+  },
+  {
+   "id": "S10.rehber-paneli",
+   "ok": true,
+   "detail": "Rehber paneli: tüm görevler, ne için/nerede, ödül çipleri"
+  },
+  {
+   "id": "S10.wiki-ack",
+   "ok": true,
+   "detail": "Wiki açılınca \"Rehber'i aç\" görevi sunucuda tamamlandı ve ödül işlendi"
+  },
+  {
+   "id": "D3.demirci-paneli",
+   "ok": true,
+   "detail": "Demirci’ye yaklaşıp E: yükseltme paneli açıldı"
+  },
+  {
+   "id": "D3.oranlar-ui",
+   "ok": true,
+   "detail": "Arayüzde gösterilen oranlar PRD tablosu: 100, 90, 85, 80, 65, 50, 35, 20, 10% (+1…+9)"
+  },
+  {
+   "id": "D3.risk-uyari",
+   "ok": true,
+   "detail": "+5 hedefinde \"EŞYA YOK OLUR\" uyarısı gösterildi"
+  },
+  {
+   "id": "D4.kitap",
+   "ok": true,
+   "detail": "Demirci el kitabı: %65 + %10 = 75% (65% +10)"
+  },
+  {
+   "id": "D3.basari",
+   "ok": true,
+   "detail": "Yükseltme başarılı (+4→+5): ✦ Başarılı! +5"
+  },
+  {
+   "id": "D4.tilsim",
+   "ok": true,
+   "detail": "Koruma tılsımı: 🛡 Başarısız ama tılsım eşyayı korudu! (eşya +5 olarak korundu, tılsım tüketildi)"
+  },
+  {
+   "id": "D3.yok-olma",
+   "ok": true,
+   "detail": "Tılsımsız başarısızlıkta (+5 hedefi) eşya yok oldu"
+  },
+  {
+   "id": "E1.ak-sakal",
+   "ok": true,
+   "detail": "Ak Sakal diyaloğu ve oba öğretici görevleri"
+  },
+  {
+   "id": "E1.oba-paneli",
+   "ok": true,
+   "detail": "Oba paneli: Otağ + Demirhane, ortak ambar, yoldaşlar"
+  },
+  {
+   "id": "E4.yoldas-yuvasi",
+   "ok": true,
+   "detail": "Başlangıçta 2 yoldaş yuvası"
+  },
+  {
+   "id": "E5.bagis",
+   "ok": true,
+   "detail": "Bağış: katılım puanı=240, ortak ambar={\"ore\":90,\"hide\":60,\"wood\":90}"
+  },
+  {
+   "id": "E2.yukseltme",
+   "ok": true,
+   "detail": "Otağ yükseltmesi başladı; bitiş zamanı DB’de: 2026-10-15T02:45:26.383Z; öğretici adımı=7"
+  },
+  {
+   "id": "E4.sefer",
+   "ok": true,
+   "detail": "Yoldaş 1 saatlik sefere gönderildi (bitiş zamanı kayıtlı)"
+  },
+  {
+   "id": "E4.sefer-hazir",
+   "ok": true,
+   "detail": "Süre dolunca sefer ödülü hazır (giriş anında hesaplanır)"
+  },
+  {
+   "id": "E7.yazit",
+   "ok": true,
+   "detail": "Sunucu çapı 40 parça eşiği aşıldı: 1 yazıt çözüldü (“n, gökten bir el kilidi kendi anahtarıyla açtı.»”), tüm oyunculara duyuruldu=true"
+  },
+  {
+   "id": "D6.catlak-acik",
+   "ok": true,
+   "detail": "Çatlak açık ve bekliyor (durum=0); oyuncu 22 birim uzakta, pusula oku ve harita işareti görünür"
+  },
+  {
+   "id": "D6.catlak-ui",
+   "ok": true,
+   "detail": "Çatlak çubuğu görünür, dalga=1, durum=1; parti kurmadan otomatik katılım"
+  },
+  {
+   "id": "B7.olum-ekrani",
+   "ok": true,
+   "detail": "Ölüm ekranı gösterildi; riskli bölgede küçük deneyim kaybı: xp=0"
+  },
+  {
+   "id": "B7.yeniden-dogus",
+   "ok": true,
+   "detail": "Yurda dönüldü (güvenli bölge)"
+  },
+  {
+   "id": "H1.yetkisiz-arayuz",
+   "ok": true,
+   "detail": "Rolü olmayan hesapta GM düğmesi yok, F2 yönetici panelini açmaz"
+  },
+  {
+   "id": "H1.rol",
+   "ok": true,
+   "detail": "Yönetici hesabı \"Yonetici753\": rol=admin, GM düğmesi görünür, HUD etiketi var"
+  },
+  {
+   "id": "H1.panel",
+   "ok": true,
+   "detail": "F2 ile yönetici paneli açıldı (30+ hızlı komut)"
+  },
+  {
+   "id": "H1.komut",
+   "ok": true,
+   "detail": "GM komutları sunucuda uygulandı: sv=25, kuşanılan=4, atk=679"
+  },
+  {
+   "id": "H1.sohbet-gm",
+   "ok": true,
+   "detail": "Sohbetten /gm komutu çalıştı (altın=927, bağlantı: , kapalı=false)"
+  },
+  {
+   "id": "H2.tas-okuma",
+   "ok": true,
+   "detail": "Taşa yaklaşınca \"E\" ipucu: “EBalbal Taşı”; okununca kart: “nmış: «Gök dokuz kat. Sekizi kapalıdır.»”"
+  },
+  {
+   "id": "H3.ruya",
+   "ok": true,
+   "detail": "Rüya ekranı yazı yazı belirdi, \"Uyan\" ile ipucu kaydedildi"
+  },
+  {
+   "id": "H3.kodeks",
+   "ok": true,
+   "detail": "Kodeks: 27/36 ipucu; \"Mühürün Dışı\" açıldı ve metni gösteriyor"
+  },
+  {
+   "id": "H5.kilometre-tasi",
+   "ok": true,
+   "detail": "Seviye 10 kilometre taşı: akçe +4000, kitap +1, tılsım=1"
+  },
+  {
+   "id": "H5.savunma-paneli",
+   "ok": true,
+   "detail": "Karakter panelinde tür savunmaları, vuruş/beceri bloğu ve delme gösteriliyor"
+  },
+  {
+   "id": "H5.temel-efsun",
+   "ok": true,
+   "detail": "Eşya ipucunda temel efsun gösteriliyor: “Tengri'nin Kartal Miğferi +5Efsanevi · Miğfer · Eşya seviyesi 30Savunma93Can742◆ Temel efs”"
+  },
+  {
+   "id": "H5.saha-bossu",
+   "ok": true,
+   "detail": "Saha bossu adıyla görünüyor: 29Demir Dişli BörüBıçak; sv29, can 48227"
+  },
+  {
+   "id": "H5.olum-ipucu",
+   "ok": true,
+   "detail": "Ölüm ekranı ipucu: “Seni öldüren: Demir Dişli Börü · Bıçak (sende: %0) İpucu: Bıçak savunması giyen eşyalar bu hasarı keser (Demirci’de efsunlu parçal”"
+  },
+  {
+   "id": "H5.pazar-paneli",
+   "ok": true,
+   "detail": "Pazar paneli (P): ilanlar, ilanlarım, \"bana uygun\" süzgeci ve sıralama"
+  },
+  {
+   "id": "H5.efsun-yenile",
+   "ok": true,
+   "detail": "Demirci paneli \"Efsun yenile\" sekmesi: rastgele ve seçerek yenileme düğmeleri"
+  },
+  {
+   "id": "H12.kapi-paneli",
+   "ok": true,
+   "detail": "Yurt kapısında E: Kapı Taşı paneli; Kutlu Otlak (PvP kapalı) ve Erlik Diyarı kartları, seviye ve PvP kuralı görünür"
+  },
+  {
+   "id": "H12.otlak",
+   "ok": true,
+   "detail": "Kapıdan geçince Kutlu Otlak'ta (bölge=otlak); bölge etiketi: Otlak Kampı (güvenli) · Katman 1 · 2 çev"
+  },
+  {
+   "id": "H13.otlak-pvp-yok",
+   "ok": true,
+   "detail": "Otlak'ta PvP düğmesi pasif: \"PvP: Kapalı\""
+  },
+  {
+   "id": "H13.bayrak",
+   "ok": true,
+   "detail": "HUD düğmesiyle PvP bayrağı açıldı: sunucu=true, düğme=\"PvP: Açık\""
+  },
+  {
+   "id": "H13.bayrak-kapat",
+   "ok": true,
+   "detail": "PvP yoksa bayrak hemen kapanır"
+  },
+  {
+   "id": "H16.pazar-mal",
+   "ok": true,
+   "detail": "Pazar: malzeme yığını ilanı verildi (ok=true); \"Mallar\" görünümünde \"Demir cevheri ×100\" listelendi; satış panelinde \"Mallarım\" bölümü var"
+  },
+  {
+   "id": "H14.zindan-paneli",
+   "ok": true,
+   "detail": "Erlik kampında Kapı Taşı: zindan kartları (ücret, günlük hak, parti/tek giriş)"
+  },
+  {
+   "id": "H14.zindan-giris",
+   "ok": true,
+   "detail": "Zindan başladı: bölge=demir#0, ücret düştü (900 akçe), HUD: \"Demir Madeni (zindan)19:46Dalga 1/3×\""
+  },
+  {
+   "id": "H14.zindan-cikis",
+   "ok": true,
+   "detail": "Zindandan çıkış düğmesi Erlik kampına döndürür"
+  },
+  {
+   "id": "H15.tezgah-paneli",
+   "ok": true,
+   "detail": "Tezgâh paneli: günlük/haftalık üretim, şansa bağlı üretim, kostüm kartları (efsun ekle/değiştir/uzat)"
+  },
+  {
+   "id": "H15.kostum-giy",
+   "ok": true,
+   "detail": "Kostüm giyildi: sunucu basamak=3, istemci avatarı yeniden kuruldu (kod=8)"
+  },
+  {
+   "id": "F7.olcum",
+   "ok": true,
+   "detail": "Kare başına JS/CPU maliyeti=791.71 ms; aktif mesh=98/2643; üçgen=396062; (yazılım rasterleştirmede FPS=1)"
+  },
+  {
+   "id": "T1.arayuz",
+   "ok": true,
+   "detail": "Dokunmatik cihazda joystick, saldırı düğmesi ve sağa alınmış beceri çubuğu var"
+  },
+  {
+   "id": "T6.gorev-seridi",
+   "ok": true,
+   "detail": "Telefonda görev kutusu gizli olsa da geçerli öğretici adımı üst şeritte görünür: Yürü: W A S D ya da yere tıkla (telefonda sol joystick) (0/25)"
+  },
+  {
+   "id": "T2.joystick",
+   "ok": true,
+   "detail": "Joystick sağa çekilince oyuncu 52.7 m yürüdü, bırakınca joystick sıfırlandı"
+  },
+  {
+   "id": "T3.saldiri",
+   "ok": true,
+   "detail": "Saldırı düğmesi basılıyken saldırı açık, bırakınca kapanır"
+  },
+  {
+   "id": "T4.kamera",
+   "ok": true,
+   "detail": "Tek parmak sürükleme kamerayı döndürür"
+  },
+  {
+   "id": "T5.panel-sigar",
+   "ok": true,
+   "detail": "Envanter paneli 844×390 ekrana sığıyor (827×367)"
+  },
+  {
+   "id": "G.konsol",
+   "ok": true,
+   "detail": "Tarayıcı konsolunda hata yok"
+  }
+ ],
+ "metrics": {
+  "audioPeak": 6.4541015625,
+  "dropsSeenDuringLoot": 2,
+  "perf": {
+   "fps": 1,
+   "meshes": 2643,
+   "active": 98,
+   "draw": 0,
+   "tris": 396062,
+   "cpuMs": 791.71
+  },
+  "gl": {
+   "vendor": "Google Inc. (Google)",
+   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+   "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+  }
+ },
+ "errors": []
+}

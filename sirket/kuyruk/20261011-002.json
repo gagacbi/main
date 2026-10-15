@@ -1,0 +1,11 @@
+{
+  "id": "20261011-002",
+  "takim": "gorsel",
+  "baslik": "Kalan çizgi ikonları game-icons ile yenile",
+  "istek": "Panel başlıkları, durum etkileri (sersemleme, yavaşlama, zehir, lanet) ve HUD'daki kalan çizgi ikonları client/src/ui/gipaint.ts eşlemesiyle renkli yap; ekran görüntüsü ekle; krediyi güncelle.",
+  "oncelik": 3,
+  "durum": "bekliyor",
+  "deneme": 0,
+  "olusturma": "2026-10-11T18:58:35.401Z",
+  "notlar": []
+}
